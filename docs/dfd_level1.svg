@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="800" xmlns="http://www.w3.org/2000/svg">
+    <!-- Styles -->
+    <defs>
+        <style>
+            .entity { fill: #4CAF50; stroke: #2E7D32; stroke-width: 2; }
+            .process { fill: #2196F3; stroke: #1565C0; stroke-width: 2; }
+            .datastore { fill: #FF9800; stroke: #F57C00; stroke-width: 2; }
+            .flow { fill: none; stroke: #424242; stroke-width: 2; marker-end: url(#arrowhead); }
+            .text { font-family: Arial; font-size: 14px; fill: #212121; }
+            .entity-text { font-family: Arial; font-size: 14px; fill: white; }
+            .process-text { font-family: Arial; font-size: 14px; fill: white; }
+            .store-text { font-family: Arial; font-size: 14px; fill: white; }
+            .subtext { font-family: Arial; font-size: 12px; fill: #616161; }
+        </style>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#424242"/>
+        </marker>
+    </defs>
+
+    <!-- External Entity: User -->
+    <rect x="50" y="350" width="120" height="60" rx="10" class="entity"/>
+    <text x="90" y="385" class="entity-text">User</text>
+
+    <!-- Processes -->
+    <!-- Game Category Manager -->
+    <circle cx="300" cy="250" r="70" class="process"/>
+    <text x="260" y="255" class="process-text">Game Category</text>
+    <text x="270" y="275" class="process-text">Manager</text>
+
+    <!-- Game Engine -->
+    <circle cx="500" cy="380" r="70" class="process"/>
+    <text x="460" y="375" class="process-text">Game Engine</text>
+    <text x="460" y="395" class="process-text" style="font-size: 12px">(Game Specific)</text>
+
+    <!-- Score Management -->
+    <circle cx="700" cy="380" r="70" class="process"/>
+    <text x="660" y="375" class="process-text">Score Management</text>
+    <text x="660" y="395" class="process-text" style="font-size: 12px">(Per Game)</text>
+
+    <!-- Achievement System -->
+    <circle cx="500" cy="600" r="70" class="process"/>
+    <text x="460" y="595" class="process-text">Achievement</text>
+    <text x="460" y="615" class="process-text">System</text>
+    <text x="460" y="635" class="process-text" style="font-size: 12px">(Game Specific)</text>
+
+    <!-- Settings Manager -->
+    <circle cx="300" cy="600" r="70" class="process"/>
+    <text x="260" y="605" class="process-text">Settings Manager</text>
+
+    <!-- Data Stores -->
+    <!-- Game State Store -->
+    <rect x="800" y="250" width="150" height="60" rx="10" class="datastore"/>
+    <text x="820" y="275" class="store-text">Game State</text>
+    <text x="820" y="295" class="store-text" style="font-size: 12px">(Per Game)</text>
+
+    <!-- High Scores Store -->
+    <rect x="800" y="380" width="150" height="60" rx="10" class="datastore"/>
+    <text x="820" y="405" class="store-text">High Scores</text>
+    <text x="820" y="425" class="store-text" style="font-size: 12px">(Game Specific)</text>
+
+    <!-- Achievement Store -->
+    <rect x="800" y="510" width="150" height="60" rx="10" class="datastore"/>
+    <text x="815" y="535" class="store-text">Achievements</text>
+    <text x="815" y="555" class="store-text" style="font-size: 12px">(Per Game)</text>
+
+    <!-- Settings Store -->
+    <rect x="800" y="640" width="150" height="60" rx="10" class="datastore"/>
+    <text x="830" y="675" class="store-text">Settings</text>
+
+    <!-- Data Flows -->
+    <!-- User to Game Category -->
+    <path d="M170 360 L230 280" class="flow"/>
+    <text x="180" y="300" class="text">Select Category</text>
+
+    <!-- Game Category to Game Engine -->
+    <path d="M370 280 L430 380" class="flow"/>
+    <text x="380" y="320" class="text">Load Game</text>
+
+    <!-- Game Engine to Score Management -->
+    <path d="M570 380 L630 380" class="flow"/>
+    <text x="580" y="360" class="text">Game Results</text>
+
+    <!-- Game Engine to Achievement System -->
+    <path d="M500 450 L500 530" class="flow"/>
+    <text x="510" y="490" class="text">Game Events</text>
+
+    <!-- Game Engine to Game State -->
+    <path d="M570 350 L800 280" class="flow"/>
+    <text x="650" y="300" class="text">Save Game State</text>
+
+    <!-- Score Management to High Scores -->
+    <path d="M770 380 L800 410" class="flow"/>
+    <text x="750" y="360" class="text">Update Scores</text>
+
+    <!-- Achievement System to Achievement Store -->
+    <path d="M570 600 L800 540" class="flow"/>
+    <text x="600" y="550" class="text">Update Achievements</text>
+
+    <!-- Settings Manager to Settings Store -->
+    <path d="M370 600 L800 670" class="flow"/>
+    <text x="500" y="650" class="text">Save Settings</text>
+
+    <!-- User to Settings Manager -->
+    <path d="M170 400 L240 580" class="flow"/>
+    <text x="180" y="500" class="text">Configure Settings</text>
+</svg> 

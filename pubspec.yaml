@@ -1,0 +1,83 @@
+name: gameverse
+description: "A new Flutter project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  get: ^4.6.6  # For state management and navigation
+  equatable: ^2.0.5
+  get_storage: ^2.1.1
+  google_fonts: ^6.1.0  # For custom fonts
+  shared_preferences: ^2.2.2  # For local storage
+  flutter_animate: ^4.5.2  # For smooth animations
+  cached_network_image: ^3.3.0  # For image caching
+  flutter_svg: ^2.0.9  # For SVG support
+  lottie: ^3.3.1  # For Lottie animations
+  logger: ^2.5.0
+  sensors_plus: ^6.1.1  # For accelerometer and gyroscope
+  connectivity_plus: ^6.1.2  # For network status monitoring
+  uuid: ^4.3.3  # For unique game IDs
+  json_annotation: ^4.8.1
+  audioplayers: ^6.1.0
+  confetti: ^0.8.0
+  permission_handler: ^11.3.1
+  flutter_launcher_icons: ^0.14.3
+  url_launcher: ^6.2.0
+  flutter_vector_icons: ^2.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  # JSON serialization generators
+  build_runner: ^2.4.8
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    # Chess pieces (SVG)
+    - assets/chess/images/black_bishop.svg
+    - assets/chess/images/black_king.svg
+    - assets/chess/images/black_knight.svg
+    - assets/chess/images/black_pawn.svg
+    - assets/chess/images/black_queen.svg
+    - assets/chess/images/black_rook.svg
+    - assets/chess/images/white_bishop.svg
+    - assets/chess/images/white_king.svg
+    - assets/chess/images/white_knight.svg
+    - assets/chess/images/white_pawn.svg
+    - assets/chess/images/white_queen.svg
+    - assets/chess/images/white_rook.svg
+    
+    # Chess sounds
+    - assets/chess/sounds/board_start.mp3
+    - assets/chess/sounds/check.ogg
+    - assets/chess/sounds/checkmate.wav
+    - assets/chess/sounds/clock_tick.wav
+    - assets/chess/sounds/game_end.wav
+    - assets/chess/sounds/menu_selection.wav
+    - assets/chess/sounds/piece_move.wav
+    - assets/chess/sounds/promotion.wav
+    - assets/chess/sounds/time_up.mp3
+    
+    # Other game assets
+    - assets/sounds/drop.mp3
+    - assets/sounds/win.mp3
+    - assets/images/
+    - assets/images/google_logo.png
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+

@@ -1,0 +1,30 @@
+see deeply wht i am doing app
+
+more deep
+
+see wht games i have impmented till now
+
+see wht n all catgroies we have 
+
+next whcih game shud we implent and in which catgroy just suggest
+
+ first read each file before making changes
+
+lets start with memeory maatch game also see wht n al file i have done in previous games so u can have idea also fist lets plan also rmebr game binding n all for this like other game we created also remembr to connect in home controller see it read
+
+start also do ur best and next level ui and backgroun color n ensging n smooth n bestt creaat file on by one dont create at once also in  games folder with ctageory like u can see
+
+lol u forgot to put in home controler also read and alsso the bidning update and also the mode selctuon scren intiliase see like we did in other game
+
+
+lol u forgot to put in home controler also read and alsso the bidning update and also the mode selctuon scren intiliase see like we did in other game see first then do @game_binding.dart @home_controller.dart  also create the cards for arcade game @category_card.dart @category_screen.dart @home_screen.dart 
+
+
+also add in both game scren and mode selection scren when do back button it ask suerfriendy message type see below correct-
+
+
+there is pixel overlfo errro in times in timed mode game scren do u to time is there nay way and imrpovement and make also imrpve statsitscs it shud be accuarate shown both in game and setting and shd be synced correct adn can be reset
+dont remvoe any imports existing anyhting first read
+
+
+i like the idea of favourites and tournments ,can u suggest wht can we do in these two dont give code yet

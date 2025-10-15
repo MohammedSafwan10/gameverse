@@ -1,0 +1,13 @@
+ - assets/sounds/card_flip.mp3
+    - assets/sounds/match_success.mp3
+    - assets/sounds/match_fail.mp3
+    - assets/sounds/game_complete.mp3
+
+connect-
+    - assets/sounds/letter_select.mp3
+    - assets/sounds/word_complete.mp3
+    - assets/sounds/level_complete.mp3
+    - assets/sounds/hint.mp3
+    - assets/sounds/error.mp3
+
+also in core when in home scrreen when pressed back button or trying to exit the app can u make something like are u sure u want to exit the app type u know wht i mean can u do it @home_screen.dart @home_controller.dart 

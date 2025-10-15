@@ -1,0 +1,20 @@
+sha-1 gameverse sign in google
+
+S C:\flutter\my games\gameverse> keytool -list -v -keystore "$env:USERPROFILE\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
+
+Alias name: androiddebugkey
+Creation date: 07-Sep-2024
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: C=US, O=Android, CN=Android Debug
+Issuer: C=US, O=Android, CN=Android Debug
+Serial number: 1
+Valid from: Sat Sep 07 15:17:53 IST 2024 until: Mon Aug 31 15:17:53 IST 2054     
+Certificate fingerprints:
+         SHA1: ED:FC:DA:A2:69:00:2E:FB:9A:78:9E:06:6D:E6:10:62:37:7F:2D:9C       
+         SHA256: 3C:1B:F0:D4:B2:12:AE:EC:E2:C3:FE:7F:EA:EF:6F:D2:DD:38:AC:02:68:AE:6D:97:51:19:D4:55:A4:BB:AB:93
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 1
+PS C:\flutter\my games\gameverse> 

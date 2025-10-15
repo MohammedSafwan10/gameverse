@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Styles -->
+    <defs>
+        <style>
+            .entity { fill: #4CAF50; stroke: #2E7D32; stroke-width: 2; filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.2)); }
+            .process { fill: #2196F3; stroke: #1565C0; stroke-width: 2; filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.2)); }
+            .flow { fill: none; stroke: #424242; stroke-width: 2; marker-end: url(#arrowhead); }
+            .flow-highlight { fill: none; stroke: #424242; stroke-width: 4; stroke-dasharray: 5,5; marker-end: url(#arrowhead); }
+            .text { font-family: Arial; font-size: 14px; fill: #212121; font-weight: 500; }
+            .entity-text { font-family: Arial; font-size: 16px; fill: white; font-weight: bold; }
+            .process-text { font-family: Arial; font-size: 18px; fill: white; font-weight: bold; }
+            .glow { filter: url(#glow); }
+        </style>
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#424242"/>
+        </marker>
+        <!-- Gradient for process -->
+        <linearGradient id="processGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2196F3;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#1565C0;stop-opacity:1" />
+        </linearGradient>
+        <!-- Gradient for entity -->
+        <linearGradient id="entityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#2E7D32;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+
+    <!-- Background -->
+    <rect width="800" height="600" fill="#f5f5f5"/>
+
+    <!-- External Entities -->
+    <rect x="50" y="250" width="120" height="60" rx="15" class="entity" fill="url(#entityGradient)"/>
+    <text x="90" y="285" class="entity-text">User</text>
+
+    <rect x="600" y="200" width="120" height="60" rx="15" class="entity" fill="url(#entityGradient)"/>
+    <text x="615" y="235" class="entity-text">Storage</text>
+
+    <rect x="600" y="350" width="120" height="60" rx="15" class="entity" fill="url(#entityGradient)"/>
+    <text x="615" y="385" class="entity-text">Audio</text>
+
+    <!-- Main Process -->
+    <circle cx="350" cy="280" r="100" class="process" fill="url(#processGradient)"/>
+    <text x="300" y="270" class="process-text">GameVerse</text>
+    <text x="310" y="300" class="process-text">System</text>
+
+    <!-- Data Flows -->
+    <!-- User to GameVerse -->
+    <path d="M170 280 L250 280" class="flow-highlight"/>
+    <text x="180" y="270" class="text">User Input</text>
+
+    <!-- GameVerse to User -->
+    <path d="M250 300 L170 300" class="flow"/>
+    <text x="180" y="320" class="text">Visual Feedback</text>
+
+    <!-- Storage System -->
+    <path d="M450 280 L600 230" class="flow"/>
+    <text x="470" y="240" class="text">Game State</text>
+    <path d="M600 250 L450 300" class="flow"/>
+    <text x="470" y="290" class="text">Stored Data</text>
+
+    <!-- Audio System -->
+    <path d="M450 330 L600 370" class="flow"/>
+    <text x="470" y="340" class="text">Audio Events</text>
+</svg> 
