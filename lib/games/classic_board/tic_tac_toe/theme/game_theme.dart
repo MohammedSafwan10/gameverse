@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 class TicTacToeTheme {
-  static const primaryColor = Color(0xFF6C5CE7);
-  static const secondaryColor = Color(0xFFA3A1FF);
+  // Matching "Classic Board" category color (Coral/Orange)
+  static const primaryColor = Color(0xFFFF7F50);
+  static const secondaryColor = Color(0xFFFF6348);
   static const backgroundColor = Color(0xFFF8F9FE);
   static const darkBackgroundColor = Color(0xFF2D3436);
 
-  static const xColor = Color(0xFF00B894);
-  static const oColor = Color(0xFFFF7675);
-  static const gridColor = Color(0xFF2D3436);
+  static const xColor = Color(0xFF2ED573); // Emerald Green
+  static const oColor = Color(0xFF1E90FF); // Dodger Blue
+  static const gridColor = Color(0xFF747D8C);
 
   static final lightTheme = ThemeData(
     useMaterial3: true,
@@ -40,8 +41,9 @@ class TicTacToeTheme {
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
+        elevation: 0,
       ),
     ),
   );
@@ -76,7 +78,7 @@ class TicTacToeTheme {
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
     ),

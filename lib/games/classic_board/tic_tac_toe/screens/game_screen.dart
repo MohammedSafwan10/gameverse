@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/stats_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../models/player.dart';
 import '../models/game_mode.dart';
-import '../utils/animations.dart';
 import '../widgets/board_cell.dart';
 import '../theme/game_theme.dart';
 import '../services/navigation_service.dart';
@@ -31,14 +31,6 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
       printEmojis: true,
     ),
   );
-
-  static const _boardShadow = [
-    BoxShadow(
-      color: Color(0x1A2D3436),
-      blurRadius: 8,
-      offset: Offset(0, 4),
-    ),
-  ];
 
   bool _showContent = false;
 
@@ -68,71 +60,125 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
       },
       child: Scaffold(
         backgroundColor: TicTacToeTheme.backgroundColor,
-        appBar: AppBar(
-          title: const Text('Tic Tac Toe'),
-          backgroundColor: TicTacToeTheme.primaryColor,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _navigationService.back,
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => _showRestartConfirmationDialog(),
+        body: Stack(
+          children: [
+            // Decorative Background Elements
+            Positioned(
+              right: -100,
+              top: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: TicTacToeTheme.primaryColor.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: _navigationService.toSettings,
+            Positioned(
+              left: -50,
+              bottom: 100,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: TicTacToeTheme.oColor.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.bar_chart),
-              onPressed: _navigationService.toStats,
+
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildCustomHeader(),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final bool isLandscape =
+                            constraints.maxWidth > constraints.maxHeight;
+                        final double boardPadding = isLandscape ? 8.0 : 24.0;
+
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: boardPadding),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Player status
+                              _buildPlayerStatus()
+                                  .animate(target: _showContent ? 1 : 0)
+                                  .fadeIn(duration: 600.ms)
+                                  .slideY(begin: -0.2, end: 0),
+
+                              SizedBox(height: isLandscape ? 16.0 : 40.0),
+
+                              // Game Board
+                              _buildGameBoard(constraints)
+                                  .animate(target: _showContent ? 1 : 0)
+                                  .fadeIn(duration: 800.ms)
+                                  .scale(begin: const Offset(0.9, 0.9)),
+
+                              SizedBox(height: isLandscape ? 16.0 : 40.0),
+
+                              // Game Status
+                              _buildGameStatus()
+                                  .animate(target: _showContent ? 1 : 0)
+                                  .fadeIn(duration: 600.ms)
+                                  .slideY(begin: 0.2, end: 0),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Responsive layout based on available height
-              final bool isLandscape =
-                  constraints.maxWidth > constraints.maxHeight;
-              final double boardPadding = isLandscape ? 8.0 : 16.0;
+      ),
+    );
+  }
 
-              return Padding(
-                padding: EdgeInsets.all(boardPadding),
-                child: Column(
-                  children: [
-                    // Player status with score
-                    TicTacToeAnimations.fadeSlide(
-                      show: _showContent,
-                      offset: const Offset(0, -0.2),
-                      child: _buildPlayerStatus(),
-                    ),
-
-                    SizedBox(height: isLandscape ? 16.0 : 24.0),
-
-                    // Main game board - takes most of the space
-                    Expanded(
-                      child: TicTacToeAnimations.fadeSlide(
-                        show: _showContent,
-                        child: _buildGameBoard(constraints),
-                      ),
-                    ),
-
-                    SizedBox(height: isLandscape ? 16.0 : 24.0),
-
-                    // Game status (whose turn, AI thinking, game result)
-                    TicTacToeAnimations.fadeSlide(
-                      show: _showContent,
-                      offset: const Offset(0, 0.2),
-                      child: _buildGameStatus(),
-                    ),
-                  ],
-                ),
-              );
+  Widget _buildCustomHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            color: Colors.black87,
+            onPressed: () async {
+               final shouldPop = await _showExitConfirmationDialog();
+                if (shouldPop) {
+                  _navigationService.back();
+                }
             },
           ),
-        ),
+          Text(
+            'Tic Tac Toe',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                color: Colors.black87,
+                onPressed: () => _showRestartConfirmationDialog(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                color: Colors.black87,
+                onPressed: _navigationService.toSettings,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -146,7 +192,18 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
       final isMultiplayer = settings.settings.gameMode == GameMode.multiPlayer;
 
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Expanded(
@@ -159,7 +216,12 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 label: isMultiplayer ? 'Player X' : 'You',
               ),
             ),
-            const SizedBox(width: 16),
+            Container(
+              height: 40,
+              width: 1,
+              color: Colors.grey.withOpacity(0.2),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+            ),
             Expanded(
               child: PlayerInfo(
                 player: Player.o,
@@ -181,8 +243,8 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
 
     // Calculate the maximum size for the board while keeping it square
     final double maxSize = constraints.maxWidth > constraints.maxHeight
-        ? constraints.maxHeight * 0.85
-        : constraints.maxWidth;
+        ? constraints.maxHeight * 0.7
+        : constraints.maxWidth * 0.9; // Adjusted size for better proportions
 
     return Center(
       child: SizedBox(
@@ -191,17 +253,14 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: TicTacToeTheme.gridColor.withValues(
-                red: TicTacToeTheme.gridColor.r.toDouble(),
-                green: TicTacToeTheme.gridColor.g.toDouble(),
-                blue: TicTacToeTheme.gridColor.b.toDouble(),
-                alpha: 0.1,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+               BoxShadow(
+                color: TicTacToeTheme.primaryColor.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              width: 2,
-            ),
-            boxShadow: _boardShadow,
+            ],
           ),
           child: Obx(() {
             final gameState = _controller.gameState;
@@ -209,13 +268,12 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
               ),
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 9,
               itemBuilder: (context, index) {
-                _logger.t('Building cell at index: $index');
                 return BoardCell(
                   player: gameState.board[index],
                   isWinningCell: gameState.winningLine.contains(index),
@@ -223,7 +281,6 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                   isEnabled: gameState.board[index] == Player.none &&
                       !gameState.isGameOver,
                   onTap: () {
-                    _logger.i('Cell tapped at index: $index');
                     _controller.makeMove(index);
                   },
                 );
@@ -243,63 +300,70 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
       final settings = Get.find<TicTacToeSettingsController>();
       final isMultiplayer = settings.settings.gameMode == GameMode.multiPlayer;
 
-      _logger.d('Game status - thinking: $isThinking, gameOver: $isGameOver');
-
       if (isGameOver) {
         final winner = gameState.winner;
         String message;
         Color messageColor;
 
         if (winner == null) {
-          message = 'Draw!';
+          message = 'It\'s a Draw!';
           messageColor = Colors.orange;
         } else if (winner == Player.x) {
-          message = isMultiplayer ? 'Player X Won!' : 'You Won!';
-          messageColor = Colors.green;
+          message = isMultiplayer ? 'Player X Wins!' : 'You Win!';
+          messageColor = TicTacToeTheme.xColor;
         } else {
-          message = isMultiplayer ? 'Player O Won!' : 'AI Won!';
-          messageColor = Colors.red;
+          message = isMultiplayer ? 'Player O Wins!' : 'AI Wins!';
+          messageColor = TicTacToeTheme.oColor;
         }
-
-        _logger.i('Game over: $message');
 
         return Column(
           children: [
             Text(
               message,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: messageColor,
                   ),
-            ),
+            ).animate().scale(curve: Curves.elasticOut),
             const SizedBox(height: 16),
-            FilledButton(
+            FilledButton.icon(
               onPressed: () => _controller.resetGame(),
+              icon: const Icon(Icons.replay_rounded),
+              label: const Text('Play Again'),
               style: FilledButton.styleFrom(
                 backgroundColor: TicTacToeTheme.primaryColor,
                 foregroundColor: Colors.white,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                elevation: 0,
               ),
-              child: const Text('Play Again'),
-            ),
+            ).animate().fadeIn(delay: 300.ms),
           ],
         );
       }
 
       if (isThinking) {
-        return Column(
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: TicTacToeTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(width: 12),
             Text(
               'AI is thinking...',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: TicTacToeTheme.primaryColor,
-                  ),
+              style: TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         );
@@ -315,12 +379,21 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
         turnMessage = currentPlayer == Player.x ? 'Your Turn' : 'AI Turn';
       }
 
-      return Text(
-        turnMessage,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: TicTacToeTheme.primaryColor,
-            ),
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: (currentPlayer == Player.x ? TicTacToeTheme.xColor : TicTacToeTheme.oColor)
+              .withOpacity(0.1),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Text(
+          turnMessage,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: currentPlayer == Player.x ? TicTacToeTheme.xColor : TicTacToeTheme.oColor,
+            fontSize: 16,
+          ),
+        ),
       );
     });
   }
@@ -329,10 +402,12 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             title: const Text('Exit Game?'),
             content: const Text('Are you sure you want to exit the game?'),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             ),
             actions: [
               TextButton(
@@ -343,6 +418,9 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: FilledButton.styleFrom(
                   backgroundColor: TicTacToeTheme.primaryColor,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text('Yes'),
               ),
@@ -356,10 +434,12 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     final shouldRestart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Restart Game?'),
         content: const Text('Are you sure you want to restart the game?'),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         actions: [
           TextButton(
@@ -370,6 +450,9 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: TicTacToeTheme.primaryColor,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Yes'),
           ),

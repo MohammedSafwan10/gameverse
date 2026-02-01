@@ -2,245 +2,188 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Enhanced colors for a more premium look
-  static final Color _lightPrimaryColor = Color(0xFF2563EB);
-  static final Color _darkPrimaryColor = Color(0xFF60A5FA);
+  // Modern Vibrant Color Palette
+  static const Color _primaryColor = Color(0xFF6C63FF); // Modern Indigo
+  static const Color _secondaryColor = Color(0xFF2A2D3E); // Dark Gunmetal
+  static const Color _accentColor = Color(0xFFFF6584); // Vibrant Pink
 
-  // Gradient colors
-  static final List<Color> primaryGradient = [
-    Color(0xFF2563EB), // Primary blue
-    Color(0xFF3B82F6), // Lighter blue
-  ];
+  static const Color _backgroundColor = Color(0xFFF8F9FE); // Clean Off-White
+  static const Color _surfaceColor = Colors.white;
+  static const Color _errorColor = Color(0xFFFF4757);
 
-  static final List<Color> surfaceGradient = [
-    Color(0xFFF8FAFC),
-    Colors.white,
-  ];
-
-  static final List<Color> cardGradient = [
-    Colors.white,
-    Color(0xFFF8FAFC),
-  ];
-
-  // Category card colors
-  static final Map<String, List<Color>> categoryGradients = {
-    'Arcade': [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
-    'Classic Board': [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-    'Word Games': [Color(0xFFEF4444), Color(0xFFF87171)],
-    'Brain Training': [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
-    'Puzzle': [Color(0xFFF97316), Color(0xFFFB923C)],
-    'Quick Casual': [Color(0xFF22C55E), Color(0xFF4ADE80)],
-    'Strategy': [Color(0xFF14B8A6), Color(0xFF2DD4BF)],
-    'Reaction': [Color(0xFFFACC15), Color(0xFFFDE047)],
-    'Educational': [Color(0xFF6366F1), Color(0xFF818CF8)],
-  };
-
-  // Enhanced text themes with better hierarchy
-  static final _lightTextTheme = TextTheme(
-    headlineLarge: GoogleFonts.poppins(
-      fontSize: 32,
-      fontWeight: FontWeight.bold,
-      letterSpacing: -0.5,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
-    headlineMedium: GoogleFonts.poppins(
-      fontSize: 24,
-      fontWeight: FontWeight.w600,
-      letterSpacing: -0.3,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
-    titleLarge: GoogleFonts.poppins(
-      fontSize: 20,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.15,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
-    titleMedium: GoogleFonts.poppins(
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.1,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
-    bodyLarge: GoogleFonts.inter(
-      fontSize: 16,
-      fontWeight: FontWeight.w400,
-      letterSpacing: 0.5,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
-    bodyMedium: GoogleFonts.inter(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-      letterSpacing: 0.25,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
-    labelLarge: GoogleFonts.inter(
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 1.25,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
-    ),
+  // Gradients
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFF6C63FF), Color(0xFF4834D4)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
 
-  static final _darkTextTheme = TextTheme(
-    headlineLarge: GoogleFonts.poppins(
+  static const LinearGradient accentGradient = LinearGradient(
+    colors: [Color(0xFFFF6584), Color(0xFFFF7F50)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Category Colors (Pastel & Vibrant Mix)
+  static final Map<String, Color> categoryColors = {
+    'Arcade': Color(0xFF70A1FF),      // Soft Blue
+    'Classic Board': Color(0xFFFF7F50),// Coral
+    'Word Games': Color(0xFF2ED573),   // Emerald
+    'Brain Training': Color(0xFFA29BFE), // Periwinkle
+    'Puzzle': Color(0xFFFF6B81),       // Watermelon
+    'Quick Casual': Color(0xFFECCC68), // Mustard
+    'Strategy': Color(0xFF1E90FF),     // Dodger Blue
+    'Reaction': Color(0xFFFF4757),     // Red
+    'Educational': Color(0xFF5352ED),  // Royal Blue
+  };
+
+  // Modern Text Theme
+  static final TextTheme _textTheme = TextTheme(
+    displayLarge: GoogleFonts.outfit(
+      fontSize: 32,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -1.0,
+      color: _secondaryColor,
+    ),
+    displayMedium: GoogleFonts.outfit(
       fontSize: 28,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-    titleLarge: GoogleFonts.poppins(
-      fontSize: 22,
       fontWeight: FontWeight.w600,
-      color: Colors.white,
+      letterSpacing: -0.5,
+      color: _secondaryColor,
     ),
-    bodyLarge: GoogleFonts.poppins(
+    displaySmall: GoogleFonts.outfit(
+      fontSize: 24,
+      fontWeight: FontWeight.w600,
+      color: _secondaryColor,
+    ),
+    headlineMedium: GoogleFonts.outfit(
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+      color: _secondaryColor,
+    ),
+    titleLarge: GoogleFonts.dmSans(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: _secondaryColor,
+    ),
+    bodyLarge: GoogleFonts.dmSans(
       fontSize: 16,
-      color: Colors.white,
+      fontWeight: FontWeight.w400,
+      color: _secondaryColor.withOpacity(0.8),
+    ),
+    bodyMedium: GoogleFonts.dmSans(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: _secondaryColor.withOpacity(0.6),
+    ),
+    labelLarge: GoogleFonts.dmSans(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.5,
+      color: _primaryColor,
     ),
   );
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    primaryColor: _lightPrimaryColor,
-    scaffoldBackgroundColor: surfaceGradient[0],
+    primaryColor: _primaryColor,
+    scaffoldBackgroundColor: _backgroundColor,
+
     colorScheme: ColorScheme.light(
-      primary: _lightPrimaryColor,
-      secondary: Color(0xFF3B82F6),
-      tertiary: Color(0xFF6366F1),
-      surface: surfaceGradient[0],
-      onSurface: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.87 * 255,
-      ),
+      primary: _primaryColor,
+      secondary: _accentColor,
+      surface: _surfaceColor,
+      error: _errorColor,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: _secondaryColor,
+      onError: Colors.white,
     ),
-    textTheme: _lightTextTheme,
+
+    textTheme: _textTheme,
+
+    appBarTheme: AppBarTheme(
+      backgroundColor: _backgroundColor,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: _textTheme.titleLarge,
+      iconTheme: IconThemeData(color: _secondaryColor),
+    ),
+
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: _surfaceColor,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
       ),
-      shadowColor: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.03 * 255,
-      ),
+      margin: EdgeInsets.zero,
     ),
+
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
+        backgroundColor: _primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        textStyle: _textTheme.labelLarge?.copyWith(color: Colors.white),
+      ),
+    ),
+
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: _primaryColor,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
+        textStyle: _textTheme.labelLarge,
       ),
     ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return _lightPrimaryColor;
-        }
-        return Colors.grey;
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return _lightPrimaryColor.withValues(
-            red: _lightPrimaryColor.r.toDouble(),
-            green: _lightPrimaryColor.g.toDouble(),
-            blue: _lightPrimaryColor.b.toDouble(),
-            alpha: 0.5 * 255,
-          );
-        }
-        return Colors.grey.withValues(
-          red: Colors.grey.r.toDouble(),
-          green: Colors.grey.g.toDouble(),
-          blue: Colors.grey.b.toDouble(),
-          alpha: 0.5 * 255,
-        );
-      }),
+
+    iconTheme: IconThemeData(
+      color: _secondaryColor,
+      size: 24,
+    ),
+
+    dividerTheme: DividerThemeData(
+      color: _secondaryColor.withOpacity(0.1),
+      thickness: 1,
+      space: 1,
     ),
   );
 
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: _darkPrimaryColor,
-    scaffoldBackgroundColor: const Color(0xFF1A1A1A),
+    primaryColor: _primaryColor,
+    scaffoldBackgroundColor: Color(0xFF121212),
+
     colorScheme: ColorScheme.dark(
-      primary: _darkPrimaryColor,
-      secondary: Colors.blue.shade200,
-      surface: const Color(0xFF1A1A1A),
+      primary: _primaryColor,
+      secondary: _accentColor,
+      surface: Color(0xFF1E1E1E),
+      error: _errorColor,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
       onSurface: Colors.white,
+      onError: Colors.white,
     ),
-    textTheme: _darkTextTheme,
+
+    textTheme: _textTheme.apply(
+      bodyColor: Colors.white,
+      displayColor: Colors.white,
+    ),
+
     cardTheme: CardThemeData(
-      color: const Color(0xFF2A2A2A),
-      elevation: 4,
+      color: Color(0xFF1E1E1E),
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
-    ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return _darkPrimaryColor;
-        }
-        return Colors.grey;
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return _darkPrimaryColor.withValues(
-            red: _darkPrimaryColor.r.toDouble(),
-            green: _darkPrimaryColor.g.toDouble(),
-            blue: _darkPrimaryColor.b.toDouble(),
-            alpha: 0.5 * 255,
-          );
-        }
-        return Colors.grey.withValues(
-          red: Colors.grey.r.toDouble(),
-          green: Colors.grey.g.toDouble(),
-          blue: Colors.grey.b.toDouble(),
-          alpha: 0.5 * 255,
-        );
-      }),
     ),
   );
 }

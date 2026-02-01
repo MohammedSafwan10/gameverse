@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../theme/app_theme.dart';
 
 class GameInfo {
   final String name;
@@ -31,201 +33,223 @@ class CategoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Get.theme.colorScheme.surface,
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: _buildGamesList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    // Override color with AppTheme version if available to ensure consistency
+    final themeColor = AppTheme.categoryColors[title] ?? color;
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Get.theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.black.withValues(
-                  red: 0,
-                  green: 0,
-                  blue: 0,
-                  alpha: 0.1 * 255,
-                ),
-              ),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Get.back(),
-              color: Get.theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Get.textTheme.headlineMedium?.copyWith(
-                    color: Get.theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${games.length} Games Available',
-                  style: Get.textTheme.titleSmall?.copyWith(
-                    color: Get.theme.colorScheme.onSurface.withValues(
-                      red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                      green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                      blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                      alpha: 0.7 * 255,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverAppBar(context, themeColor),
+          _buildGamesList(context, themeColor),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
         ],
       ),
     );
   }
 
-  Widget _buildGamesList() {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      itemCount: games.length,
-      itemBuilder: (context, index) {
-        final game = games[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Get.theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.black.withValues(
-                red: 0,
-                green: 0,
-                blue: 0,
-                alpha: 0.08 * 255,
-              ),
-            ),
+  Widget _buildSliverAppBar(BuildContext context, Color themeColor) {
+    return SliverAppBar.large(
+      expandedHeight: 180,
+      backgroundColor: themeColor,
+      surfaceTintColor: themeColor,
+      leading: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          shape: BoxShape.circle,
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              onTap: game.isAvailable ? () => Get.to(game.screen) : null,
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: color.withValues(
-                          red: color.r.toDouble(),
-                          green: color.g.toDouble(),
-                          blue: color.b.toDouble(),
-                          alpha: 0.15,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        game.icon,
-                        size: 32,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            game.name,
-                            style: Get.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Get.theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            game.description,
-                            style: Get.textTheme.bodyMedium?.copyWith(
-                              color: Get.theme.colorScheme.onSurface.withValues(
-                                red: Get.theme.colorScheme.onSurface.r
-                                    .toDouble(),
-                                green: Get.theme.colorScheme.onSurface.g
-                                    .toDouble(),
-                                blue: Get.theme.colorScheme.onSurface.b
-                                    .toDouble(),
-                                alpha: 0.7 * 255,
-                              ),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!game.isAvailable) ...[
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Get.theme.colorScheme.primary.withValues(
-                            red: Get.theme.colorScheme.primary.r.toDouble(),
-                            green: Get.theme.colorScheme.primary.g.toDouble(),
-                            blue: Get.theme.colorScheme.primary.b.toDouble(),
-                            alpha: 0.12,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Get.theme.colorScheme.primary.withValues(
-                              red: Get.theme.colorScheme.primary.r.toDouble(),
-                              green: Get.theme.colorScheme.primary.g.toDouble(),
-                              blue: Get.theme.colorScheme.primary.b.toDouble(),
-                              alpha: 0.3,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          'Coming Soon',
-                          style: Get.textTheme.labelSmall?.copyWith(
-                            color: Get.theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+        ),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(color: themeColor),
+            // Decorative circles
+            Positioned(
+              right: -50,
+              top: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
-          ),
-        );
-      },
+            Positioned(
+              left: -30,
+              bottom: -30,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildGamesList(BuildContext context, Color themeColor) {
+    if (games.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.games_outlined, size: 64, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              Text(
+                'No games available yet',
+                style: TextStyle(color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(24),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final game = games[index];
+            return _buildGameCard(context, game, themeColor, index);
+          },
+          childCount: games.length,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameCard(BuildContext context, GameInfo game, Color themeColor, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: game.isAvailable ? () => Get.to(game.screen) : null,
+          borderRadius: BorderRadius.circular(24),
+          splashColor: themeColor.withOpacity(0.1),
+          highlightColor: themeColor.withOpacity(0.05),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Game Icon
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: themeColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(
+                    game.icon,
+                    size: 32,
+                    color: themeColor,
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        game.name,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        game.description,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Action
+                const SizedBox(width: 12),
+                if (game.isAvailable)
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: themeColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: themeColor.withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'SOON',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).animate(delay: (100 * index).ms).fadeIn().slideX(begin: 0.2);
   }
 }
