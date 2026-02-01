@@ -47,12 +47,14 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
         }
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FE),
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            color: Colors.black87,
             onPressed: () async {
               final shouldPop = await _showExitConfirmationDialog(context);
               if (shouldPop) {
@@ -62,39 +64,46 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
           ).animate().fadeIn(delay: 100.ms),
           actions: [
             IconButton(
-              icon: const Icon(Icons.settings),
+              icon: const Icon(Icons.settings_outlined),
+              color: Colors.black87,
               onPressed: () => Get.to(() => const BlockMergeSettingsScreen()),
               tooltip: 'Game Settings',
             ).animate().fadeIn(delay: 100.ms),
           ],
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.orange.shade200,
-                Colors.orange.shade50,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 16),
-                _buildGameInfo(),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: Center(
-                    child: _buildGameGrid(gridSize, tileSize),
-                  ),
+        body: Stack(
+          children: [
+             // Decorative Background
+            Positioned(
+              right: -100,
+              top: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
-          ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader().animate().fadeIn().slideY(begin: -0.2),
+                  const SizedBox(height: 16),
+                  _buildGameInfo(),
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: Center(
+                      child: _buildGameGrid(gridSize, tileSize),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -106,33 +115,33 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
         Text(
           'Block Merge',
           style: Get.textTheme.headlineMedium?.copyWith(
-            color: Colors.orange.shade800,
+            color: Colors.black87,
             fontWeight: FontWeight.bold,
           ),
         ),
-        Obx(() => Tooltip(
-              message: settingsController.gameMode.value ==
-                      BlockMergeMode.classic
-                  ? 'Classic Mode: Keep playing until no moves are left'
-                  : settingsController.gameMode.value ==
-                          BlockMergeMode.timeChallenge
-                      ? 'Time Challenge: Race against the clock! Get the highest score before time runs out'
-                      : 'Zen Mode: Relaxed gameplay with no game over. Practice and improve your strategy',
-              child: Text(
+        Obx(() => Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
                 settingsController.gameMode.value == BlockMergeMode.classic
                     ? 'Classic Mode'
                     : settingsController.gameMode.value ==
                             BlockMergeMode.timeChallenge
                         ? 'Time Challenge'
                         : 'Zen Mode',
-                style: TextStyle(
-                  color: Colors.orange.shade600,
-                  fontWeight: FontWeight.w500,
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
               ),
-            )),
+        )),
       ],
-    ).animate().fadeIn().slideY(begin: -0.3);
+    );
   }
 
   Widget _buildGameInfo() {
@@ -140,134 +149,59 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Expanded(
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Score',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.orange.shade800,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Obx(() => Text(
-                              controller.score.value.toString(),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ],
-                    ),
-                  ),
+                child: _buildScoreCard(
+                  'Score',
+                  controller.score.value.toString(),
+                  Colors.orange,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Best',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.orange.shade800,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Obx(() => Text(
-                              controller.bestScore.value.toString(),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ],
-                    ),
-                  ),
+                child: _buildScoreCard(
+                  'Best',
+                  controller.bestScore.value.toString(),
+                  Colors.amber,
                 ),
               ),
               if (settingsController.gameMode.value ==
                   BlockMergeMode.timeChallenge) ...[
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 16),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Time',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.orange.shade800,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Obx(() => Text(
-                                controller.timeRemaining.value.toString(),
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )),
-                        ],
-                      ),
-                    ),
+                  child: _buildScoreCard(
+                    'Time',
+                    controller.timeRemaining.value.toString(),
+                    Colors.red,
                   ),
                 ),
               ],
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildControlButton(
-              icon: Icons.refresh,
+              icon: Icons.refresh_rounded,
               label: 'Restart',
               onPressed: controller.newGame,
               tooltip: 'Start a new game',
             ),
             const SizedBox(width: 16),
             _buildControlButton(
-              icon: Icons.undo,
+              icon: Icons.undo_rounded,
               label: 'Undo',
               onPressed: controller.undo,
               tooltip: 'Undo last move',
             ),
             const SizedBox(width: 16),
             _buildControlButton(
-              icon: Icons.help_outline,
+              icon: Icons.help_outline_rounded,
               label: 'Help',
               onPressed: _showTutorialDialog,
               tooltip: 'How to play',
@@ -275,7 +209,46 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
           ],
         ),
       ],
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: -0.2);
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2);
+  }
+
+  Widget _buildScoreCard(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Obx(() => Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          )),
+        ],
+      ),
+    );
   }
 
   Widget _buildControlButton({
@@ -288,23 +261,16 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
       message: tooltip,
       child: ElevatedButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon, color: Colors.orange.shade800, size: 18),
-        label: Text(
-          label,
-          style: TextStyle(
-            color: Colors.orange.shade800,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
-        ),
+        icon: Icon(icon, color: Colors.white, size: 20),
+        label: Text(label),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 2,
-          minimumSize: const Size(70, 36),
+          elevation: 0,
         ),
       ),
     );
@@ -316,17 +282,8 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
       height: gridSize,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.orange.shade100.withValues(
-          red: Colors.orange.shade800.r.toDouble(),
-          green: Colors.orange.shade800.g.toDouble(),
-          blue: Colors.orange.shade800.b.toDouble(),
-          alpha: 0.1,
-        ),
+        color: const Color(0xFFBBADA0),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.orange.shade200,
-          width: 2,
-        ),
       ),
       child: GestureDetector(
         onVerticalDragEnd: (details) {
@@ -347,8 +304,8 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 4,
-            mainAxisSpacing: 4,
-            crossAxisSpacing: 4,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
           ),
           itemCount: 16,
           itemBuilder: (context, index) {
@@ -364,38 +321,30 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
           },
         ),
       ),
-    ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.8, 0.8));
+    ).animate().scale(curve: Curves.elasticOut, duration: 800.ms);
   }
 
   Future<bool> _showExitConfirmationDialog(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.warning_amber_rounded,
-                    color: Colors.orange.shade800),
-                const SizedBox(width: 8),
-                const Text('Exit Game'),
-              ],
-            ),
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Exit Game?'),
             content: const Text(
                 'Are you sure you want to exit? Progress will be lost.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.orange.shade800),
-                ),
+                child: const Text('CANCEL'),
               ),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade800,
-                  foregroundColor: Colors.white,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Exit'),
+                child: const Text('EXIT'),
               ),
             ],
           ),
@@ -408,9 +357,11 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(Icons.lightbulb_outline, color: Colors.orange.shade800),
+            Icon(Icons.lightbulb_outline_rounded, color: Colors.orange),
             const SizedBox(width: 8),
             const Text('How to Play'),
           ],
@@ -422,19 +373,19 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
             _buildTutorialStep(
               '1. Swipe Direction',
               'Swipe up, down, left, or right to move all tiles in that direction.',
-              Icons.swipe,
+              Icons.swipe_rounded,
             ),
             const SizedBox(height: 16),
             _buildTutorialStep(
               '2. Merge Tiles',
-              'When two tiles with the same number touch, they merge into one tile with double the value!',
-              Icons.merge_type,
+              'When two tiles with the same number touch, they merge into one!',
+              Icons.merge_type_rounded,
             ),
             const SizedBox(height: 16),
             _buildTutorialStep(
               '3. Reach 2048',
               'Keep merging tiles to reach the 2048 tile and win the game!',
-              Icons.emoji_events,
+              Icons.emoji_events_rounded,
             ),
           ],
         ),
@@ -444,16 +395,13 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
               settingsController.setShowTutorial(false);
               Navigator.of(context).pop();
             },
-            child: Text(
-              'Don\'t Show Again',
-              style: TextStyle(color: Colors.orange.shade800),
-            ),
+            child: const Text('Don\'t Show Again'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade800,
-              foregroundColor: Colors.white,
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.orange,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Got it!'),
           ),
@@ -463,28 +411,39 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
   }
 
   Widget _buildTutorialStep(String title, String description, IconData icon) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(icon, color: Colors.orange.shade600, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Colors.orange, size: 20),
         ),
-        const SizedBox(height: 4),
-        Text(
-          description,
-          style: TextStyle(
-            color: Colors.grey.shade700,
-            fontSize: 14,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math';
 import '../controllers/game_controller.dart';
 import '../widgets/mole_hole.dart';
@@ -16,29 +17,32 @@ class WhackAMoleGameScreen extends GetView<WhackAMoleGameController> {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              backgroundColor: Colors.grey[900],
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: const Text(
                 'Exit Game?',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               content: const Text(
                 'Are you sure you want to exit? Your progress will be lost.',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: Colors.black87),
               ),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Cancel',
-                      style: TextStyle(color: Colors.white70)),
+                  child: const Text('Cancel'),
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
                 ),
-                TextButton(
-                  child: const Text('Exit',
-                      style: TextStyle(color: Colors.redAccent)),
+                FilledButton(
                   onPressed: () {
                     Navigator.of(context).pop(true);
                   },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Exit'),
                 ),
               ],
             );
@@ -57,8 +61,8 @@ class WhackAMoleGameScreen extends GetView<WhackAMoleGameController> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
             childAspectRatio: 1,
           ),
           itemCount: 9,
@@ -109,60 +113,76 @@ class WhackAMoleGameScreen extends GetView<WhackAMoleGameController> {
         return const SizedBox.shrink();
       }
       return Container(
-        color: Colors.black54,
+        color: Colors.black.withOpacity(0.4),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'PAUSED',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton(
-                    onPressed: controller.resumeGame,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'PAUSED',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FilledButton(
+                      onPressed: controller.resumeGame,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text(
+                        'Resume',
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
-                    child: const Text(
-                      'Resume',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  ElevatedButton(
-                    onPressed: controller.quitGame,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
+                    const SizedBox(width: 20),
+                    FilledButton(
+                      onPressed: controller.quitGame,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text(
+                        'Quit',
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
-                    child: const Text(
-                      'Quit',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      );
+      ).animate().fadeIn();
     });
   }
 
@@ -195,27 +215,28 @@ class WhackAMoleGameScreen extends GetView<WhackAMoleGameController> {
     return Obx(() {
       if (controller.isPlaying.value) return const SizedBox.shrink();
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: controller.startGame,
-            style: ElevatedButton.styleFrom(
+            style: FilledButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               textStyle: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(20),
               ),
+              elevation: 4,
             ),
             child: const Text('Start Game'),
           ),
         ),
-      );
+      ).animate().fadeIn().scale();
     });
   }
 
@@ -236,51 +257,58 @@ class WhackAMoleGameScreen extends GetView<WhackAMoleGameController> {
         }
       },
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF1A237E),
-                Color(0xFF0D47A1),
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Obx(() => GameHUD(
-                        score: controller.currentScore.value,
-                        timeRemaining: controller.gameMode == 'classic'
-                            ? controller.timeRemaining.value
-                            : -1,
-                        lives: controller.gameMode == 'survival'
-                            ? controller.lives.value
-                            : null,
-                        onPause: controller.pauseGame,
-                        onBackPressed: (context) async {
-                          if (controller.isPlaying.value) {
-                            controller.pauseGame();
-                          }
-                          final shouldPop =
-                              await _showExitConfirmationDialog(context);
-                          if (shouldPop) {
-                            controller.quitGame();
-                          }
-                          return shouldPop;
-                        },
-                        gameMode: controller.gameMode,
-                      )),
+        backgroundColor: const Color(0xFFF8F9FE),
+        body: Stack(
+          children: [
+             // Decorative Background
+            Positioned(
+              left: -100,
+              top: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 16),
-                _buildGameArea(),
-                _buildStartButton(),
-              ],
+              ),
             ),
-          ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Obx(() => GameHUD(
+                          score: controller.currentScore.value,
+                          timeRemaining: controller.gameMode == 'classic'
+                              ? controller.timeRemaining.value
+                              : -1,
+                          lives: controller.gameMode == 'survival'
+                              ? controller.lives.value
+                              : null,
+                          onPause: controller.pauseGame,
+                          onBackPressed: (context) async {
+                            if (controller.isPlaying.value) {
+                              controller.pauseGame();
+                            }
+                            final shouldPop =
+                                await _showExitConfirmationDialog(context);
+                            if (shouldPop) {
+                              controller.quitGame();
+                            }
+                            return shouldPop;
+                          },
+                          gameMode: controller.gameMode,
+                        )),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildGameArea(),
+                  _buildStartButton(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

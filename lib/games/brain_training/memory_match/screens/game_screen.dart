@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../models/game_mode.dart';
 import '../models/game_state.dart';
@@ -43,7 +44,6 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
       controller = Get.find<MemoryMatchGameController>();
       soundService = Get.find<SoundService>();
 
-      // Initialize game after frame is built
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _logger.i(
             'Initializing game with mode: ${widget.mode}, difficulty: ${widget.difficulty}');
@@ -52,14 +52,13 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     } catch (e, stackTrace) {
       _logger.e(
           'Error during initialization\nError: $e\nStack trace: $stackTrace');
-      rethrow; // Rethrow to let the error handler deal with it
+      rethrow;
     }
   }
 
   @override
   void dispose() {
     _logger.i('Disposing MemoryMatchGameScreen');
-    // Ensure we cleanup the game state before disposing
     if (Get.isRegistered<MemoryMatchGameController>()) {
       controller.cleanupGame();
     }
@@ -85,19 +84,34 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Container(
-                  color: Colors.grey[50],
-                  child: _buildGameBoard(),
+        backgroundColor: const Color(0xFFF8F9FE),
+        body: Stack(
+          children: [
+             // Decorative Background
+            Positioned(
+              right: -100,
+              top: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: widget.mode.color.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
               ),
-            ],
-          ),
+            ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader().animate().fadeIn(duration: 400.ms).slideY(begin: -0.2),
+                  Expanded(
+                    child: _buildGameBoard(),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -107,10 +121,11 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     return await Get.dialog<bool>(
           Dialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(24),
             ),
+            backgroundColor: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -118,6 +133,7 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
                     'Exit Game?',
                     style: Get.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -141,7 +157,6 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          // Cleanup before exiting
                           controller.cleanupGame();
                           Get.back(result: true);
                         },
@@ -149,8 +164,9 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
                           backgroundColor: widget.mode.color,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          elevation: 0,
                         ),
                         child: const Text('Exit'),
                       ),
@@ -171,172 +187,91 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
         return const SizedBox.shrink();
       }
 
-      // Check screen size to adjust layout
       final screenWidth = MediaQuery.of(context).size.width;
       final isSmallScreen = screenWidth < 360;
 
-      return Padding(
-        padding: EdgeInsets.fromLTRB(
-            isSmallScreen ? 8 : 16,
-            isSmallScreen ? 4 : 8,
-            isSmallScreen ? 8 : 16,
-            isSmallScreen ? 4 : 8),
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           children: [
             Row(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.mode.color.withValues(
-                          red: widget.mode.color.r.toDouble(),
-                          green: widget.mode.color.g.toDouble(),
-                          blue: widget.mode.color.b.toDouble(),
-                          alpha: 0.2,
-                        ),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Get.back(),
-                    color: widget.mode.color,
-                    iconSize: isSmallScreen ? 18 : 20,
-                    padding: isSmallScreen
-                        ? const EdgeInsets.all(8)
-                        : const EdgeInsets.all(12),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  onPressed: () => Get.back(),
+                  color: Colors.black87,
+                  iconSize: 20,
                 ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.mode.displayName,
-                        style: Get.textTheme.titleMedium?.copyWith(
-                          color: widget.mode.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: isSmallScreen ? 16 : null,
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          widget.mode.displayName,
+                          style: Get.textTheme.titleMedium?.copyWith(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${gameState.remainingPairs} pairs remaining',
-                        style: Get.textTheme.bodySmall?.copyWith(
-                          color: Colors.black54,
-                          fontSize: isSmallScreen ? 10 : null,
+                        Text(
+                          '${gameState.remainingPairs} pairs left',
+                          style: Get.textTheme.bodySmall?.copyWith(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.mode.color.withValues(
-                          red: widget.mode.color.r.toDouble(),
-                          green: widget.mode.color.g.toDouble(),
-                          blue: widget.mode.color.b.toDouble(),
-                          alpha: 0.2,
-                        ),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                IconButton(
+                  icon: Icon(
+                    soundService.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    size: 24,
                   ),
-                  child: IconButton(
-                    icon: Icon(
-                      soundService.isMuted ? Icons.volume_off : Icons.volume_up,
-                      size: 20,
-                    ),
-                    onPressed: soundService.toggleMute,
-                    color: widget.mode.color,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: widget.mode.color.withValues(
-                      red: widget.mode.color.r.toDouble(),
-                      green: widget.mode.color.g.toDouble(),
-                      blue: widget.mode.color.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.timer,
-                        color: widget.mode.color,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${gameState.timeElapsed}s',
-                        style: TextStyle(
-                          color: widget.mode.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+                  onPressed: soundService.toggleMute,
+                  color: Colors.black87,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.mode.color.withValues(
-                      red: widget.mode.color.r.toDouble(),
-                      green: widget.mode.color.g.toDouble(),
-                      blue: widget.mode.color.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStat(
-                    icon: Icons.star,
-                    value: gameState.score.toString(),
-                    label: 'Score',
-                  ),
-                  _buildStat(
-                    icon: Icons.swap_horiz,
-                    value: gameState.moves.toString(),
-                    label: 'Moves',
-                  ),
-                  _buildStat(
-                    icon: Icons.grid_view,
-                    value: '${gameState.gridSize}x${gameState.gridSize}',
-                    label: 'Grid',
-                  ),
-                ],
-              ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildStat(
+                  icon: Icons.star_rounded,
+                  value: gameState.score.toString(),
+                  label: 'Score',
+                  color: Colors.amber,
+                ),
+                _buildStat(
+                  icon: Icons.timer_rounded,
+                  value: '${gameState.timeElapsed}s',
+                  label: 'Time',
+                  color: Colors.blue,
+                ),
+                _buildStat(
+                  icon: Icons.grid_view_rounded,
+                  value: gameState.moves.toString(),
+                  label: 'Moves',
+                  color: Colors.purple,
+                ),
+              ],
             ),
           ],
         ),
@@ -348,43 +283,41 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     required IconData icon,
     required String value,
     required String label,
+    required Color color,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: widget.mode.color.withValues(
-              red: widget.mode.color.r.toDouble(),
-              green: widget.mode.color.g.toDouble(),
-              blue: widget.mode.color.b.toDouble(),
-              alpha: 0.1,
-            ),
-            borderRadius: BorderRadius.circular(12),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          child: Icon(
-            icon,
-            color: widget.mode.color,
-            size: 20,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Get.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        Text(
-          label,
-          style: Get.textTheme.bodySmall?.copyWith(
-            color: Colors.black54,
-            fontSize: 10,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -392,133 +325,66 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     return Obx(() {
       final gameState = controller.state;
       if (gameState == null) {
-        _logger.d('Game state is null, showing loading indicator');
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        return const Center(child: CircularProgressIndicator());
       }
 
-      _logger.d('Building game board with grid size: ${gameState.gridSize}');
       final gridSize = gameState.gridSize;
-
-      // Calculate spacing based on grid size and screen size
       final screenWidth = MediaQuery.of(context).size.width;
       final screenHeight = MediaQuery.of(context).size.height;
       final isSmallScreen = screenWidth < 360 || screenHeight < 600;
-      final gridSpacing = isSmallScreen
-          ? (gridSize <= 4 ? 4.0 : 2.0)
-          : (gridSize <= 4 ? 8.0 : 4.0);
+      final gridSpacing = 12.0;
 
-      return Container(
-        margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                red: 0.0,
-                green: 0.0,
-                blue: 0.0,
-                alpha: 0.05,
-              ),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Calculate available space considering device size
-              final availableWidth =
-                  constraints.maxWidth - (gridSize + 1) * gridSpacing;
-              final availableHeight =
-                  constraints.maxHeight - (gridSize + 1) * gridSpacing;
+      return Center(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final availableWidth = constraints.maxWidth - (gridSize + 1) * gridSpacing;
+            final availableHeight = constraints.maxHeight - (gridSize + 1) * gridSpacing;
+            final maxCardSize = min(
+              availableWidth / gridSize,
+              availableHeight / gridSize,
+            );
 
-              // Calculate maximum possible card size based on available space
-              final maxCardSize = min(
-                availableWidth / gridSize,
-                availableHeight / gridSize,
-              );
+            final cardSize = min(maxCardSize * 0.9, 100.0); // Cap max size
+            final totalWidth = cardSize * gridSize + (gridSize - 1) * gridSpacing;
+            final totalHeight = cardSize * gridSize + (gridSize - 1) * gridSpacing;
 
-              // Adjust card size based on grid size and screen size
-              double cardSize;
-              if (isSmallScreen) {
-                // Smaller cards on small screens
-                cardSize = maxCardSize * 0.95;
-              } else if (gridSize <= 4) {
-                cardSize = maxCardSize;
-              } else if (gridSize == 6) {
-                cardSize = maxCardSize * 0.95;
-              } else {
-                // For 8x8 grid
-                cardSize = maxCardSize * 0.9;
-              }
-
-              // Ensure we never create overflow by limiting size
-              cardSize = min(cardSize, (screenWidth - 40) / gridSize);
-
-              // Calculate total grid size based on card size
-              final totalWidth =
-                  cardSize * gridSize + (gridSize + 1) * gridSpacing;
-              final totalHeight =
-                  cardSize * gridSize + (gridSize + 1) * gridSpacing;
-
-              _logger.t('Card size calculated: $cardSize');
-
-              return Center(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Container(
-                      width: totalWidth,
-                      height: totalHeight,
-                      padding: EdgeInsets.all(gridSpacing),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: gridSize,
-                          crossAxisSpacing: gridSpacing,
-                          mainAxisSpacing: gridSpacing,
+            return SizedBox(
+              width: totalWidth + 24, // Add padding
+              height: totalHeight + 24,
+              child: GridView.builder(
+                padding: const EdgeInsets.all(12),
+                physics: const BouncingScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: gridSize,
+                  crossAxisSpacing: gridSpacing,
+                  mainAxisSpacing: gridSpacing,
+                ),
+                itemCount: gameState.cards.length,
+                itemBuilder: (context, index) {
+                  final card = gameState.cards[index];
+                  return Hero(
+                    tag: 'card_${card.id}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => controller.flipCard(index),
+                        borderRadius: BorderRadius.circular(16),
+                        child: FlipCard(
+                          card: card,
+                          mode: widget.mode,
+                          onFlipComplete: (bool isFrontSide) {
+                            if (isFrontSide && card.isMatched) {
+                              controller.showMatchAnimation(index);
+                            }
+                          },
                         ),
-                        itemCount: gameState.cards.length,
-                        itemBuilder: (context, index) {
-                          final card = gameState.cards[index];
-                          return Hero(
-                            tag: 'card_${card.id}',
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  _logger.t('Card tapped: $index');
-                                  controller.flipCard(index);
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: FlipCard(
-                                  card: card,
-                                  mode: widget.mode,
-                                  onFlipComplete: (bool isFrontSide) {
-                                    if (isFrontSide && card.isMatched) {
-                                      controller.showMatchAnimation(index);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
                       ),
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
+                  ).animate().scale(delay: (50 * index).ms, duration: 400.ms, curve: Curves.easeOutBack);
+                },
+              ),
+            );
+          },
         ),
       );
     });

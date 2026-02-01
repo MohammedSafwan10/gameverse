@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:async';
 import '../models/game_state.dart';
 import '../services/word_service.dart';
@@ -97,10 +98,9 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
 
   void _showGameOverDialog() {
     final score = WordService.calculateScore(gameState);
-    final title = gameState.status == HangmanGameStatus.won
-        ? 'Congratulations!'
-        : 'Game Over';
-    final message = gameState.status == HangmanGameStatus.won
+    final isWin = gameState.status == HangmanGameStatus.won;
+    final title = isWin ? 'Congratulations!' : 'Game Over';
+    final message = isWin
         ? 'You won! Score: $score'
         : 'The word was: ${gameState.word}';
 
@@ -108,18 +108,19 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(title),
+        backgroundColor: Colors.white,
+        title: Text(title, style: TextStyle(color: isWin ? Colors.green : Colors.red)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message),
-            if (gameState.status == HangmanGameStatus.won) ...[
-              const SizedBox(height: 8),
+            Text(message, style: const TextStyle(fontSize: 18)),
+            if (isWin) ...[
+              const SizedBox(height: 16),
               Text(
                 'Time: ${DateTime.now().difference(gameState.startTime).inSeconds}s\n'
                 'Lives: ${gameState.remainingLives}\n'
                 'Hints: ${3 - gameState.hintsRemaining} used',
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ],
           ],
@@ -132,7 +133,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
             },
             child: const Text('Back'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close dialog
               // Reset game with new word
@@ -152,6 +153,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
                 Navigator.of(context).pop(); // Return to previous screen
               }
             },
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF6C63FF)),
             child: const Text('Play Again'),
           ),
         ],
@@ -162,58 +164,100 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
-        title: Text(gameState.category.displayName),
+        title: Text(
+            gameState.category.displayName,
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)
+        ),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
           if (gameState.hintsRemaining > 0 && !gameState.isGameOver)
             Tooltip(
               message: 'Use Hint (${gameState.hintsRemaining} left)',
-              child: IconButton(
-                icon: const Icon(Icons.help_outline),
-                onPressed: _useHint,
+              child: Container(
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6584).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFF6584)),
+                  onPressed: _useHint,
+                ),
               ),
             ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildInfoChip(
-                  Icons.favorite,
-                  '${gameState.remainingLives}',
-                  Colors.red,
+             // Decorative Background
+            Positioned(
+              left: -50,
+              top: 50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6C63FF).withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-                if (gameState.mode == HangmanGameMode.singlePlayer)
-                  _buildInfoChip(
-                    Icons.score,
-                    '${WordService.calculateScore(gameState)}',
-                    Colors.amber,
-                  ),
-                _buildInfoChip(
-                  Icons.timer,
-                  _timeDisplay,
-                  Colors.blue,
-                ),
-              ],
+              ),
             ),
-          ),
-          Expanded(
-            flex: 3,
-            child: _buildHangmanDrawing(),
-          ),
-          Expanded(
-            flex: 1,
-            child: _buildWordDisplay(),
-          ),
-          Expanded(
-            flex: 2,
-            child: _buildKeyboard(),
-          ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildInfoChip(
+                          Icons.favorite_rounded,
+                          '${gameState.remainingLives}',
+                          const Color(0xFFFF4757),
+                        ),
+                        if (gameState.mode == HangmanGameMode.singlePlayer)
+                          _buildInfoChip(
+                            Icons.emoji_events_rounded,
+                            '${WordService.calculateScore(gameState)}',
+                            const Color(0xFFFFA502),
+                          ),
+                        _buildInfoChip(
+                          Icons.timer_rounded,
+                          _timeDisplay,
+                          const Color(0xFF2ED573),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn().slideY(begin: -0.2),
+
+                  Expanded(
+                    flex: 3,
+                    child: Center(
+                        child: _buildHangmanDrawing().animate().fadeIn(duration: 600.ms),
+                    ),
+                  ),
+
+                  Expanded(
+                    flex: 1,
+                    child: _buildWordDisplay().animate().fadeIn(delay: 200.ms),
+                  ),
+
+                  Expanded(
+                    flex: 2,
+                    child: _buildKeyboard().animate().slideY(begin: 0.2, duration: 400.ms),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -221,35 +265,29 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
 
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(
-          red: color.r.toDouble(),
-          green: color.g.toDouble(),
-          blue: color.b.toDouble(),
-          alpha: 0.1 * 255,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withValues(
-            red: color.r.toDouble(),
-            green: color.g.toDouble(),
-            blue: color.b.toDouble(),
-            alpha: 0.3 * 255,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 4),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
           Text(
             label,
             style: TextStyle(
-              color: color,
+              color: Colors.black87,
               fontWeight: FontWeight.bold,
-              fontSize: 14,
+              fontSize: 16,
             ),
           ),
         ],
@@ -259,10 +297,18 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
 
   Widget _buildHangmanDrawing() {
     return Container(
-      margin: const EdgeInsets.all(16),
+      width: 250,
+      height: 250,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: CustomPaint(
         painter: HangmanPainter(
@@ -274,22 +320,35 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
 
   Widget _buildWordDisplay() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      width: double.infinity,
+      alignment: Alignment.center,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: gameState.maskedWord.map((letter) {
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: 28,
+            final isRevealed = letter != '_';
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isRevealed ? const Color(0xFF6C63FF).withOpacity(0.1) : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border(
+                    bottom: BorderSide(
+                        color: isRevealed ? Colors.transparent : Colors.black87,
+                        width: 3
+                    ),
+                ),
+              ),
               child: Text(
                 letter,
-                style: const TextStyle(
-                  fontSize: 28,
+                style: TextStyle(
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
+                  color: const Color(0xFF6C63FF),
                 ),
-                textAlign: TextAlign.center,
               ),
             );
           }).toList(),
@@ -306,12 +365,26 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: letters.map((row) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: row.map((letter) {
@@ -319,50 +392,36 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
                     _guessedLetters.contains(letter.toLowerCase());
                 final isCorrect = gameState.word.toUpperCase().contains(letter);
                 return Padding(
-                  padding: const EdgeInsets.all(2),
+                  padding: const EdgeInsets.all(3),
                   child: SizedBox(
-                    width: 32,
-                    height: 42,
+                    width: 34,
+                    height: 48,
                     child: ElevatedButton(
                       onPressed:
                           isGuessed ? null : () => _onLetterPressed(letter),
                       style: ElevatedButton.styleFrom(
                         padding: EdgeInsets.zero,
                         backgroundColor: isGuessed
-                            ? (isCorrect ? Colors.green[100] : Colors.red[100])
-                            : Theme.of(context).colorScheme.primary.withValues(
-                                  red: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .r
-                                      .toDouble(),
-                                  green: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .g
-                                      .toDouble(),
-                                  blue: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .b
-                                      .toDouble(),
-                                  alpha: 0.1 * 255,
-                                ),
-                        foregroundColor: Theme.of(context).colorScheme.primary,
+                            ? (isCorrect ? const Color(0xFF2ED573) : const Color(0xFFFF4757))
+                            : Colors.white,
+                        foregroundColor: const Color(0xFF2A2D3E),
+                        elevation: isGuessed ? 0 : 2,
+                        shadowColor: Colors.black.withOpacity(0.2),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
+                          side: isGuessed
+                            ? BorderSide.none
+                            : BorderSide(color: Colors.grey.withOpacity(0.2)),
                         ),
                       ),
                       child: Text(
                         letter,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: isGuessed
-                              ? (isCorrect
-                                  ? Colors.green[900]
-                                  : Colors.red[900])
-                              : Theme.of(context).colorScheme.primary,
+                              ? Colors.white
+                              : const Color(0xFF2A2D3E),
                         ),
                       ),
                     ),
@@ -385,8 +444,8 @@ class HangmanPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black87
-      ..strokeWidth = 3
+      ..color = const Color(0xFF2A2D3E)
+      ..strokeWidth = 4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
@@ -423,108 +482,57 @@ class HangmanPainter extends CustomPainter {
     // Rope
     if (incorrectGuesses >= 4) {
       final ropePaint = Paint()
-        ..color = Colors.brown
-        ..strokeWidth = 2
+        ..color = const Color(0xFFFFA502)
+        ..strokeWidth = 3
         ..style = PaintingStyle.stroke;
 
-      final path = Path();
-      path.moveTo(centerX, size.height * 0.1);
-      for (var i = 0; i < 3; i++) {
-        path.relativeLineTo(2, 15);
-        path.relativeLineTo(-4, 15);
-      }
-      canvas.drawPath(path, ropePaint);
+      canvas.drawLine(
+        Offset(centerX, size.height * 0.1),
+        Offset(centerX, size.height * 0.25),
+        ropePaint,
+      );
     }
 
     // Head
     if (incorrectGuesses >= 5) {
-      // Head outline
       canvas.drawCircle(
-        Offset(centerX, size.height * 0.3),
+        Offset(centerX, size.height * 0.35),
         headRadius,
-        paint,
+        paint..color = const Color(0xFF6C63FF),
       );
-
-      // Simple face features if space allows
-      if (headRadius > 15) {
-        final facePaint = Paint()
-          ..color = Colors.black87
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-
-        // Eyes
-        canvas.drawCircle(
-          Offset(centerX - headRadius * 0.3, size.height * 0.28),
-          2,
-          facePaint,
-        );
-        canvas.drawCircle(
-          Offset(centerX + headRadius * 0.3, size.height * 0.28),
-          2,
-          facePaint,
-        );
-
-        // Sad mouth
-        final mouthPath = Path();
-        mouthPath.moveTo(centerX - headRadius * 0.3, size.height * 0.33);
-        mouthPath.quadraticBezierTo(
-          centerX,
-          size.height * 0.36,
-          centerX + headRadius * 0.3,
-          size.height * 0.33,
-        );
-        canvas.drawPath(mouthPath, facePaint);
-      }
     }
 
-    // Body and limbs
+    // Body
     if (incorrectGuesses >= 6) {
-      // Body
       canvas.drawLine(
-        Offset(centerX, size.height * 0.42),
-        Offset(centerX, size.height * 0.65),
+        Offset(centerX, size.height * 0.45),
+        Offset(centerX, size.height * 0.7),
+        paint..color = const Color(0xFF2A2D3E),
+      );
+
+      // Arms
+       canvas.drawLine(
+        Offset(centerX, size.height * 0.5),
+        Offset(centerX - 30, size.height * 0.6),
+        paint,
+      );
+       canvas.drawLine(
+        Offset(centerX, size.height * 0.5),
+        Offset(centerX + 30, size.height * 0.6),
         paint,
       );
 
-      // Arms with slight curve
-      final armPath = Path();
-      // Left arm
-      armPath.moveTo(centerX, size.height * 0.45);
-      armPath.quadraticBezierTo(
-        centerX - size.width * 0.1,
-        size.height * 0.5,
-        centerX - size.width * 0.15,
-        size.height * 0.55,
+      // Legs
+       canvas.drawLine(
+        Offset(centerX, size.height * 0.7),
+        Offset(centerX - 30, size.height * 0.85),
+        paint,
       );
-      // Right arm
-      armPath.moveTo(centerX, size.height * 0.45);
-      armPath.quadraticBezierTo(
-        centerX + size.width * 0.1,
-        size.height * 0.5,
-        centerX + size.width * 0.15,
-        size.height * 0.55,
+       canvas.drawLine(
+        Offset(centerX, size.height * 0.7),
+        Offset(centerX + 30, size.height * 0.85),
+        paint,
       );
-      canvas.drawPath(armPath, paint);
-
-      // Legs with slight curve
-      final legPath = Path();
-      // Left leg
-      legPath.moveTo(centerX, size.height * 0.65);
-      legPath.quadraticBezierTo(
-        centerX - size.width * 0.1,
-        size.height * 0.75,
-        centerX - size.width * 0.15,
-        size.height * 0.8,
-      );
-      // Right leg
-      legPath.moveTo(centerX, size.height * 0.65);
-      legPath.quadraticBezierTo(
-        centerX + size.width * 0.1,
-        size.height * 0.75,
-        centerX + size.width * 0.15,
-        size.height * 0.8,
-      );
-      canvas.drawPath(legPath, paint);
     }
   }
 

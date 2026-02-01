@@ -12,7 +12,6 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize dependencies if not already initialized
     if (!Get.isRegistered<QuizService>()) {
       QuizMasterBinding().dependencies();
     }
@@ -20,205 +19,100 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
     final quizService = Get.find<QuizService>();
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.indigo.shade100,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // App Bar
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(
-                                red: 0,
-                                green: 0,
-                                blue: 0,
-                                alpha: 0.05 * 255,
-                              ),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.arrow_back_rounded, size: 24),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.help_outline),
-                      onPressed: () => _showHowToPlay(context),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Quiz Master',
-                      style: Get.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ).animate().fadeIn().slideX(),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Test your knowledge in various topics',
-                      style: Get.textTheme.titleMedium?.copyWith(
-                        color: Colors.black54,
-                      ),
-                    ).animate().fadeIn().slideX(delay: 200.ms),
-                  ],
-                ),
-              ),
-
-              // Stats Section
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(
-                      red: 255,
-                      green: 255,
-                      blue: 255,
-                      alpha: 0.8 * 255,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Obx(() => Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildStatItem(
-                            'Best Score',
-                            quizService.highScores.isEmpty
-                                ? '0'
-                                : '${quizService.highScores.values.reduce((a, b) => a > b ? a : b)}',
-                            Icons.emoji_events_rounded,
-                            Colors.amber,
-                          ),
-                          _buildDivider(),
-                          _buildStatItem(
-                            'Total Played',
-                            '${quizService.totalQuestionsAnswered}',
-                            Icons.quiz_rounded,
-                            Colors.blue,
-                          ),
-                        ],
-                      )),
-                ),
-              ).animate().fadeIn().slideY(begin: -0.2),
-
-              // Categories Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Categories',
-                  style: Get.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: quizService.categories.length,
-                  itemBuilder: (context, index) {
-                    final category = quizService.categories[index];
-                    return _buildCategoryCard(category, index);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-      String label, String value, IconData icon, Color color) {
-    return Flexible(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      backgroundColor: const Color(0xFFF8F9FE),
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(
-                red: color.r.toDouble(),
-                green: color.g.toDouble(),
-                blue: color.b.toDouble(),
-                alpha: 0.1 * 255,
+           // Decorative Background
+            Positioned(
+              right: -100,
+              top: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
               ),
-              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.black.withValues(
-                red: 0,
-                green: 0,
-                blue: 0,
-                alpha: 0.6 * 255,
+            Positioned(
+              left: -50,
+              bottom: 50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
               ),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
             ),
-            textAlign: TextAlign.center,
+
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                        color: Colors.black87,
+                        onPressed: () => Get.back(),
+                      ),
+                      const Text(
+                        'Quiz Master',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.help_outline_rounded),
+                        color: Colors.black87,
+                        onPressed: () => _showHowToPlay(context),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn().slideY(begin: -0.2),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Select Category',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ).animate().fadeIn(delay: 200.ms),
+
+                        const SizedBox(height: 16),
+
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: quizService.categories.length,
+                          itemBuilder: (context, index) {
+                            final category = quizService.categories[index];
+                            return _buildCategoryCard(category, index);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(
-      height: 40,
-      width: 1,
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.05 * 255,
       ),
     );
   }
@@ -228,85 +122,67 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
       padding: const EdgeInsets.only(bottom: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: category.color.withValues(
-            red: category.color.r.toDouble(),
-            green: category.color.g.toDouble(),
-            blue: category.color.b.toDouble(),
-            alpha: 0.05 * 255,
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: category.color.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () => _showDifficultyDialog(category),
             borderRadius: BorderRadius.circular(24),
+            splashColor: category.color.withOpacity(0.1),
+            highlightColor: category.color.withOpacity(0.05),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
                   Container(
-                    width: 56,
-                    height: 56,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
-                      color: category.color.withValues(
-                        red: category.color.r.toDouble(),
-                        green: category.color.g.toDouble(),
-                        blue: category.color.b.toDouble(),
-                        alpha: 0.15 * 255,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
+                      color: category.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
                       category.icon,
-                      size: 24,
+                      size: 30,
                       color: category.color,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 20),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           category.name,
-                          style: Get.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          category.description,
-                          style: Get.textTheme.bodyMedium?.copyWith(
-                            color: Colors.black54,
+                          '${category.questionCount} Questions',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _buildInfoChip(
-                              icon: Icons.quiz_rounded,
-                              label: '${category.questionCount} Questions',
-                              color: category.color,
-                            ),
-                            _buildInfoChip(
-                              icon: Icons.timer_rounded,
-                              label: '5 min',
-                              color: Colors.green,
-                            ),
-                          ],
                         ),
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: Colors.black26,
+                    color: category.color.withOpacity(0.5),
                     size: 20,
                   ),
                 ],
@@ -314,56 +190,16 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
             ),
           ),
         ),
-      ).animate().fadeIn().slideX(delay: Duration(milliseconds: index * 100)),
-    );
-  }
-
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(
-          red: color.r.toDouble(),
-          green: color.g.toDouble(),
-          blue: color.b.toDouble(),
-          alpha: 0.1 * 255,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
+      ).animate(delay: (100 * index).ms).fadeIn().slideX(begin: 0.2),
     );
   }
 
   void _showDifficultyDialog(QuizCategory category) {
     Get.dialog(
       Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(32),
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -371,53 +207,25 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: category.color.withValues(
-                        red: category.color.r.toDouble(),
-                        green: category.color.g.toDouble(),
-                        blue: category.color.b.toDouble(),
-                        alpha: 0.1 * 255,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      category.icon,
-                      color: category.color,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Select Difficulty',
-                          style: Get.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        Text(
-                          category.name,
-                          style: Get.textTheme.bodyMedium?.copyWith(
-                            color: category.color,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ).animate().fadeIn().slideY(begin: 0.3),
+              Text(
+                'Select Difficulty',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                category.name,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: category.color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 24),
-              ...category.difficulties.asMap().entries.map((entry) {
-                final index = entry.key;
-                final difficulty = entry.value;
+              ...category.difficulties.map((difficulty) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Material(
@@ -435,54 +243,44 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          border: Border.all(
+                            color: _getDifficultyColor(difficulty).withOpacity(0.3),
+                            width: 1.5,
+                          ),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: category.color.withValues(
-                                red: category.color.r.toDouble(),
-                                green: category.color.g.toDouble(),
-                                blue: category.color.b.toDouble(),
-                                alpha: 0.05 * 255,
-                              ),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                          ],
                         ),
                         child: Row(
                           children: [
                             Icon(
                               _getDifficultyIcon(difficulty),
                               color: _getDifficultyColor(difficulty),
-                              size: 24,
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             Text(
                               difficulty,
-                              style: Get.textTheme.titleMedium?.copyWith(
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                                 color: Colors.black87,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
                             const Spacer(),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              color: Colors.black26,
-                              size: 16,
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.grey[400],
+                              size: 20,
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ).animate().fadeIn(delay: (100 * index).ms).slideX();
+                );
               }),
             ],
           ),
         ),
       ),
-      barrierDismissible: true,
     );
   }
 
@@ -516,6 +314,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
@@ -523,89 +322,46 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(
-                        red: Colors.blue.r.toDouble(),
-                        green: Colors.blue.g.toDouble(),
-                        blue: Colors.blue.b.toDouble(),
-                        alpha: 0.1 * 255,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(
-                      Icons.help_outline_rounded,
-                      color: Colors.blue,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'How to Play',
-                          style: Get.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        Text(
-                          'Quick guide to get started',
-                          style: Get.textTheme.bodyMedium?.copyWith(
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const Icon(Icons.help_outline_rounded, size: 48, color: Colors.blue),
+              const SizedBox(height: 16),
+              const Text(
+                'How to Play',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 24),
-              _buildHowToPlaySection(
-                'Choose Category',
-                'Select from various topics like Science, History, Geography, and more!',
+              _buildInstructionStep(
+                '1. Select a category',
                 Icons.category_rounded,
                 Colors.purple,
               ),
               const SizedBox(height: 16),
-              _buildHowToPlaySection(
-                'Select Difficulty',
-                'Pick your challenge level: Easy, Medium, or Hard',
-                Icons.trending_up_rounded,
+              _buildInstructionStep(
+                '2. Choose difficulty',
+                Icons.speed_rounded,
                 Colors.orange,
               ),
               const SizedBox(height: 16),
-              _buildHowToPlaySection(
-                'Answer Questions',
-                'Read carefully and select the best answer. The faster you answer, the more points you get!',
-                Icons.quiz_rounded,
-                Colors.blue,
+              _buildInstructionStep(
+                '3. Answer questions correctly',
+                Icons.check_circle_rounded,
+                Colors.green,
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Get.back(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+              FilledButton(
+                onPressed: () => Get.back(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Text('Got it!'),
                 ),
+                child: const Text('Got it!'),
               ),
             ],
           ),
@@ -614,53 +370,25 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
     );
   }
 
-  Widget _buildHowToPlaySection(
-    String title,
-    String content,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildInstructionStep(String text, IconData icon, Color color) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withValues(
-              red: color.r.toDouble(),
-              green: color.g.toDouble(),
-              blue: color.b.toDouble(),
-              alpha: 0.1 * 255,
-            ),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 20, color: color),
+          child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                content,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black.withValues(
-                    red: 0,
-                    green: 0,
-                    blue: 0,
-                    alpha: 0.6 * 255,
-                  ),
-                ),
-              ),
-            ],
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
           ),
         ),
       ],

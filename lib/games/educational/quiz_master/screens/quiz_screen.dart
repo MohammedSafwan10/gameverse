@@ -44,57 +44,63 @@ class QuizScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                category.color.withValues(
-                  red: category.color.r.toDouble(),
-                  green: category.color.g.toDouble(),
-                  blue: category.color.b.toDouble(),
-                  alpha: 0.05 * 255,
+        backgroundColor: const Color(0xFFF8F9FE),
+        body: Stack(
+          children: [
+             // Decorative Background
+            Positioned(
+              right: -100,
+              top: -50,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: category.color.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-                Colors.white,
-              ],
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
 
-              final currentQuestion = controller.currentQuestion.value;
-              if (currentQuestion == null) {
-                return const Center(child: Text('No questions available'));
-              }
+            SafeArea(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              return Column(
-                children: [
-                  _buildHeader(controller),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          _buildQuestionCard(currentQuestion, controller),
-                          const SizedBox(height: 20),
-                          _buildOptions(currentQuestion, controller),
-                        ],
+                final currentQuestion = controller.currentQuestion.value;
+                if (currentQuestion == null) {
+                  return const Center(child: Text('No questions available'));
+                }
+
+                return Column(
+                  children: [
+                    _buildHeader(controller),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            _buildQuestionCard(currentQuestion, controller)
+                                .animate(key: ValueKey(currentQuestion.id))
+                                .fadeIn()
+                                .slideX(begin: 0.2),
+                            const SizedBox(height: 24),
+                            _buildOptions(currentQuestion, controller),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  if (controller.hasAnswered.value)
-                    _buildNextButton(controller)
-                        .animate()
-                        .fadeIn()
-                        .slideY(begin: 1, end: 0),
-                ],
-              );
-            }),
-          ),
+                    if (controller.hasAnswered.value)
+                      _buildNextButton(controller)
+                          .animate()
+                          .fadeIn()
+                          .slideY(begin: 1, end: 0),
+                  ],
+                );
+              }),
+            ),
+          ],
         ),
       ),
     );
@@ -123,12 +129,7 @@ class QuizScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(
-                          red: 0,
-                          green: 0,
-                          blue: 0,
-                          alpha: 0.05 * 255,
-                        ),
+                        color: Colors.black.withOpacity(0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -139,187 +140,110 @@ class QuizScreen extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(
-                        red: Colors.amber.r.toDouble(),
-                        green: Colors.amber.g.toDouble(),
-                        blue: Colors.amber.b.toDouble(),
-                        alpha: 0.1 * 255,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Obx(() => Text(
-                              '${controller.score.value}',
-                              style: const TextStyle(
-                                color: Colors.amber,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ],
-                    ),
+                  _buildStatusChip(
+                    icon: Icons.star_rounded,
+                    value: '${controller.score.value}',
+                    color: Colors.amber,
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(
-                        red: Colors.orange.r.toDouble(),
-                        green: Colors.orange.g.toDouble(),
-                        blue: Colors.orange.b.toDouble(),
-                        alpha: 0.1 * 255,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.local_fire_department_rounded,
-                          color: Colors.orange,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Obx(() => Text(
-                              '${controller.streak.value}x',
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ],
-                    ),
+                  const SizedBox(width: 12),
+                  _buildStatusChip(
+                    icon: Icons.local_fire_department_rounded,
+                    value: '${controller.streak.value}x',
+                    color: Colors.orange,
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: category.color.withValues(
-                    red: category.color.r.toDouble(),
-                    green: category.color.g.toDouble(),
-                    blue: category.color.b.toDouble(),
-                    alpha: 0.1 * 255,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(category.icon, color: category.color, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 24),
+
+          // Progress Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 8,
+              child: Stack(
                 children: [
-                  Text(
-                    category.name,
-                    style: Get.textTheme.titleMedium?.copyWith(
-                      color: category.color,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    difficulty,
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      color: _getDifficultyColor(difficulty),
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Container(color: Colors.grey[200]),
+                  AnimatedFractionallySizedBox(
+                    duration: const Duration(milliseconds: 500),
+                    widthFactor: (controller.currentQuestionIndex.value + 1) /
+                        controller.questions.length,
+                    child: Container(color: category.color),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
-          Stack(
-            children: [
-              Container(
-                height: 8,
-                decoration: BoxDecoration(
-                  color: category.color.withValues(
-                    red: category.color.r.toDouble(),
-                    green: category.color.g.toDouble(),
-                    blue: category.color.b.toDouble(),
-                    alpha: 0.1 * 255,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 8,
-                width: Get.width *
-                    ((controller.currentQuestionIndex.value + 1) /
-                        controller.questions.length),
-                decoration: BoxDecoration(
-                  color: category.color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: 12),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Question ${controller.currentQuestionIndex.value + 1}/${controller.questions.length}',
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               if (controller.timeRemaining.value > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(
-                      red: Colors.green.r.toDouble(),
-                      green: Colors.green.g.toDouble(),
-                      blue: Colors.green.b.toDouble(),
-                      alpha: 0.1 * 255,
-                    ),
+                    color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.timer_outlined,
-                        color: Colors.green,
-                        size: 14,
-                      ),
+                      Icon(Icons.timer_rounded, size: 16, color: Colors.red),
                       const SizedBox(width: 4),
                       Obx(() => Text(
-                            '${controller.timeRemaining.value}s',
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
-                          )),
+                        '${controller.timeRemaining.value}s',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )),
                     ],
                   ),
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip({
+    required IconData icon,
+    required String value,
+    required Color color
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),
@@ -331,28 +255,23 @@ class QuizScreen extends StatelessWidget {
     QuizMasterController controller,
   ) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(
-          red: 255,
-          green: 255,
-          blue: 255,
-          alpha: 0.9 * 255,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            question.question,
-            style: Get.textTheme.titleLarge?.copyWith(
-              color: Colors.black87,
-              height: 1.4,
-            ),
-          ),
           if (question.imageUrl != null) ...[
-            const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
@@ -362,38 +281,34 @@ class QuizScreen extends StatelessWidget {
                 width: double.infinity,
               ),
             ),
-          ],
-          if (controller.hasAnswered.value) ...[
             const SizedBox(height: 16),
+          ],
+          Text(
+            question.question,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+              height: 1.4,
+            ),
+          ),
+
+          if (controller.hasAnswered.value) ...[
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: (controller.selectedAnswer.value ==
                             question.correctOptionIndex
                         ? Colors.green
-                        : Colors.red)
-                    .withValues(
-                  red: (controller.selectedAnswer.value ==
-                              question.correctOptionIndex
-                          ? Colors.green
-                          : Colors.red)
-                      .r
-                      .toDouble(),
-                  green: (controller.selectedAnswer.value ==
-                              question.correctOptionIndex
-                          ? Colors.green
-                          : Colors.red)
-                      .g
-                      .toDouble(),
-                  blue: (controller.selectedAnswer.value ==
-                              question.correctOptionIndex
-                          ? Colors.green
-                          : Colors.red)
-                      .b
-                      .toDouble(),
-                  alpha: 0.1 * 255,
-                ),
+                        : Colors.red).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: (controller.selectedAnswer.value ==
+                              question.correctOptionIndex
+                          ? Colors.green
+                          : Colors.red).withOpacity(0.3),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,35 +331,30 @@ class QuizScreen extends StatelessWidget {
                                 question.correctOptionIndex
                             ? 'Correct!'
                             : 'Incorrect',
-                        style: Get.textTheme.titleMedium?.copyWith(
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                           color: controller.selectedAnswer.value ==
                                   question.correctOptionIndex
                               ? Colors.green
                               : Colors.red,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Explanation:',
-                    style: Get.textTheme.titleSmall?.copyWith(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
+                  if (question.explanation.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      question.explanation,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    question.explanation,
-                    style: Get.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black54,
-                      height: 1.4,
-                    ),
-                  ),
+                  ],
                 ],
               ),
-            ),
+            ).animate().fadeIn(),
           ],
         ],
       ),
@@ -463,80 +373,93 @@ class QuizScreen extends StatelessWidget {
         final hasAnswered = controller.hasAnswered.value;
         final isCorrect = index == question.correctOptionIndex;
 
-        Color getOptionColor() {
-          if (!hasAnswered) return category.color;
+        Color getBorderColor() {
+          if (!hasAnswered) return isSelected ? category.color : Colors.transparent;
           if (isCorrect) return Colors.green;
           if (isSelected && !isCorrect) return Colors.red;
-          return Colors.grey;
+          return Colors.transparent;
+        }
+
+        Color getBackgroundColor() {
+          if (!hasAnswered) return Colors.white;
+          if (isCorrect) return Colors.green.withOpacity(0.1);
+          if (isSelected && !isCorrect) return Colors.red.withOpacity(0.1);
+          return Colors.white;
         }
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap:
-                  hasAnswered ? null : () => controller.answerQuestion(index),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: getBackgroundColor(),
               borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: getOptionColor().withValues(
-                    red: getOptionColor().r.toDouble(),
-                    green: getOptionColor().g.toDouble(),
-                    blue: getOptionColor().b.toDouble(),
-                    alpha: isSelected ? 0.15 * 255 : 0.05 * 255,
+              border: Border.all(
+                color: hasAnswered ? getBorderColor() : Colors.transparent,
+                width: 2,
+              ),
+              boxShadow: [
+                if (!hasAnswered)
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: getOptionColor().withValues(
-                          red: getOptionColor().r.toDouble(),
-                          green: getOptionColor().g.toDouble(),
-                          blue: getOptionColor().b.toDouble(),
-                          alpha: isSelected ? 0.2 * 255 : 0.1 * 255,
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: hasAnswered ? null : () => controller.answerQuestion(index),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: hasAnswered
+                              ? (isCorrect ? Colors.green : (isSelected ? Colors.red : Colors.grey[200]))
+                              : category.color.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          String.fromCharCode(65 + index), // A, B, C, D
-                          style: TextStyle(
-                            color: getOptionColor(),
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Text(
+                            String.fromCharCode(65 + index),
+                            style: TextStyle(
+                              color: hasAnswered
+                                  ? (isCorrect || isSelected ? Colors.white : Colors.grey[600])
+                                  : category.color,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        option,
-                        style: Get.textTheme.bodyLarge?.copyWith(
-                          color: Colors.black87,
-                          height: 1.4,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          option,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    if (hasAnswered)
-                      Icon(
-                        isCorrect
-                            ? Icons.check_circle_rounded
-                            : (isSelected ? Icons.cancel_rounded : null),
-                        color: isCorrect ? Colors.green : Colors.red,
-                        size: 24,
-                      ),
-                  ],
+                      if (hasAnswered && (isCorrect || isSelected))
+                        Icon(
+                          isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                          color: isCorrect ? Colors.green : Colors.red,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ).animate().fadeIn().slideX(delay: Duration(milliseconds: index * 100));
+        ).animate(key: ValueKey(question.id)).fadeIn(delay: Duration(milliseconds: 100 * index)).slideX();
       }).toList(),
     );
   }
@@ -546,48 +469,43 @@ class QuizScreen extends StatelessWidget {
         controller.questions.length - 1;
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
-      child: ElevatedButton(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: FilledButton(
         onPressed: isLastQuestion
             ? () => _showResults(controller)
             : controller.nextQuestion,
-        style: ElevatedButton.styleFrom(
+        style: FilledButton.styleFrom(
           backgroundColor: category.color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 32,
-            vertical: 16,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              isLastQuestion ? 'Finish Quiz' : 'Next Question',
-              style: Get.textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              isLastQuestion ? Icons.flag_rounded : Icons.arrow_forward_rounded,
-            ),
-          ],
+        child: Text(
+          isLastQuestion ? 'Finish Quiz' : 'Next Question',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
 
   void _showResults(QuizMasterController controller) {
-    // Update high score in QuizService
-    final quizService = Get.find<QuizService>();
-
-    // Update stats immediately
-    quizService.updateHighScore(
+    // Update stats logic here if needed
+    Get.find<QuizService>().updateHighScore(
       category: category,
       difficulty: difficulty,
       score: controller.score.value,
@@ -595,128 +513,81 @@ class QuizScreen extends StatelessWidget {
 
     Get.dialog(
       Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(32),
         ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: category.color.withValues(
-                    red: category.color.r.toDouble(),
-                    green: category.color.g.toDouble(),
-                    blue: category.color.b.toDouble(),
-                    alpha: 0.1 * 255,
-                  ),
+                  color: Colors.amber.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.emoji_events_rounded,
-                  color: category.color,
+                  color: Colors.amber,
                   size: 48,
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 'Quiz Complete!',
-                style: Get.textTheme.headlineSmall?.copyWith(
+                style: TextStyle(
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Great job on completing the quiz!',
-                style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Colors.black54,
+                'You scored ${controller.score.value} points!',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              _buildResultStat(
-                'Final Score',
-                '${controller.score.value}',
-                Icons.star_rounded,
-                Colors.amber,
-              ),
-              const SizedBox(height: 16),
-              _buildResultStat(
-                'Highest Streak',
-                '${controller.streak.value}x',
-                Icons.local_fire_department_rounded,
-                Colors.orange,
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
                         Get.back(); // Close dialog
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          Get.back(); // Return to previous screen
-                        });
+                        Get.back(); // Exit screen
                       },
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        side: BorderSide(
-                          color: category.color.withValues(
-                            red: category.color.r.toDouble(),
-                            green: category.color.g.toDouble(),
-                            blue: category.color.b.toDouble(),
-                            alpha: 0.5 * 255,
-                          ),
-                        ),
                       ),
-                      child: Text(
-                        'Exit Quiz',
-                        style: TextStyle(
-                          color: category.color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: const Text('Exit'),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: ElevatedButton(
+                    child: FilledButton(
                       onPressed: () {
                         Get.back();
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          controller.startQuiz(
-                            category: category,
-                            difficulty: difficulty,
-                            mode: mode,
-                          );
-                        });
+                        controller.startQuiz(
+                          category: category,
+                          difficulty: difficulty,
+                          mode: mode,
+                        );
                       },
-                      style: ElevatedButton.styleFrom(
+                      style: FilledButton.styleFrom(
                         backgroundColor: category.color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        'Play Again',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: const Text('Play Again'),
                     ),
                   ),
                 ],
@@ -729,186 +600,34 @@ class QuizScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildResultStat(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(
-          red: color.r.toDouble(),
-          green: color.g.toDouble(),
-          blue: color.b.toDouble(),
-          alpha: 0.1 * 255,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(
-                red: color.r.toDouble(),
-                green: color.g.toDouble(),
-                blue: color.b.toDouble(),
-                alpha: 0.2 * 255,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                value,
-                style: Get.textTheme.titleLarge?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<bool> _showExitConfirmationDialog(
     BuildContext context,
     QuizMasterController controller,
   ) async {
-    final result = await showDialog<bool>(
+    return await showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Exit Quiz?'),
+        content: const Text(
+          'Are you sure you want to exit? Your progress will be lost.',
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(
-                    red: Colors.red.r.toDouble(),
-                    green: Colors.red.g.toDouble(),
-                    blue: Colors.red.b.toDouble(),
-                    alpha: 0.1 * 255,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.exit_to_app_rounded,
-                  color: Colors.red,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Exit Quiz?',
-                style: Get.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to exit? Your progress will be lost.',
-                style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        side: BorderSide(
-                          color: Colors.grey.withValues(
-                            red: Colors.grey.r.toDouble(),
-                            green: Colors.grey.g.toDouble(),
-                            blue: Colors.grey.b.toDouble(),
-                            alpha: 0.5 * 255,
-                          ),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'Exit',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
           ),
-        ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
       ),
-    );
-    return result ?? false;
-  }
-
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return Colors.green;
-      case 'medium':
-        return Colors.orange;
-      case 'hard':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+    ) ?? false;
   }
 }

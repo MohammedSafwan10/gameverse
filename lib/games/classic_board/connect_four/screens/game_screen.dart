@@ -34,9 +34,11 @@ class ConnectFourGameScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FE), // AppTheme clean background
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            color: Colors.black87,
             onPressed: () =>
                 _showExitConfirmationDialog(context).then((result) {
               if (result) Get.back();
@@ -50,7 +52,7 @@ class ConnectFourGameScreen extends StatelessWidget {
             return Text(
               text,
               style: TextStyle(
-                color: isWinning ? Get.theme.colorScheme.primary : null,
+                color: isWinning ? Get.theme.colorScheme.primary : Colors.black87,
                 fontWeight: FontWeight.bold,
               ),
             );
@@ -60,10 +62,10 @@ class ConnectFourGameScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           actions: [
             IconButton(
-              icon: const Icon(Icons.settings),
+              icon: const Icon(Icons.settings_outlined),
+              color: Colors.black87,
               tooltip: 'Settings',
               onPressed: () {
-                // Ensure the settings controller is initialized
                 if (!Get.isRegistered<ConnectFourSettingsController>()) {
                   Get.put(ConnectFourSettingsController(), permanent: true);
                 }
@@ -71,47 +73,55 @@ class ConnectFourGameScreen extends StatelessWidget {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.bar_chart),
+              icon: const Icon(Icons.bar_chart_rounded),
+              color: Colors.black87,
               tooltip: 'Statistics',
               onPressed: () => Get.to(() => const ConnectFourStatsScreen()),
             ),
           ],
         ),
         extendBodyBehindAppBar: true,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Get.theme.colorScheme.primary.withValues(
-                  red: Get.theme.colorScheme.primary.r.toDouble(),
-                  green: Get.theme.colorScheme.primary.g.toDouble(),
-                  blue: Get.theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.2,
+        body: Stack(
+          children: [
+             // Decorative Background
+             Positioned(
+              right: -100,
+              top: -50,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-                Get.theme.colorScheme.surface,
-                Get.theme.colorScheme.secondary.withValues(
-                  red: Get.theme.colorScheme.secondary.r.toDouble(),
-                  green: Get.theme.colorScheme.secondary.g.toDouble(),
-                  blue: Get.theme.colorScheme.secondary.b.toDouble(),
-                  alpha: 0.1,
+              ),
+            ),
+            Positioned(
+              left: -80,
+              bottom: 100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-              ],
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildControls(context, controller),
-                SizedBox(height: topPadding.clamp(20, 40)),
-                _buildGameBoard(controller),
-                const Spacer(),
-                _buildGameStatus(controller),
-                const SizedBox(height: 20),
-              ],
+
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildControls(context, controller).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2),
+                  SizedBox(height: topPadding.clamp(20, 40)),
+                  _buildGameBoard(controller).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
+                  const Spacer(),
+                  _buildGameStatus(controller).animate().fadeIn(duration: 600.ms).slideY(begin: 0.2),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -133,11 +143,11 @@ class ConnectFourGameScreen extends StatelessWidget {
               Obx(() => IconButton(
                     icon: Icon(
                       soundService.isEnabled.value
-                          ? Icons.volume_up
-                          : Icons.volume_off,
+                          ? Icons.volume_up_rounded
+                          : Icons.volume_off_rounded,
                       color: soundService.isEnabled.value
                           ? Get.theme.colorScheme.primary
-                          : null,
+                          : Colors.grey,
                     ),
                     onPressed: () {
                       soundService.toggleSound();
@@ -146,7 +156,8 @@ class ConnectFourGameScreen extends StatelessWidget {
                     tooltip: 'Sound',
                   )),
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh_rounded),
+                color: Colors.black87,
                 tooltip: 'Restart Game',
                 onPressed: () =>
                     _showRestartConfirmationDialog(context, controller),
@@ -157,25 +168,16 @@ class ConnectFourGameScreen extends StatelessWidget {
         Obx(() {
           if (controller.gameMode.value == GameMode.vsAI) {
             return Container(
-              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surface.withValues(
-                  red: Get.theme.colorScheme.surface.r.toDouble(),
-                  green: Get.theme.colorScheme.surface.g.toDouble(),
-                  blue: Get.theme.colorScheme.surface.b.toDouble(),
-                  alpha: 0.9,
-                ),
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Get.theme.colorScheme.primary.withValues(
-                      red: Get.theme.colorScheme.primary.r.toDouble(),
-                      green: Get.theme.colorScheme.primary.g.toDouble(),
-                      blue: Get.theme.colorScheme.primary.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    blurRadius: 4,
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -186,22 +188,20 @@ class ConnectFourGameScreen extends StatelessWidget {
                   children: [
                     Text(
                       'AI Difficulty:',
-                      style: Get.textTheme.bodyMedium,
+                      style: Get.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: AIDifficulty.values
                           .map((difficulty) => Padding(
-                                padding: const EdgeInsets.only(right: 4),
+                                padding: const EdgeInsets.only(right: 8),
                                 child: _buildDifficultyChip(
                                   difficulty,
                                   controller.aiDifficulty.value == difficulty,
                                   () {
-                                    // Update both controller and settings
                                     controller.setAIDifficulty(difficulty);
-                                    settingsController
-                                        .setDifficulty(difficulty);
+                                    settingsController.setDifficulty(difficulty);
                                   },
                                 ),
                               ))
@@ -225,86 +225,34 @@ class ConnectFourGameScreen extends StatelessWidget {
       AIDifficulty.medium: Colors.orange,
       AIDifficulty.hard: Colors.red,
     };
-    final icons = {
-      AIDifficulty.easy: Icons.sentiment_satisfied,
-      AIDifficulty.medium: Icons.sentiment_neutral,
-      AIDifficulty.hard: Icons.sentiment_very_dissatisfied,
-    };
     final color = colors[difficulty]!;
-    final icon = icons[difficulty]!;
 
-    return Material(
-      color: Colors.transparent,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(
-                    red: color.r.toDouble(),
-                    green: color.g.toDouble(),
-                    blue: color.b.toDouble(),
-                    alpha: 0.1,
-                  )
-                : Colors.transparent,
+            color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
             border: Border.all(
-              color: isSelected
-                  ? color
-                  : Get.theme.colorScheme.onSurface.withValues(
-                      red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                      green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                      blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                      alpha: 0.3,
-                    ),
+              color: isSelected ? color : Colors.grey.withOpacity(0.3),
               width: 1,
             ),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected
-                    ? color
-                    : Get.theme.colorScheme.onSurface.withValues(
-                        red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                        green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                        blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                        alpha: 0.7,
-                      ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                difficulty.name.capitalize!,
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? color
-                      : Get.theme.colorScheme.onSurface.withValues(
-                          red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                          green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                          blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                          alpha: 0.7,
-                        ),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
+          child: Text(
+            difficulty.name.capitalize!,
+            style: TextStyle(
+              color: isSelected ? color : Colors.grey[600],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 13,
+            ),
           ),
         ),
       ),
-    )
-        .animate(
-          target: isSelected ? 1 : 0,
-        )
-        .scale(
-          begin: const Offset(1, 1),
-          end: const Offset(1.05, 1.05),
-          duration: const Duration(milliseconds: 200),
-        );
+    );
   }
 
   Widget _buildGameBoard(ConnectFourController controller) {
@@ -315,99 +263,69 @@ class ConnectFourGameScreen extends StatelessWidget {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0),
         decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Get.theme.colorScheme.primary.withValues(
-                red: Get.theme.colorScheme.primary.r.toDouble(),
-                green: Get.theme.colorScheme.primary.g.toDouble(),
-                blue: Get.theme.colorScheme.primary.b.toDouble(),
-                alpha: 0.2,
-              ),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.blue.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: AspectRatio(
           aspectRatio: 7 / 6,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             child: Stack(
               children: [
-                BoardWidget(controller: controller),
+                // Add padding inside the board container
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: BoardWidget(controller: controller),
+                ),
+
                 if (isWinning)
                   Container(
-                    color: Colors.black.withValues(
-                      red: 0.0,
-                      green: 0.0,
-                      blue: 0.0,
-                      alpha: 0.1,
-                    ),
+                    color: Colors.black.withOpacity(0.1),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Lottie.network(
-                            'https://assets2.lottiefiles.com/packages/lf20_obhph3sh.json',
-                            width: 150,
-                            height: 150,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 16),
+                          // You might want to replace Lottie if not available or verify asset
+                          // Using a scale animation for text instead
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
+                                horizontal: 32, vertical: 16),
                             decoration: BoxDecoration(
                               color: Get.theme.colorScheme.primary,
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      Get.theme.colorScheme.primary.withValues(
-                                    red: Get.theme.colorScheme.primary.r
-                                        .toDouble(),
-                                    green: Get.theme.colorScheme.primary.g
-                                        .toDouble(),
-                                    blue: Get.theme.colorScheme.primary.b
-                                        .toDouble(),
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                                  color: Get.theme.colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             child: Text(
                               _getWinnerText(controller),
-                              style: Get.textTheme.titleLarge?.copyWith(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 20,
                               ),
                             ),
-                          ),
+                          ).animate().scale(curve: Curves.elasticOut),
                         ],
                       ),
                     ),
-                  ).animate().fadeIn(),
+                  ),
               ],
             ),
           ),
         ),
-      )
-          .animate(
-            target: isWinning ? 1 : 0,
-          )
-          .shimmer(
-            duration: const Duration(milliseconds: 2000),
-            color: Get.theme.colorScheme.primary.withValues(
-              red: Get.theme.colorScheme.primary.r.toDouble(),
-              green: Get.theme.colorScheme.primary.g.toDouble(),
-              blue: Get.theme.colorScheme.primary.b.toDouble(),
-              alpha: 0.3,
-            ),
-          );
+      );
     });
   }
 
@@ -418,17 +336,12 @@ class ConnectFourGameScreen extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
-            color: Get.theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Get.theme.colorScheme.primary.withValues(
-                  red: Get.theme.colorScheme.primary.r.toDouble(),
-                  green: Get.theme.colorScheme.primary.g.toDouble(),
-                  blue: Get.theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.1,
-                ),
-                blurRadius: 8,
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
             ],
@@ -440,7 +353,7 @@ class ConnectFourGameScreen extends StatelessWidget {
                 "Player 1",
                 CellState.player1,
                 controller.currentPlayer.value == CellState.player1,
-                Colors.red,
+                Colors.red, // Classic Connect 4 Red
                 controller,
                 controller.gameMode.value == GameMode.vsAI
                     ? statsController.playerWins.value
@@ -448,19 +361,14 @@ class ConnectFourGameScreen extends StatelessWidget {
               ),
               Container(
                 height: 40,
-                width: 2,
-                color: Get.theme.colorScheme.primary.withValues(
-                  red: Get.theme.colorScheme.primary.r.toDouble(),
-                  green: Get.theme.colorScheme.primary.g.toDouble(),
-                  blue: Get.theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.1,
-                ),
+                width: 1,
+                color: Colors.grey.withOpacity(0.2),
               ),
               _buildPlayerIndicator(
                 controller.gameMode.value == GameMode.vsAI ? "AI" : "Player 2",
                 CellState.player2,
                 controller.currentPlayer.value == CellState.player2,
-                Colors.yellow,
+                Colors.yellow[700]!, // Classic Connect 4 Yellow
                 controller,
                 controller.gameMode.value == GameMode.vsAI
                     ? statsController.aiWins.value
@@ -484,107 +392,62 @@ class ConnectFourGameScreen extends StatelessWidget {
         (player == CellState.player2 &&
             controller.board.value.status == GameStatus.player2Won);
 
-    // Show active indicator only when game is still in progress
-    final showActiveIndicator = isCurrentPlayer && !controller.isGameOver;
-
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: showActiveIndicator
-            ? Border.all(color: Get.theme.colorScheme.primary, width: 2)
-            : null,
-        boxShadow: [
-          if (isWinner)
-            BoxShadow(
-              color: color.withValues(
-                red: color.r.toDouble(),
-                green: color.g.toDouble(),
-                blue: color.b.toDouble(),
-                alpha: 0.3,
-              ),
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
-        ],
+        color: isCurrentPlayer ? color.withOpacity(0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isCurrentPlayer ? color : Colors.transparent,
+          width: 2,
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
           Container(
-            width: 24,
-            height: 24,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(
-                    red: color.r.toDouble(),
-                    green: color.g.toDouble(),
-                    blue: color.b.toDouble(),
-                    alpha: 0.3,
-                  ),
+                  color: color.withOpacity(0.4),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: Get.textTheme.titleMedium?.copyWith(
-                  fontWeight:
-                      showActiveIndicator ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    'Wins: $wins',
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (isWinner)
-                    Text(
-                      ' Winner! 🎉',
-                      style: Get.textTheme.bodySmall?.copyWith(
-                        color: Get.theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            name,
+            style: TextStyle(
+              fontWeight: isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
+              color: Colors.black87,
+            ),
           ),
+          Text(
+            'Wins: $wins',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+          ),
+          if (isWinner)
+             Text(
+              'WINNER',
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+              ),
+            ).animate().fadeIn(),
         ],
       ),
-    )
-        .animate(
-          target: showActiveIndicator ? 1 : 0,
-        )
-        .scale(
-          begin: const Offset(1, 1),
-          end: const Offset(1.05, 1.05),
-          duration: const Duration(milliseconds: 200),
-        )
-        .animate(
-          target: isWinner ? 1 : 0,
-        )
-        .shimmer(
-          duration: const Duration(milliseconds: 1000),
-          color: color.withValues(
-            red: color.r.toDouble(),
-            green: color.g.toDouble(),
-            blue: color.b.toDouble(),
-            alpha: 0.5,
-          ),
-        );
+    );
   }
 
   String _getGameStatusText(ConnectFourController controller) {
@@ -619,11 +482,13 @@ class ConnectFourGameScreen extends StatelessWidget {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             title: const Text('Exit Game?'),
             content: const Text(
-                'Are you sure you want to exit the game? Any progress will not be saved.'),
+                'Are you sure you want to exit? Progress will be lost.'),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             ),
             actions: [
               TextButton(
@@ -634,6 +499,9 @@ class ConnectFourGameScreen extends StatelessWidget {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: FilledButton.styleFrom(
                   backgroundColor: Get.theme.colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text('EXIT'),
               ),
@@ -648,11 +516,13 @@ class ConnectFourGameScreen extends StatelessWidget {
     final shouldRestart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Restart Game?'),
         content: const Text(
-            'Are you sure you want to restart the game? The current game will be lost.'),
+            'Are you sure you want to restart? Current game will be lost.'),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         actions: [
           TextButton(
@@ -663,6 +533,9 @@ class ConnectFourGameScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: Get.theme.colorScheme.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('RESTART'),
           ),

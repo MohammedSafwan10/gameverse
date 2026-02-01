@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../bindings/game_binding.dart';
@@ -12,82 +13,87 @@ class ConnectFourModeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Get.theme.colorScheme.primary.withValues(
-                red: Get.theme.colorScheme.primary.r.toDouble(),
-                green: Get.theme.colorScheme.primary.g.toDouble(),
-                blue: Get.theme.colorScheme.primary.b.toDouble(),
-                alpha: 0.1,
+      backgroundColor: const Color(0xFFF8F9FE),
+      body: Stack(
+        children: [
+          // Decorative Background
+          Positioned(
+            right: -100,
+            top: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                shape: BoxShape.circle,
               ),
-              Get.theme.colorScheme.surface,
-            ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 40),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildModeButton(
-                        'Player vs Player',
-                        'Challenge your friend locally',
-                        Icons.people,
-                        Colors.blue,
-                        () => _startGame(GameMode.pvp),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildModeButton(
-                        'Player vs AI',
-                        'Challenge our smart AI opponent',
-                        Icons.smart_toy,
-                        Colors.purple,
-                        () => _startGame(GameMode.vsAI),
-                      ),
-                    ],
+
+          SafeArea(
+            child: Column(
+              children: [
+                _buildHeader().animate().fadeIn(duration: 400.ms).slideY(begin: -0.2),
+                const SizedBox(height: 40),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildModeButton(
+                          'Player vs Player',
+                          'Challenge your friend locally',
+                          Icons.people_outline_rounded,
+                          Colors.blue,
+                          () => _startGame(GameMode.pvp),
+                          0,
+                        ),
+                        const SizedBox(height: 24),
+                        _buildModeButton(
+                          'Player vs AI',
+                          'Challenge our smart AI opponent',
+                          Icons.smart_toy_outlined,
+                          Colors.purple,
+                          () => _startGame(GameMode.vsAI),
+                          1,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(24.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            color: Colors.black87,
             onPressed: () => Get.back(),
           ),
-          const SizedBox(width: 16),
           Text(
             'Connect Four',
             style: Get.textTheme.headlineMedium?.copyWith(
-              color: Get.theme.colorScheme.primary,
+              color: Colors.black87,
               fontWeight: FontWeight.bold,
+              fontSize: 24,
             ),
           ),
-          const Spacer(),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings_outlined),
+            color: Colors.black87,
             tooltip: 'Settings',
             onPressed: () {
-              // Ensure the settings controller is initialized
               if (!Get.isRegistered<ConnectFourSettingsController>()) {
                 Get.put(ConnectFourSettingsController(), permanent: true);
               }
@@ -105,43 +111,37 @@ class ConnectFourModeScreen extends StatelessWidget {
     IconData icon,
     Color color,
     VoidCallback onTap,
+    int index,
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Get.theme.colorScheme.primary.withValues(
-              red: Get.theme.colorScheme.primary.r.toDouble(),
-              green: Get.theme.colorScheme.primary.g.toDouble(),
-              blue: Get.theme.colorScheme.primary.b.toDouble(),
-              alpha: 0.3,
-            ),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: color.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
+          splashColor: color.withOpacity(0.1),
+          highlightColor: color.withOpacity(0.05),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: color.withValues(
-                      red: color.r.toDouble(),
-                      green: color.g.toDouble(),
-                      blue: color.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
                     icon,
@@ -149,51 +149,48 @@ class ConnectFourModeScreen extends StatelessWidget {
                     color: color,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: Get.textTheme.titleLarge?.copyWith(
+                        style: TextStyle(
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: Get.textTheme.bodyMedium?.copyWith(
-                          color: Get.theme.colorScheme.onSurface.withValues(
-                            red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                            green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                            blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                            alpha: 0.7,
-                          ),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Icon(
-                  Icons.arrow_forward_ios,
-                  color: Get.theme.colorScheme.primary,
+                  Icons.arrow_forward_ios_rounded,
+                  color: color.withOpacity(0.5),
+                  size: 20,
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
+    ).animate(delay: (200 * index).ms).fadeIn().slideX(begin: 0.2);
   }
 
   void _startGame(GameMode mode) {
-    // Ensure the settings controller is initialized
     if (!Get.isRegistered<ConnectFourSettingsController>()) {
       Get.put(ConnectFourSettingsController(), permanent: true);
     }
 
-    // Update the settings controller with the selected mode
     final settingsController = Get.find<ConnectFourSettingsController>();
     settingsController.setGameMode(mode);
 
@@ -202,7 +199,6 @@ class ConnectFourModeScreen extends StatelessWidget {
       binding: ConnectFourBinding(gameMode: mode),
       transition: Transition.rightToLeft,
     )?.then((_) {
-      // Clean up when returning from game
       Get.delete<ConnectFourController>();
     });
   }

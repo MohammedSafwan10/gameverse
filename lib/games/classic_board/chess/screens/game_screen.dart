@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../widgets/chess_board_widget.dart';
 import '../widgets/countdown_timer.dart';
@@ -15,7 +16,6 @@ class ChessGameScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isPortrait = screenHeight > screenWidth;
-    final theme = Theme.of(context);
 
     return PopScope(
       canPop: false,
@@ -29,14 +29,13 @@ class ChessGameScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FE), // AppTheme clean background
         appBar: AppBar(
-          title: Obx(() => Text(
-                _getGameTitle(controller.gameMode.value),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              )),
-          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            color: Colors.black87,
             onPressed: () async {
               final shouldPop =
                   await _showExitConfirmationDialog(context, controller);
@@ -45,10 +44,20 @@ class ChessGameScreen extends StatelessWidget {
               }
             },
           ),
+          centerTitle: true,
+          title: Obx(() => Text(
+                _getGameTitle(controller.gameMode.value),
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              )),
           actions: [
             // Restart Button
             IconButton(
-              icon: const Icon(Icons.restart_alt),
+              icon: const Icon(Icons.refresh_rounded),
+              color: Colors.black87,
               onPressed: () =>
                   _showRestartConfirmationDialog(context, controller),
               tooltip: 'Restart Game',
@@ -61,9 +70,10 @@ class ChessGameScreen extends StatelessWidget {
               return IconButton(
                 icon: Icon(
                   controller.isGamePaused.value
-                      ? Icons.play_arrow
-                      : Icons.pause,
+                      ? Icons.play_arrow_rounded
+                      : Icons.pause_rounded,
                 ),
+                color: Colors.black87,
                 onPressed: () {
                   if (controller.isGamePaused.value) {
                     controller.resumeGame();
@@ -76,19 +86,10 @@ class ChessGameScreen extends StatelessWidget {
                     : 'Pause Game',
               );
             }),
-            // Sound Toggle
-            Obx(() => IconButton(
-                  icon: Icon(
-                    controller.soundService.isSoundEnabled.value
-                        ? Icons.volume_up
-                        : Icons.volume_off,
-                  ),
-                  onPressed: controller.soundService.toggleSound,
-                  tooltip: 'Toggle Sound',
-                )),
             // Settings
             IconButton(
-              icon: const Icon(Icons.settings),
+              icon: const Icon(Icons.settings_outlined),
+              color: Colors.black87,
               onPressed: () {
                 controller.soundService.playMenuSelectionSound();
                 Get.to(
@@ -102,517 +103,242 @@ class ChessGameScreen extends StatelessWidget {
         ),
         body: Stack(
           children: [
-            // Main Game Content
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    theme.colorScheme.primary.withValues(
-                      red: theme.colorScheme.primary.r.toDouble(),
-                      green: theme.colorScheme.primary.g.toDouble(),
-                      blue: theme.colorScheme.primary.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    theme.colorScheme.surfaceContainerHighest,
-                  ],
+            // Decorative Background
+            Positioned(
+              right: -50,
+              top: 50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
               ),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    // Game Info Bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              red: 0.0,
-                              green: 0.0,
-                              blue: 0.0,
-                              alpha: 0.1,
-                            ),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Turn Indicator
-                          Obx(() => Row(
-                                children: [
-                                  Icon(
-                                    Icons.person,
+            ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  // Game Info Bar
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Turn Indicator
+                        Obx(() => Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
                                     color: controller.isWhiteTurn.value
-                                        ? Colors.amber
-                                        : Colors.grey,
+                                        ? Colors.orange.withOpacity(0.1)
+                                        : Colors.grey.withOpacity(0.1),
+                                    shape: BoxShape.circle,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Turn: ${controller.isWhiteTurn.value ? "White" : "Black"}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    color: controller.isWhiteTurn.value
+                                        ? Colors.orange
+                                        : Colors.grey[700],
+                                    size: 20,
                                   ),
-                                ],
-                              )),
-                          // Game State
-                          Obx(() => Text(
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Current Turn',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      controller.isWhiteTurn.value ? "White" : "Black",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.black87),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            )),
+                        // Game State
+                        Obx(() => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _getStateColor(controller.gameState.value).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
                                 _getStateText(controller.gameState.value),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: _getStateColor(
                                       controller.gameState.value),
+                                  fontSize: 12,
                                 ),
-                              )),
+                              ),
+                        )),
+                      ],
+                    ),
+                  ).animate().fadeIn().slideY(begin: -0.2),
+
+                  const SizedBox(height: 16),
+
+                  // Timer Display (if enabled)
+                  Obx(() {
+                    if (!controller.timerEnabled.value) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Black's Timer
+                          _buildTimerDisplay(
+                            'Black',
+                            controller.formatTime(
+                                controller.blackTimeRemaining.value),
+                            !controller.isWhiteTurn.value,
+                          ),
+                          // White's Timer
+                          _buildTimerDisplay(
+                            'White',
+                            controller.formatTime(
+                                controller.whiteTimeRemaining.value),
+                            controller.isWhiteTurn.value,
+                          ),
                         ],
                       ),
-                    ),
+                    );
+                  }),
 
-                    // Timer Display (if enabled)
-                    Obx(() {
-                      if (!controller.timerEnabled.value) {
-                        return const SizedBox.shrink();
-                      }
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Black's Timer
-                            _buildTimerDisplay(
-                              'Black',
-                              controller.formatTime(
-                                  controller.blackTimeRemaining.value),
-                              !controller.isWhiteTurn.value,
-                              theme,
-                            ),
-                            // White's Timer
-                            _buildTimerDisplay(
-                              'White',
-                              controller.formatTime(
-                                  controller.whiteTimeRemaining.value),
-                              controller.isWhiteTurn.value,
-                              theme,
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                  // Main Game Area
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final maxSize = isPortrait
+                            ? constraints.maxWidth
+                            : constraints.maxHeight * 0.9;
+                        final boardSize = maxSize - 32;
 
-                    // Main Game Area
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final maxSize = isPortrait
-                              ? constraints.maxWidth
-                              : constraints.maxHeight * 0.9;
-                          final boardSize = maxSize - 32;
+                        return SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Captured Pieces - Top (Black's captures)
+                                _buildCapturedPiecesBar(controller, isTop: true),
 
-                          return SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Captured Pieces - Top (Black's captures)
-                                  Card(
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                const SizedBox(height: 16),
+
+                                // Chess Board
+                                Hero(
+                                  tag: 'chess_board',
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
                                     ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: SizedBox(
+                                        width: boardSize,
+                                        height: boardSize,
+                                        child: const ChessBoardWidget(),
+                                      ),
+                                    ),
+                                  ),
+                                ).animate().scale(curve: Curves.easeOutBack, duration: 600.ms),
+
+                                const SizedBox(height: 16),
+
+                                // Captured Pieces - Bottom (White's captures)
+                                _buildCapturedPiecesBar(controller, isTop: false),
+
+                                // Game Messages
+                                Obx(() {
+                                  final message = _getGameMessage(
+                                    controller.gameState.value,
+                                    controller.isWhiteTurn.value,
+                                    controller.gameMode.value,
+                                  );
+                                  if (message.isEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 24),
                                     child: Container(
-                                      height: 40,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8),
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(30),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: _getStateColor(controller.gameState.value).withOpacity(0.2),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
                                       child: Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          // Player indicator
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8),
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                right: BorderSide(
-                                                  color: Get
-                                                      .theme.colorScheme.outline
-                                                      .withValues(
-                                                    red: Get.theme.colorScheme
-                                                        .outline.r
-                                                        .toDouble(),
-                                                    green: Get.theme.colorScheme
-                                                        .outline.g
-                                                        .toDouble(),
-                                                    blue: Get.theme.colorScheme
-                                                        .outline.b
-                                                        .toDouble(),
-                                                    alpha: 0.5,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            child: Icon(
-                                              Icons.person,
-                                              color:
-                                                  controller.isWhiteTurn.value
-                                                      ? Colors.amber
-                                                      : Colors.grey,
-                                              size: 16,
-                                            ),
+                                          Icon(
+                                            _getMessageIcon(
+                                                controller.gameState.value),
+                                            color: _getStateColor(
+                                                controller.gameState.value),
                                           ),
                                           const SizedBox(width: 8),
-                                          // Captured pieces list
-                                          Expanded(
-                                            child: Obx(() {
-                                              // Filter and sort pieces
-                                              final filteredPieces = controller
-                                                  .capturedPieces
-                                                  .where((piece) =>
-                                                      (piece.contains(
-                                                              'black') &&
-                                                          controller.isWhiteTurn
-                                                              .value) ||
-                                                      (piece.contains(
-                                                              'white') &&
-                                                          !controller
-                                                              .isWhiteTurn
-                                                              .value))
-                                                  .toList();
-
-                                              // Sort by piece value
-                                              filteredPieces.sort((a, b) {
-                                                final valueA = switch (a) {
-                                                  String p
-                                                      when p
-                                                          .contains('queen') =>
-                                                    9,
-                                                  String p
-                                                      when p.contains('rook') =>
-                                                    5,
-                                                  String p
-                                                      when p.contains(
-                                                              'bishop') ||
-                                                          p.contains(
-                                                              'knight') =>
-                                                    3,
-                                                  String p
-                                                      when p.contains('pawn') =>
-                                                    1,
-                                                  _ => 0,
-                                                };
-                                                final valueB = switch (b) {
-                                                  String p
-                                                      when p
-                                                          .contains('queen') =>
-                                                    9,
-                                                  String p
-                                                      when p.contains('rook') =>
-                                                    5,
-                                                  String p
-                                                      when p.contains(
-                                                              'bishop') ||
-                                                          p.contains(
-                                                              'knight') =>
-                                                    3,
-                                                  String p
-                                                      when p.contains('pawn') =>
-                                                    1,
-                                                  _ => 0,
-                                                };
-                                                return valueB.compareTo(
-                                                    valueA); // Sort descending
-                                              });
-
-                                              return ListView.builder(
-                                                scrollDirection:
-                                                    Axis.horizontal,
-                                                itemCount:
-                                                    filteredPieces.length,
-                                                physics:
-                                                    const BouncingScrollPhysics(),
-                                                itemBuilder: (context, index) {
-                                                  final piece =
-                                                      filteredPieces[index];
-                                                  return Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 2,
-                                                        vertical: 4),
-                                                    child: SvgPicture.asset(
-                                                      'assets/chess/images/$piece.svg',
-                                                      width: 20,
-                                                      height: 20,
-                                                      colorFilter:
-                                                          ColorFilter.mode(
-                                                        piece.contains('white')
-                                                            ? Colors.white
-                                                            : Colors.black,
-                                                        BlendMode.srcIn,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            }),
+                                          Text(
+                                            message,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // Chess Board
-                                  Hero(
-                                    tag: 'chess_board',
-                                    child: Card(
-                                      elevation: 8,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: AnimatedContainer(
-                                        duration:
-                                            const Duration(milliseconds: 300),
-                                        curve: Curves.easeInOut,
-                                        padding: const EdgeInsets.all(12.0),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: theme.colorScheme.shadow
-                                                  .withValues(
-                                                red: theme.colorScheme.shadow.r
-                                                    .toDouble(),
-                                                green: theme
-                                                    .colorScheme.shadow.g
-                                                    .toDouble(),
-                                                blue: theme.colorScheme.shadow.b
-                                                    .toDouble(),
-                                                alpha: 0.1,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: SizedBox(
-                                          width: boardSize,
-                                          height: boardSize,
-                                          child: const ChessBoardWidget(),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // Captured Pieces - Bottom (White's captures)
-                                  Card(
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Container(
-                                      height: 40,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      child: Row(
-                                        children: [
-                                          // Player indicator
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8),
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                right: BorderSide(
-                                                  color: Get
-                                                      .theme.colorScheme.outline
-                                                      .withValues(
-                                                    red: Get.theme.colorScheme
-                                                        .outline.r
-                                                        .toDouble(),
-                                                    green: Get.theme.colorScheme
-                                                        .outline.g
-                                                        .toDouble(),
-                                                    blue: Get.theme.colorScheme
-                                                        .outline.b
-                                                        .toDouble(),
-                                                    alpha: 0.5,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            child: Icon(
-                                              Icons.person,
-                                              color:
-                                                  !controller.isWhiteTurn.value
-                                                      ? Colors.amber
-                                                      : Colors.grey,
-                                              size: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          // Captured pieces list
-                                          Expanded(
-                                            child: Obx(() {
-                                              // Filter and sort pieces
-                                              final filteredPieces = controller
-                                                  .capturedPieces
-                                                  .where((piece) =>
-                                                      (piece.contains(
-                                                              'white') &&
-                                                          controller.isWhiteTurn
-                                                              .value) ||
-                                                      (piece.contains(
-                                                              'black') &&
-                                                          !controller
-                                                              .isWhiteTurn
-                                                              .value))
-                                                  .toList();
-
-                                              // Sort by piece value
-                                              filteredPieces.sort((a, b) {
-                                                final valueA = switch (a) {
-                                                  String p
-                                                      when p
-                                                          .contains('queen') =>
-                                                    9,
-                                                  String p
-                                                      when p.contains('rook') =>
-                                                    5,
-                                                  String p
-                                                      when p.contains(
-                                                              'bishop') ||
-                                                          p.contains(
-                                                              'knight') =>
-                                                    3,
-                                                  String p
-                                                      when p.contains('pawn') =>
-                                                    1,
-                                                  _ => 0,
-                                                };
-                                                final valueB = switch (b) {
-                                                  String p
-                                                      when p
-                                                          .contains('queen') =>
-                                                    9,
-                                                  String p
-                                                      when p.contains('rook') =>
-                                                    5,
-                                                  String p
-                                                      when p.contains(
-                                                              'bishop') ||
-                                                          p.contains(
-                                                              'knight') =>
-                                                    3,
-                                                  String p
-                                                      when p.contains('pawn') =>
-                                                    1,
-                                                  _ => 0,
-                                                };
-                                                return valueB.compareTo(
-                                                    valueA); // Sort descending
-                                              });
-
-                                              return ListView.builder(
-                                                scrollDirection:
-                                                    Axis.horizontal,
-                                                itemCount:
-                                                    filteredPieces.length,
-                                                physics:
-                                                    const BouncingScrollPhysics(),
-                                                itemBuilder: (context, index) {
-                                                  final piece =
-                                                      filteredPieces[index];
-                                                  return Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 2,
-                                                        vertical: 4),
-                                                    child: SvgPicture.asset(
-                                                      'assets/chess/images/$piece.svg',
-                                                      width: 20,
-                                                      height: 20,
-                                                      colorFilter:
-                                                          ColorFilter.mode(
-                                                        piece.contains('white')
-                                                            ? Colors.white
-                                                            : Colors.black,
-                                                        BlendMode.srcIn,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            }),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-
-                                  // Game Messages
-                                  Obx(() {
-                                    final message = _getGameMessage(
-                                      controller.gameState.value,
-                                      controller.isWhiteTurn.value,
-                                      controller.gameMode.value,
-                                    );
-                                    if (message.isEmpty) {
-                                      return const SizedBox.shrink();
-                                    }
-
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 16),
-                                      child: Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                _getMessageIcon(
-                                                    controller.gameState.value),
-                                                color: _getStateColor(
-                                                    controller.gameState.value),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                message,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                ],
-                              ),
+                                  ).animate().fadeIn().slideY(begin: 0.2);
+                                }),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
@@ -624,61 +350,68 @@ class ChessGameScreen extends StatelessWidget {
               return Container(
                 width: double.infinity,
                 height: double.infinity,
-                color: Colors.black.withValues(
-                  red: 0.0,
-                  green: 0.0,
-                  blue: 0.0,
-                  alpha: 0.7,
-                ),
+                color: Colors.white.withOpacity(0.8), // Modern light overlay
                 child: Center(
-                  child: Card(
-                    elevation: 8,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    margin: const EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.pause_circle_outline, size: 48),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Game Paused',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.pause_circle_outline_rounded, size: 64, color: Colors.indigo),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Game Paused',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextButton.icon(
+                              onPressed: () {
+                                controller.forfeitGame();
+                                Get.back();
+                              },
+                              icon: const Icon(Icons.flag_outlined),
+                              label: const Text('Forfeit'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextButton.icon(
-                                onPressed: () {
-                                  controller.forfeitGame();
-                                  Get.back();
-                                },
-                                icon: const Icon(Icons.flag),
-                                label: const Text('Forfeit'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: theme.colorScheme.error,
-                                ),
+                            const SizedBox(width: 16),
+                            FilledButton.icon(
+                              onPressed: controller.resumeGame,
+                              icon: const Icon(Icons.play_arrow_rounded),
+                              label: const Text('Resume'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.indigo,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
-                              const SizedBox(width: 16),
-                              ElevatedButton.icon(
-                                onPressed: controller.resumeGame,
-                                icon: const Icon(Icons.play_arrow),
-                                label: const Text('Resume'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
+              ).animate().fadeIn();
             }),
 
             // Countdown Timer Overlay
@@ -700,6 +433,85 @@ class ChessGameScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildCapturedPiecesBar(ChessGameController controller, {required bool isTop}) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Player indicator
+          Icon(
+            Icons.person_rounded,
+            color: (isTop ? !controller.isWhiteTurn.value : controller.isWhiteTurn.value)
+                ? Colors.amber
+                : Colors.grey[400],
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          // Captured pieces list
+          Expanded(
+            child: Obx(() {
+              final filteredPieces = controller.capturedPieces.where((piece) {
+                // Top Bar (Opponent/Black) -> Displays White pieces captured.
+                // Bottom Bar (You/White) -> Displays Black pieces captured.
+                return isTop ? piece.contains('white') : piece.contains('black');
+              }).toList();
+
+              // Sort by value
+               filteredPieces.sort((a, b) {
+                  final valueA = _getPieceValue(a);
+                  final valueB = _getPieceValue(b);
+                  return valueB.compareTo(valueA);
+               });
+
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: filteredPieces.length,
+                physics: const BouncingScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final piece = filteredPieces[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/chess/images/$piece.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(
+                          piece.contains('white') ? Colors.grey[400]! : Colors.black87, // Styling choice
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _getPieceValue(String piece) {
+    if (piece.contains('queen')) return 9;
+    if (piece.contains('rook')) return 5;
+    if (piece.contains('bishop') || piece.contains('knight')) return 3;
+    if (piece.contains('pawn')) return 1;
+    return 0;
+  }
+
   String _getGameTitle(ChessGameMode mode) {
     return switch (mode) {
       ChessGameMode.local => 'Two Players',
@@ -711,7 +523,7 @@ class ChessGameScreen extends StatelessWidget {
   String _getStateText(ChessGameState state) {
     return switch (state) {
       ChessGameState.initial => 'NEW GAME',
-      ChessGameState.inProgress => 'IN PROGRESS',
+      ChessGameState.inProgress => 'PLAYING',
       ChessGameState.check => 'CHECK!',
       ChessGameState.checkmate => 'CHECKMATE!',
       ChessGameState.stalemate => 'STALEMATE',
@@ -731,11 +543,11 @@ class ChessGameScreen extends StatelessWidget {
 
   IconData _getMessageIcon(ChessGameState state) {
     return switch (state) {
-      ChessGameState.check => Icons.warning,
-      ChessGameState.checkmate => Icons.emoji_events,
-      ChessGameState.stalemate => Icons.block,
-      ChessGameState.draw => Icons.balance,
-      _ => Icons.info_outline,
+      ChessGameState.check => Icons.warning_rounded,
+      ChessGameState.checkmate => Icons.emoji_events_rounded,
+      ChessGameState.stalemate => Icons.block_rounded,
+      ChessGameState.draw => Icons.balance_rounded,
+      _ => Icons.info_outline_rounded,
     };
   }
 
@@ -770,22 +582,26 @@ class ChessGameScreen extends StatelessWidget {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             title: const Text('Exit Game?'),
             content: const Text(
               'Are you sure you want to exit the game? '
               'Your progress will be lost.',
             ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             actions: [
               TextButton(
                 onPressed: () => Get.back(result: false),
                 child: const Text('CANCEL'),
               ),
-              TextButton(
+              FilledButton(
                 onPressed: () => Get.back(result: true),
-                child: const Text(
-                  'EXIT',
-                  style: TextStyle(color: Colors.red),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                child: const Text('EXIT'),
               ),
             ],
           ),
@@ -793,45 +609,43 @@ class ChessGameScreen extends StatelessWidget {
         false;
   }
 
-  Widget _buildTimerDisplay(
-      String player, String time, bool isActive, ThemeData theme) {
-    return Card(
-      elevation: isActive ? 4 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildTimerDisplay(String player, String time, bool isActive) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.indigo : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isActive ? Colors.indigo.withOpacity(0.3) : Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: isActive
-              ? Border.all(
-                  color: theme.colorScheme.primary,
-                  width: 2,
-                )
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              player,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isActive ? theme.colorScheme.primary : null,
-              ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            player,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isActive ? Colors.white : Colors.grey,
+              fontSize: 12,
             ),
-            const SizedBox(height: 4),
-            Text(
-              time,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isActive ? theme.colorScheme.primary : null,
-              ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isActive ? Colors.white : Colors.black87,
+              fontFamily: 'Courier', // Monospace for timer
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -843,18 +657,25 @@ class ChessGameScreen extends StatelessWidget {
     final shouldRestart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Restart Game'),
         content: const Text(
           'Are you sure you want to restart the game? '
           'Current progress will be lost.',
         ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
             child: const Text('CANCEL'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Get.back(result: true),
+             style: FilledButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
             child: const Text('RESTART'),
           ),
         ],
