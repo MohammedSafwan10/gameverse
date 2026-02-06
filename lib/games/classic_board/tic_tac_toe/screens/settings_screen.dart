@@ -10,7 +10,8 @@ class TicTacToeSettingsScreen extends StatefulWidget {
   const TicTacToeSettingsScreen({super.key});
 
   @override
-  State<TicTacToeSettingsScreen> createState() => _TicTacToeSettingsScreenState();
+  State<TicTacToeSettingsScreen> createState() =>
+      _TicTacToeSettingsScreenState();
 }
 
 class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
@@ -38,9 +39,9 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
         title: Text(
           'Game Settings',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
         ),
       ),
       body: SafeArea(
@@ -53,11 +54,35 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
               const SizedBox(height: 24),
               _buildSoundSection(context),
               const SizedBox(height: 24),
+              _buildStatsSection(context),
+              const SizedBox(height: 24),
               _buildResetSection(context),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatsSection(BuildContext context) {
+    return _buildSection(
+      context,
+      title: 'Statistics',
+      index: 2,
+      children: [
+        ListTile(
+          title: const Text('Reset Current Mode Stats'),
+          subtitle: const Text('Clear stats for the current game mode'),
+          trailing: const Icon(Icons.refresh),
+          onTap: () => _showStatsResetConfirmation(context, false),
+        ),
+        ListTile(
+          title: const Text('Reset All Stats'),
+          subtitle: const Text('Clear all statistics and achievements'),
+          trailing: const Icon(Icons.delete_forever),
+          onTap: () => _showStatsResetConfirmation(context, true),
+        ),
+      ],
     );
   }
 
@@ -85,15 +110,15 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: TicTacToeTheme.primaryColor,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: TicTacToeTheme.primaryColor,
+                    ),
               ),
               const SizedBox(height: 16),
               ...children.map((child) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: child,
-              )),
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: child,
+                  )),
             ],
           ),
         ),
@@ -108,16 +133,17 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
       index: 0,
       children: [
         Obx(() => ListTile(
-          title: const Text('Game Mode'),
-          subtitle: Text(settingsController.settings.gameMode.displayName),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showModeSelection(context),
-        )),
+              title: const Text('Game Mode'),
+              subtitle: Text(settingsController.settings.gameMode.displayName),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showModeSelection(context),
+            )),
         Obx(() {
           if (settingsController.settings.gameMode == GameMode.singlePlayer) {
             return ListTile(
               title: const Text('Difficulty'),
-              subtitle: Text(settingsController.settings.difficulty.displayName),
+              subtitle:
+                  Text(settingsController.settings.difficulty.displayName),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showDifficultySelection(context),
             );
@@ -125,11 +151,12 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
           return const SizedBox.shrink();
         }),
         Obx(() => SwitchListTile(
-          title: const Text('Auto Restart'),
-          subtitle: const Text('Start a new game automatically after each game'),
-          value: settingsController.settings.autoRestart,
-          onChanged: (value) => settingsController.toggleAutoRestart(),
-        )),
+              title: const Text('Auto Restart'),
+              subtitle:
+                  const Text('Start a new game automatically after each game'),
+              value: settingsController.settings.autoRestart,
+              onChanged: (value) => settingsController.toggleAutoRestart(),
+            )),
       ],
     );
   }
@@ -141,15 +168,15 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
       index: 1,
       children: [
         Obx(() => SwitchListTile(
-          title: const Text('Sound Effects'),
-          value: settingsController.settings.soundEnabled,
-          onChanged: (value) => settingsController.toggleSound(),
-        )),
+              title: const Text('Sound Effects'),
+              value: settingsController.settings.soundEnabled,
+              onChanged: (value) => settingsController.toggleSound(),
+            )),
         Obx(() => SwitchListTile(
-          title: const Text('Vibration'),
-          value: settingsController.settings.vibrationEnabled,
-          onChanged: (value) => settingsController.toggleVibration(),
-        )),
+              title: const Text('Vibration'),
+              value: settingsController.settings.vibrationEnabled,
+              onChanged: (value) => settingsController.toggleVibration(),
+            )),
       ],
     );
   }
@@ -185,24 +212,25 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
             child: Text(
               'Select Game Mode',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: TicTacToeTheme.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: TicTacToeTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
           const Divider(),
           ...GameMode.values.map((mode) => ListTile(
-            leading: Icon(mode.icon, color: TicTacToeTheme.primaryColor),
-            title: Text(mode.displayName),
-            subtitle: Text(mode.description),
-            trailing: Obx(() => settingsController.settings.gameMode == mode
-              ? const Icon(Icons.check, color: TicTacToeTheme.primaryColor)
-              : const SizedBox.shrink()),
-            onTap: () {
-              settingsController.updateGameMode(mode);
-              Get.back();
-            },
-          )),
+                leading: Icon(mode.icon, color: TicTacToeTheme.primaryColor),
+                title: Text(mode.displayName),
+                subtitle: Text(mode.description),
+                trailing: Obx(() => settingsController.settings.gameMode == mode
+                    ? const Icon(Icons.check,
+                        color: TicTacToeTheme.primaryColor)
+                    : const SizedBox.shrink()),
+                onTap: () {
+                  settingsController.updateGameMode(mode);
+                  Get.back();
+                },
+              )),
           const SizedBox(height: 16),
         ],
       ),
@@ -224,24 +252,27 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
             child: Text(
               'Select Difficulty',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: TicTacToeTheme.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: TicTacToeTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
           const Divider(),
           ...GameDifficulty.values.map((difficulty) => ListTile(
-            leading: Icon(_getDifficultyIcon(difficulty), color: TicTacToeTheme.primaryColor),
-            title: Text(difficulty.displayName),
-            subtitle: Text(_getDifficultyDescription(difficulty)),
-            trailing: Obx(() => settingsController.settings.difficulty == difficulty
-              ? const Icon(Icons.check, color: TicTacToeTheme.primaryColor)
-              : const SizedBox.shrink()),
-            onTap: () {
-              settingsController.updateDifficulty(difficulty);
-              Get.back();
-            },
-          )),
+                leading: Icon(_getDifficultyIcon(difficulty),
+                    color: TicTacToeTheme.primaryColor),
+                title: Text(difficulty.displayName),
+                subtitle: Text(_getDifficultyDescription(difficulty)),
+                trailing: Obx(() =>
+                    settingsController.settings.difficulty == difficulty
+                        ? const Icon(Icons.check,
+                            color: TicTacToeTheme.primaryColor)
+                        : const SizedBox.shrink()),
+                onTap: () {
+                  settingsController.updateDifficulty(difficulty);
+                  Get.back();
+                },
+              )),
           const SizedBox(height: 16),
         ],
       ),
@@ -274,12 +305,49 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
     }
   }
 
+  void _showStatsResetConfirmation(BuildContext context, bool allStats) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(allStats ? 'Reset All Stats?' : 'Reset Mode Stats?'),
+        content: Text(allStats
+            ? 'This will permanentely delete all your game statistics and achievements. This action cannot be undone.'
+            : 'This will reset statistics for the current game mode. This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (allStats) {
+                await settingsController.resetAllStats();
+              } else {
+                await settingsController.resetCurrentModeStats();
+              }
+              Get.back();
+              Get.snackbar(
+                'Stats Reset',
+                'Statistics have been cleared.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.white,
+                colorText: Colors.black,
+              );
+            },
+            child: const Text('Reset', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showResetConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Reset Settings'),
-        content: const Text('Are you sure you want to reset all settings to their default values?'),
+        content: const Text(
+            'Are you sure you want to reset all settings to their default values?'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),

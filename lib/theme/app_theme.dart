@@ -26,15 +26,15 @@ class AppTheme {
 
   // Category Colors (Pastel & Vibrant Mix)
   static final Map<String, Color> categoryColors = {
-    'Arcade': Color(0xFF70A1FF),      // Soft Blue
-    'Classic Board': Color(0xFFFF7F50),// Coral
-    'Word Games': Color(0xFF2ED573),   // Emerald
+    'Arcade': Color(0xFF70A1FF), // Soft Blue
+    'Classic Board': Color(0xFFFF7F50), // Coral
+    'Word Games': Color(0xFF2ED573), // Emerald
     'Brain Training': Color(0xFFA29BFE), // Periwinkle
-    'Puzzle': Color(0xFFFF6B81),       // Watermelon
+    'Puzzle': Color(0xFFFF6B81), // Watermelon
     'Quick Casual': Color(0xFFECCC68), // Mustard
-    'Strategy': Color(0xFF1E90FF),     // Dodger Blue
-    'Reaction': Color(0xFFFF4757),     // Red
-    'Educational': Color(0xFF5352ED),  // Royal Blue
+    'Strategy': Color(0xFF1E90FF), // Dodger Blue
+    'Reaction': Color(0xFFFF4757), // Red
+    'Educational': Color(0xFF5352ED), // Royal Blue
   };
 
   // Modern Text Theme
@@ -69,12 +69,12 @@ class AppTheme {
     bodyLarge: GoogleFonts.dmSans(
       fontSize: 16,
       fontWeight: FontWeight.w400,
-      color: _secondaryColor.withOpacity(0.8),
+      color: _secondaryColor.withValues(alpha: 0.8),
     ),
     bodyMedium: GoogleFonts.dmSans(
       fontSize: 14,
       fontWeight: FontWeight.w400,
-      color: _secondaryColor.withOpacity(0.6),
+      color: _secondaryColor.withValues(alpha: 0.6),
     ),
     labelLarge: GoogleFonts.dmSans(
       fontSize: 14,
@@ -89,7 +89,6 @@ class AppTheme {
     brightness: Brightness.light,
     primaryColor: _primaryColor,
     scaffoldBackgroundColor: _backgroundColor,
-
     colorScheme: ColorScheme.light(
       primary: _primaryColor,
       secondary: _accentColor,
@@ -100,9 +99,7 @@ class AppTheme {
       onSurface: _secondaryColor,
       onError: Colors.white,
     ),
-
     textTheme: _textTheme,
-
     appBarTheme: AppBarTheme(
       backgroundColor: _backgroundColor,
       elevation: 0,
@@ -110,7 +107,6 @@ class AppTheme {
       titleTextStyle: _textTheme.titleLarge,
       iconTheme: IconThemeData(color: _secondaryColor),
     ),
-
     cardTheme: CardThemeData(
       color: _surfaceColor,
       elevation: 0,
@@ -119,7 +115,6 @@ class AppTheme {
       ),
       margin: EdgeInsets.zero,
     ),
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: _primaryColor,
@@ -132,7 +127,6 @@ class AppTheme {
         textStyle: _textTheme.labelLarge?.copyWith(color: Colors.white),
       ),
     ),
-
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: _primaryColor,
@@ -143,14 +137,12 @@ class AppTheme {
         textStyle: _textTheme.labelLarge,
       ),
     ),
-
     iconTheme: IconThemeData(
       color: _secondaryColor,
       size: 24,
     ),
-
     dividerTheme: DividerThemeData(
-      color: _secondaryColor.withOpacity(0.1),
+      color: _secondaryColor.withValues(alpha: 0.1),
       thickness: 1,
       space: 1,
     ),
@@ -161,7 +153,6 @@ class AppTheme {
     brightness: Brightness.dark,
     primaryColor: _primaryColor,
     scaffoldBackgroundColor: Color(0xFF121212),
-
     colorScheme: ColorScheme.dark(
       primary: _primaryColor,
       secondary: _accentColor,
@@ -172,12 +163,10 @@ class AppTheme {
       onSurface: Colors.white,
       onError: Colors.white,
     ),
-
     textTheme: _textTheme.apply(
       bodyColor: Colors.white,
       displayColor: Colors.white,
     ),
-
     cardTheme: CardThemeData(
       color: Color(0xFF1E1E1E),
       elevation: 0,

@@ -213,23 +213,26 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
+                Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         widget.mode.displayName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         style: Get.textTheme.titleMedium?.copyWith(
                           color: widget.mode.color,
                           fontWeight: FontWeight.bold,
-                          fontSize: isSmallScreen ? 16 : null,
+                          fontSize: isSmallScreen ? 14 : 16,
                         ),
                       ),
                       Text(
-                        '${gameState.remainingPairs} pairs remaining',
+                        '${gameState.remainingPairs} pairs left',
                         style: Get.textTheme.bodySmall?.copyWith(
                           color: Colors.black54,
-                          fontSize: isSmallScreen ? 10 : null,
+                          fontSize: isSmallScreen ? 10 : 12,
                         ),
                       ),
                     ],

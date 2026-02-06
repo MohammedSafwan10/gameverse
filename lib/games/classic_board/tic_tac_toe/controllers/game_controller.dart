@@ -113,7 +113,7 @@ class TicTacToeGameController extends GetxController {
     }
   }
 
-  void _handleGameOver() {
+  Future<void> _handleGameOver() async {
     _gameStopwatch.stop();
     final gameDuration = _gameStopwatch.elapsed;
     _logger.i('Game over. Duration: $gameDuration');
@@ -126,7 +126,7 @@ class TicTacToeGameController extends GetxController {
     if (gameMode == GameMode.singlePlayer) {
       final isWin = winner == Player.x; // Player is always X in single player
 
-      _statsController.updateGameStats(
+      await _statsController.updateGameStats(
         gameMode: gameMode,
         difficulty: _settingsController.settings.difficulty,
         isWin: isWin,
@@ -144,14 +144,11 @@ class TicTacToeGameController extends GetxController {
         // Determine the winning player (1 = X, 2 = O)
         winningPlayer = winner == Player.x ? 1 : 2;
         _logger.i('Multiplayer game won by Player $winningPlayer');
-
-        // Force UI update by updating the observable game state
-        _gameState.refresh();
       } else {
         _logger.i('Multiplayer game ended in a draw');
       }
 
-      _statsController.updateGameStats(
+      await _statsController.updateGameStats(
         gameMode: gameMode,
         isWin: false, // Not relevant in multiplayer
         isDraw: isDraw,
@@ -163,6 +160,7 @@ class TicTacToeGameController extends GetxController {
           'Multiplayer stats updated. P1 wins: ${_statsController.player1Wins}, P2 wins: ${_statsController.player2Wins}');
 
       // Ensure UI is updated with latest stats
+      _gameState.refresh();
       update();
     }
 

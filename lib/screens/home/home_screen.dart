@@ -103,17 +103,20 @@ class HomeScreen extends GetView<HomeController> {
             Text(
               'GameVerse',
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                color: Theme.of(context).primaryColor,
-                fontWeight: FontWeight.w800,
-              ),
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.w800,
+                  ),
             ).animate().fadeIn(duration: 600.ms).slideX(begin: -0.2),
             const SizedBox(height: 4),
             Text(
               'Choose your adventure',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideX(begin: -0.2),
+                    fontWeight: FontWeight.w500,
+                  ),
+            )
+                .animate()
+                .fadeIn(delay: 200.ms, duration: 600.ms)
+                .slideX(begin: -0.2),
           ],
         ),
 
@@ -124,7 +127,7 @@ class HomeScreen extends GetView<HomeController> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -136,7 +139,8 @@ class HomeScreen extends GetView<HomeController> {
               Icons.settings_outlined,
               color: Theme.of(context).iconTheme.color,
             ),
-          ).animate().scale(delay: 400.ms, duration: 400.ms, curve: Curves.easeOutBack),
+          ).animate().scale(
+              delay: 400.ms, duration: 400.ms, curve: Curves.easeOutBack),
         ),
       ],
     );

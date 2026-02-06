@@ -40,7 +40,7 @@ class AnimatedGameCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -58,8 +58,8 @@ class AnimatedGameCard extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(24),
-            splashColor: color.withOpacity(0.1),
-            highlightColor: color.withOpacity(0.05),
+            splashColor: color.withValues(alpha: 0.1),
+            highlightColor: color.withValues(alpha: 0.05),
             child: Stack(
               children: [
                 // Decorative Circle Top Right
@@ -70,7 +70,7 @@ class AnimatedGameCard extends StatelessWidget {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.08),
+                      color: color.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -87,7 +87,7 @@ class AnimatedGameCard extends StatelessWidget {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Icon(
@@ -104,10 +104,13 @@ class AnimatedGameCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -115,11 +118,16 @@ class AnimatedGameCard extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                isComingSoon ? 'Coming Soon' : '$gamesCount Games',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.black45,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                isComingSoon
+                                    ? 'Coming Soon'
+                                    : '$gamesCount Games',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Colors.black45,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                               ),
                               if (isNew && !isComingSoon) ...[
                                 const SizedBox(width: 8),
@@ -155,17 +163,18 @@ class AnimatedGameCard extends StatelessWidget {
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(24),
                       ),
                       alignment: Alignment.center,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                           ),
                         ),
                         child: Row(

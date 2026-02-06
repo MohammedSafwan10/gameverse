@@ -70,7 +70,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 width: 300,
                 height: 300,
                 decoration: BoxDecoration(
-                  color: TicTacToeTheme.primaryColor.withOpacity(0.05),
+                  color: TicTacToeTheme.primaryColor.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -82,7 +82,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 width: 200,
                 height: 200,
                 decoration: BoxDecoration(
-                  color: TicTacToeTheme.oColor.withOpacity(0.05),
+                  color: TicTacToeTheme.oColor.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -100,32 +100,43 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                         final double boardPadding = isLandscape ? 8.0 : 24.0;
 
                         return Padding(
-                          padding: EdgeInsets.symmetric(horizontal: boardPadding),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Player status
-                              _buildPlayerStatus()
-                                  .animate(target: _showContent ? 1 : 0)
-                                  .fadeIn(duration: 600.ms)
-                                  .slideY(begin: -0.2, end: 0),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: boardPadding),
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Player status
+                                    _buildPlayerStatus()
+                                        .animate(target: _showContent ? 1 : 0)
+                                        .fadeIn(duration: 600.ms)
+                                        .slideY(begin: -0.2, end: 0),
 
-                              SizedBox(height: isLandscape ? 16.0 : 40.0),
+                                    SizedBox(height: isLandscape ? 16.0 : 40.0),
 
-                              // Game Board
-                              _buildGameBoard(constraints)
-                                  .animate(target: _showContent ? 1 : 0)
-                                  .fadeIn(duration: 800.ms)
-                                  .scale(begin: const Offset(0.9, 0.9)),
+                                    // Game Board
+                                    _buildGameBoard(constraints)
+                                        .animate(target: _showContent ? 1 : 0)
+                                        .fadeIn(duration: 800.ms)
+                                        .scale(begin: const Offset(0.9, 0.9)),
 
-                              SizedBox(height: isLandscape ? 16.0 : 40.0),
+                                    SizedBox(height: isLandscape ? 16.0 : 40.0),
 
-                              // Game Status
-                              _buildGameStatus()
-                                  .animate(target: _showContent ? 1 : 0)
-                                  .fadeIn(duration: 600.ms)
-                                  .slideY(begin: 0.2, end: 0),
-                            ],
+                                    // Game Status
+                                    _buildGameStatus()
+                                        .animate(target: _showContent ? 1 : 0)
+                                        .fadeIn(duration: 600.ms)
+                                        .slideY(begin: 0.2, end: 0),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -150,10 +161,10 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
             color: Colors.black87,
             onPressed: () async {
-               final shouldPop = await _showExitConfirmationDialog();
-                if (shouldPop) {
-                  _navigationService.back();
-                }
+              final shouldPop = await _showExitConfirmationDialog();
+              if (shouldPop) {
+                _navigationService.back();
+              }
             },
           ),
           Text(
@@ -198,7 +209,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -212,14 +223,16 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 isCurrentPlayer:
                     gameState.currentPlayer == Player.x && !isThinking,
                 isWinner: gameState.winner == Player.x,
-                wins: isMultiplayer ? stats.player1Wins : stats.playerWins,
+                wins: isMultiplayer
+                    ? stats.player1Wins
+                    : stats.getWinsForDifficulty(settings.settings.difficulty),
                 label: isMultiplayer ? 'Player X' : 'You',
               ),
             ),
             Container(
               height: 40,
               width: 1,
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               margin: const EdgeInsets.symmetric(horizontal: 16),
             ),
             Expanded(
@@ -228,7 +241,10 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 isCurrentPlayer: gameState.currentPlayer == Player.o &&
                     (isMultiplayer || isThinking),
                 isWinner: gameState.winner == Player.o,
-                wins: isMultiplayer ? stats.player2Wins : stats.aiWins,
+                wins: isMultiplayer
+                    ? stats.player2Wins
+                    : stats
+                        .getLossesForDifficulty(settings.settings.difficulty),
                 label: isMultiplayer ? 'Player O' : 'AI',
               ),
             ),
@@ -255,8 +271,8 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
-               BoxShadow(
-                color: TicTacToeTheme.primaryColor.withOpacity(0.1),
+              BoxShadow(
+                color: TicTacToeTheme.primaryColor.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -382,15 +398,19 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
-          color: (currentPlayer == Player.x ? TicTacToeTheme.xColor : TicTacToeTheme.oColor)
-              .withOpacity(0.1),
+          color: (currentPlayer == Player.x
+                  ? TicTacToeTheme.xColor
+                  : TicTacToeTheme.oColor)
+              .withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(30),
         ),
         child: Text(
           turnMessage,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: currentPlayer == Player.x ? TicTacToeTheme.xColor : TicTacToeTheme.oColor,
+            color: currentPlayer == Player.x
+                ? TicTacToeTheme.xColor
+                : TicTacToeTheme.oColor,
             fontSize: 16,
           ),
         ),
@@ -419,7 +439,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: TicTacToeTheme.primaryColor,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text('Yes'),
@@ -451,7 +471,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: TicTacToeTheme.primaryColor,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: const Text('Yes'),

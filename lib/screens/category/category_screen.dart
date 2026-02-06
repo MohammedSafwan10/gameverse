@@ -57,11 +57,12 @@ class CategoryScreen extends StatelessWidget {
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              size: 20, color: Colors.white),
           onPressed: () => Get.back(),
         ),
       ),
@@ -86,7 +87,7 @@ class CategoryScreen extends StatelessWidget {
                 width: 200,
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -98,7 +99,7 @@ class CategoryScreen extends StatelessWidget {
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -142,7 +143,8 @@ class CategoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGameCard(BuildContext context, GameInfo game, Color themeColor, int index) {
+  Widget _buildGameCard(
+      BuildContext context, GameInfo game, Color themeColor, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -150,7 +152,7 @@ class CategoryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -162,8 +164,8 @@ class CategoryScreen extends StatelessWidget {
         child: InkWell(
           onTap: game.isAvailable ? () => Get.to(game.screen) : null,
           borderRadius: BorderRadius.circular(24),
-          splashColor: themeColor.withOpacity(0.1),
-          highlightColor: themeColor.withOpacity(0.05),
+          splashColor: themeColor.withValues(alpha: 0.1),
+          highlightColor: themeColor.withValues(alpha: 0.05),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -173,7 +175,7 @@ class CategoryScreen extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.1),
+                    color: themeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Icon(
@@ -191,9 +193,10 @@ class CategoryScreen extends StatelessWidget {
                     children: [
                       Text(
                         game.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -217,7 +220,7 @@ class CategoryScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: themeColor.withOpacity(0.4),
+                          color: themeColor.withValues(alpha: 0.4),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -231,7 +234,8 @@ class CategoryScreen extends StatelessWidget {
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(10),

@@ -38,6 +38,18 @@ class TicTacToeStatsController extends GetxController {
 
   int get multiplayerDraws => stats.multiplayerStats.draws;
 
+  int getWinsForDifficulty(GameDifficulty difficulty) {
+    return stats.difficultyStats[difficulty]?.gamesWon ?? 0;
+  }
+
+  int getLossesForDifficulty(GameDifficulty difficulty) {
+    return stats.difficultyStats[difficulty]?.gamesLost ?? 0;
+  }
+
+  int getDrawsForDifficulty(GameDifficulty difficulty) {
+    return stats.difficultyStats[difficulty]?.gamesDrawn ?? 0;
+  }
+
   Future<void> _loadStats() async {
     try {
       final loadedStats = await _storage.loadStats();

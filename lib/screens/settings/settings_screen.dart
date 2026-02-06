@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -7,125 +8,220 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Get.theme.colorScheme.surface,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Settings',
-          style: Get.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         centerTitle: true,
-        backgroundColor: Get.theme.colorScheme.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Colors.black87),
           onPressed: () => Get.back(),
-          color: Get.theme.colorScheme.primary,
         ),
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection(
-              'About',
-              [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Get.theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.black.withValues(
-                        red: 0,
-                        green: 0,
-                        blue: 0,
-                        alpha: 0.1 * 255,
-                      ),
+            const SizedBox(height: 20),
+
+            // App Info Section
+            _buildSectionHeader('System'),
+            _buildSettingsGroup([
+              _buildSettingTile(
+                'Version',
+                '1.0.0',
+                Icons.info_outline,
+                Colors.blue,
+              ),
+              _buildDivider(),
+              _buildSettingTile(
+                'Storage',
+                '12.4 MB used',
+                Icons.storage_rounded,
+                Colors.orange,
+              ),
+            ]),
+
+            const SizedBox(height: 32),
+
+            // Community & Social
+            _buildSectionHeader('Support'),
+            _buildSettingsGroup([
+              _buildSettingTile(
+                'Contact Us',
+                'itzmesafwan1@gmail.com',
+                Icons.email_outlined,
+                Colors.teal,
+                onTap: () {},
+              ),
+              _buildDivider(),
+              _buildSettingTile(
+                'Developer',
+                'NEXDARK TEAM',
+                Icons.code_rounded,
+                Colors.indigo,
+                onTap: () {},
+              ),
+              _buildDivider(),
+              _buildSettingTile(
+                'Rate Game',
+                'Enjoying GameVerse?',
+                Icons.star_outline_rounded,
+                Colors.amber,
+                onTap: () {},
+              ),
+            ]),
+
+            const SizedBox(height: 32),
+
+            // Legal
+            _buildSectionHeader('Legal'),
+            _buildSettingsGroup([
+              _buildSettingTile(
+                'Privacy Policy',
+                'How we handle your data',
+                Icons.security_rounded,
+                Colors.green,
+                onTap: () {},
+              ),
+              _buildDivider(),
+              _buildSettingTile(
+                'Terms of Service',
+                'Usage rules and info',
+                Icons.description_outlined,
+                Colors.grey,
+                onTap: () {},
+              ),
+            ]),
+
+            const SizedBox(height: 48),
+
+            // App Footer
+            Center(
+              child: Column(
+                children: [
+                  const Text(
+                    'GameVerse',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                      color: Colors.black54,
                     ),
                   ),
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  child: Column(
-                    children: [
-                      _buildSettingTile(
-                        'Version',
-                        '1.0.0',
-                        leading: const Icon(Icons.info_outline),
-                      ),
-                      const Divider(height: 1),
-                      _buildSettingTile(
-                        'Developer',
-                        'NEXDARK TEAM',
-                        leading: const Icon(Icons.code),
-                      ),
-                      const Divider(height: 1),
-                      _buildSettingTile(
-                        'Contact Us',
-                        'itzmesafwan1@gmail.com',
-                        leading: const Icon(Icons.email_outlined),
-                        onTap: () {
-                          // Launch email client
-                        },
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Built with ❤️ by NEXDARK',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[400],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 24, 8, 12),
-          child: Text(
-            title.toUpperCase(),
-            style: Get.textTheme.titleMedium?.copyWith(
-              color: Get.theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[400],
+          letterSpacing: 2,
         ),
-        ...children,
-      ],
+      ).animate().fadeIn().slideX(begin: -0.2),
     );
   }
 
-  Widget _buildSettingTile(
-    String title,
-    String subtitle, {
-    Widget? leading,
-    Widget? trailing,
-    VoidCallback? onTap,
-  }) {
-    return ListTile(
-      leading: leading,
-      title: Text(
-        title,
-        style: Get.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+  Widget _buildSettingsGroup(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      subtitle: Text(
-        subtitle,
-        style: Get.textTheme.bodyMedium?.copyWith(
-          color: Get.theme.colorScheme.onSurface.withValues(
-            red: Get.theme.colorScheme.onSurface.r.toDouble(),
-            green: Get.theme.colorScheme.onSurface.g.toDouble(),
-            blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-            alpha: 0.7 * 255,
+      child: Column(children: children),
+    ).animate().fadeIn().slideY(begin: 0.2);
+  }
+
+  Widget _buildSettingTile(
+      String title, String subtitle, IconData icon, Color color,
+      {VoidCallback? onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (onTap != null)
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: Colors.grey),
+            ],
           ),
         ),
       ),
-      trailing: trailing,
-      onTap: onTap,
     );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+        height: 1, indent: 68, endIndent: 20, color: Colors.grey[50]);
   }
 }

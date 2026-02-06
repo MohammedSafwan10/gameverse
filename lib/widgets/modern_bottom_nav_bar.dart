@@ -17,20 +17,26 @@ class ModernBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
-      margin: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+      margin: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        bottom: bottomPadding > 0 ? bottomPadding + 8 : 24,
+      ),
       height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(35),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
           BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.05),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -59,7 +65,7 @@ class ModernBottomNavBar extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
         ),
@@ -70,7 +76,7 @@ class ModernBottomNavBar extends StatelessWidget {
               item.icon,
               color: isSelected
                   ? Theme.of(context).primaryColor
-                  : Colors.grey.withOpacity(0.6),
+                  : Colors.grey.withValues(alpha: 0.6),
               size: 26,
             ),
             if (isSelected) ...[
@@ -78,9 +84,9 @@ class ModernBottomNavBar extends StatelessWidget {
               Text(
                 item.label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ],
           ],
