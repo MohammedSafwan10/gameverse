@@ -2,7 +2,9 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
 enum HangmanGameMode { singlePlayer, twoPlayers, dailyChallenge }
+
 enum HangmanGameStatus { playing, won, lost }
+
 enum WordCategory {
   animals,
   countries,
@@ -134,4 +136,4 @@ class HangmanGameState extends Equatable {
         category,
         startTime,
       ];
-} 
+}

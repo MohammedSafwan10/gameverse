@@ -16,35 +16,36 @@ class MemoryMatchModeSelectionScreen extends StatefulWidget {
 
 class _MemoryMatchModeSelectionScreenState
     extends State<MemoryMatchModeSelectionScreen> {
+  static const _bgDark = Color(0xFF0F0F1A);
+  static const _surfaceDark = Color(0xFF1A1A2E);
+  static const _surfaceLight = Color(0xFF22223A);
+
   @override
   void initState() {
     super.initState();
-    // Initialize dependencies once when the screen is created
     MemoryMatchBinding.initDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _bgDark,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          gradient: RadialGradient(
+            center: Alignment.topLeft,
+            radius: 1.5,
             colors: [
-              Colors.purple.shade100,
-              Colors.purple.shade400,
+              const Color(0xFFA29BFE).withValues(alpha: 0.15),
+              _bgDark,
             ],
-            stops: const [0.0, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
               _buildHeader(),
-              Expanded(
-                child: _buildModeGrid(),
-              ),
+              Expanded(child: _buildModeList()),
               _buildHelpButton(),
             ],
           ),
@@ -55,57 +56,45 @@ class _MemoryMatchModeSelectionScreenState
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _surfaceDark,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                    red: 0.0,
-                    green: 0.0,
-                    blue: 0.0,
-                    alpha: 0.1,
-                  ),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(
+                color: const Color(0xFFA29BFE).withValues(alpha: 0.2),
+              ),
             ),
             child: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Get.back(),
-              color: Colors.purple,
+              color: const Color(0xFFA29BFE),
               iconSize: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Memory Match',
-                  style: Get.textTheme.titleLarge?.copyWith(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    fontSize: 22,
                   ),
                 ).animate().fadeIn().slideX(),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   'Select your game mode',
-                  style: Get.textTheme.titleMedium?.copyWith(
-                    color: Colors.white.withValues(
-                      red: 1.0,
-                      green: 1.0,
-                      blue: 1.0,
-                      alpha: 0.8,
-                    ),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 14,
                   ),
-                ).animate().fadeIn().slideX(delay: 200.ms),
+                ).animate().fadeIn(delay: 200.ms).slideX(),
               ],
             ),
           ),
@@ -114,14 +103,14 @@ class _MemoryMatchModeSelectionScreenState
     );
   }
 
-  Widget _buildModeGrid() {
+  Widget _buildModeList() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: MemoryMatchMode.values.length,
       itemBuilder: (context, index) {
         final mode = MemoryMatchMode.values[index];
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: 14),
           child: _buildModeCard(mode),
         );
       },
@@ -130,18 +119,13 @@ class _MemoryMatchModeSelectionScreenState
 
   Widget _buildModeCard(MemoryMatchMode mode) {
     return Container(
-      height: 100,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: _surfaceDark,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: mode.color.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: mode.color.withValues(
-              red: mode.color.r.toDouble(),
-              green: mode.color.g.toDouble(),
-              blue: mode.color.b.toDouble(),
-              alpha: 0.3,
-            ),
+            color: mode.color.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -151,7 +135,7 @@ class _MemoryMatchModeSelectionScreenState
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showDifficultyDialog(mode),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -160,38 +144,30 @@ class _MemoryMatchModeSelectionScreenState
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: mode.color.withValues(
-                      red: mode.color.r.toDouble(),
-                      green: mode.color.g.toDouble(),
-                      blue: mode.color.b.toDouble(),
-                      alpha: 0.1,
-                    ),
+                    color: mode.color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    mode.icon,
-                    size: 24,
-                    color: mode.color,
-                  ),
+                  child: Icon(mode.icon, size: 24, color: mode.color),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         mode.displayName,
-                        style: Get.textTheme.titleMedium?.copyWith(
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          fontSize: 16,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         mode.description,
-                        style: Get.textTheme.bodySmall?.copyWith(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -199,7 +175,7 @@ class _MemoryMatchModeSelectionScreenState
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: mode.color,
+                  color: mode.color.withValues(alpha: 0.5),
                   size: 16,
                 ),
               ],
@@ -207,215 +183,162 @@ class _MemoryMatchModeSelectionScreenState
           ),
         ),
       ),
-    ).animate().fadeIn(delay: (200 * mode.index).ms).slideX();
+    ).animate().fadeIn(delay: (150 * mode.index).ms).slideX();
   }
 
   void _showDifficultyDialog(MemoryMatchMode mode) {
     Get.dialog(
       Dialog(
+        backgroundColor: _surfaceDark,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: mode.color.withValues(
-                  red: mode.color.r.toDouble(),
-                  green: mode.color.g.toDouble(),
-                  blue: mode.color.b.toDouble(),
-                  alpha: 0.2,
-                ),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: mode.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(mode.icon, color: mode.color, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Select Difficulty',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          mode.displayName,
+                          style: TextStyle(
+                            color: mode.color,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: mode.color.withValues(
-                          red: mode.color.r.toDouble(),
-                          green: mode.color.g.toDouble(),
-                          blue: mode.color.b.toDouble(),
-                          alpha: 0.1,
+              const SizedBox(height: 24),
+              ...GameDifficulty.values.map((difficulty) {
+                final (gridLabel, desc, icon) = switch (difficulty) {
+                  GameDifficulty.easy => (
+                      '4×3',
+                      '6 pairs · Perfect for beginners',
+                      Icons.sentiment_satisfied,
+                    ),
+                  GameDifficulty.medium => (
+                      '4×4',
+                      '8 pairs · For experienced players',
+                      Icons.sentiment_neutral,
+                    ),
+                  GameDifficulty.hard => (
+                      '5×4',
+                      '10 pairs · Ultimate challenge',
+                      Icons.sentiment_very_satisfied,
+                    ),
+                };
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Get.back();
+                        Get.to(
+                          () => MemoryMatchGameScreen(
+                            mode: mode,
+                            difficulty: difficulty,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: _surfaceLight,
+                          border: Border.all(
+                            color: mode.color.withValues(alpha: 0.15),
+                          ),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        mode.icon,
-                        color: mode.color,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Select Difficulty',
-                            style: Get.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Text(
-                            mode.displayName,
-                            style: Get.textTheme.bodyMedium?.copyWith(
-                              color: mode.color,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn().slideY(begin: 0.3),
-                const SizedBox(height: 24),
-                ...GameDifficulty.values.map((difficulty) {
-                  String gridSize;
-                  String description;
-                  IconData icon;
-
-                  switch (difficulty) {
-                    case GameDifficulty.easy:
-                      gridSize = '4x4';
-                      description = 'Perfect for beginners';
-                      icon = Icons.sentiment_satisfied;
-                    case GameDifficulty.medium:
-                      gridSize = '6x6';
-                      description = 'For experienced players';
-                      icon = Icons.sentiment_neutral;
-                    case GameDifficulty.hard:
-                      gridSize = '8x8';
-                      description = 'Ultimate challenge';
-                      icon = Icons.sentiment_very_satisfied;
-                  }
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          Get.back();
-                          Get.to(
-                            () => MemoryMatchGameScreen(
-                              mode: mode,
-                              difficulty: difficulty,
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: mode.color.withValues(
-                                red: mode.color.r.toDouble(),
-                                green: mode.color.g.toDouble(),
-                                blue: mode.color.b.toDouble(),
-                                alpha: 0.2,
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: mode.color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              width: 2,
+                              child: Icon(icon, color: mode.color, size: 22),
                             ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: mode.color.withValues(
-                                        red: mode.color.r.toDouble(),
-                                        green: mode.color.g.toDouble(),
-                                        blue: mode.color.b.toDouble(),
-                                        alpha: 0.1,
-                                      ),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    difficulty.name.toUpperCase(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Colors.white,
                                     ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  icon,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    desc,
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.45),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: mode.color.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                gridLabel,
+                                style: TextStyle(
                                   color: mode.color,
-                                  size: 24,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      difficulty.name.toUpperCase(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      description,
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: mode.color.withValues(
-                                    red: mode.color.r.toDouble(),
-                                    green: mode.color.g.toDouble(),
-                                    blue: mode.color.b.toDouble(),
-                                    alpha: 0.1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  gridSize,
-                                  style: TextStyle(
-                                    color: mode.color,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  )
-                      .animate()
-                      .fadeIn(delay: (200 * difficulty.index).ms)
-                      .slideX();
-                }),
-              ],
-            ),
+                  ),
+                ).animate().fadeIn(delay: (150 * difficulty.index).ms).slideX();
+              }),
+            ],
           ),
         ),
       ),
@@ -427,52 +350,37 @@ class _MemoryMatchModeSelectionScreenState
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: TextButton.icon(
-        onPressed: () => _showHelpDialog(),
-        icon: const Icon(Icons.help_outline, color: Colors.white),
-        label: const Text(
+        onPressed: _showHelpDialog,
+        icon: Icon(Icons.help_outline,
+            color: Colors.white.withValues(alpha: 0.7)),
+        label: Text(
           'How to Play',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w600,
+          ),
         ),
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          backgroundColor: Colors.purple.withValues(
-            red: Colors.purple.r.toDouble(),
-            green: Colors.purple.g.toDouble(),
-            blue: Colors.purple.b.toDouble(),
-            alpha: 0.4,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          backgroundColor: _surfaceDark,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
           ),
         ),
       ),
-    ).animate().fadeIn(delay: 600.ms);
+    ).animate().fadeIn(delay: 500.ms);
   }
 
   void _showHelpDialog() {
     Get.dialog(
       Dialog(
+        backgroundColor: _surfaceDark,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.purple.withValues(
-                  red: Colors.purple.r.toDouble(),
-                  green: Colors.purple.g.toDouble(),
-                  blue: Colors.purple.b.toDouble(),
-                  alpha: 0.2,
-                ),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,70 +390,48 @@ class _MemoryMatchModeSelectionScreenState
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.purple.withValues(
-                        red: Colors.purple.r.toDouble(),
-                        green: Colors.purple.g.toDouble(),
-                        blue: Colors.purple.b.toDouble(),
-                        alpha: 0.1,
-                      ),
+                      color: const Color(0xFFA29BFE).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.help_outline,
-                      color: Colors.purple,
+                      color: Color(0xFFA29BFE),
                       size: 24,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'How to Play',
-                      style: Get.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                  const SizedBox(width: 14),
+                  const Text(
+                    'How to Play',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Colors.white,
                     ),
                   ),
                 ],
-              ).animate().fadeIn().slideY(begin: 0.3),
-              const SizedBox(height: 24),
-              _buildHelpItem(
-                icon: Icons.touch_app,
-                title: 'Flip Cards',
-                description:
-                    'Tap on cards to flip them and find matching pairs.',
               ),
-              _buildHelpItem(
-                icon: Icons.compare,
-                title: 'Find Matches',
-                description:
-                    'Remember card positions to match pairs more efficiently.',
-              ),
-              _buildHelpItem(
-                icon: Icons.speed,
-                title: 'Game Modes',
-                description:
-                    'Classic - Play at your own pace\nTime Trial - Race against the clock\nChallenge - Progressive difficulty levels',
-              ),
-              _buildHelpItem(
-                icon: Icons.grid_3x3,
-                title: 'Difficulty Levels',
-                description:
-                    'Easy - 4x4 grid\nMedium - 6x6 grid\nHard - 8x8 grid',
-              ),
+              const SizedBox(height: 20),
+              _helpItem(Icons.touch_app, 'Flip Cards',
+                  'Tap on cards to flip them and reveal emojis.'),
+              _helpItem(Icons.compare, 'Find Matches',
+                  'Remember positions and match identical pairs.'),
+              _helpItem(Icons.local_fire_department, 'Build Combos',
+                  'Match consecutively for score multipliers!'),
+              _helpItem(Icons.speed, 'Game Modes',
+                  'Classic · Time Trial · Challenge'),
+              _helpItem(Icons.grid_3x3, 'Grid Sizes',
+                  'Easy 4×3 · Medium 4×4 · Hard 5×4'),
               const SizedBox(height: 16),
               Center(
                 child: ElevatedButton(
                   onPressed: () => Get.back(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
+                    backgroundColor: const Color(0xFFA29BFE),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
-                    ),
+                        horizontal: 32, vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: const Text('Got it!'),
@@ -559,32 +445,19 @@ class _MemoryMatchModeSelectionScreenState
     );
   }
 
-  Widget _buildHelpItem({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
+  Widget _helpItem(IconData icon, String title, String desc) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: Colors.purple.withValues(
-                red: Colors.purple.r.toDouble(),
-                green: Colors.purple.g.toDouble(),
-                blue: Colors.purple.b.toDouble(),
-                alpha: 0.1,
-              ),
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFFA29BFE).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: Colors.purple,
-              size: 20,
-            ),
+            child: Icon(icon, color: const Color(0xFFA29BFE), size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -595,16 +468,16 @@ class _MemoryMatchModeSelectionScreenState
                   title,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
+                    fontSize: 15,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  description,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    fontSize: 14,
+                  desc,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -612,6 +485,6 @@ class _MemoryMatchModeSelectionScreenState
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms).slideX();
+    );
   }
 }

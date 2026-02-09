@@ -14,8 +14,6 @@ import '../games/quick_casual/flappy_bird/screens/mode_selection_screen.dart'
     as flappy_bird;
 import '../games/puzzle/block_merge/screens/mode_selection_screen.dart'
     as block_merge;
-import '../games/reaction/whack_a_mole/screens/mode_selection_screen.dart'
-    as whack_a_mole;
 import '../games/educational/quiz_master/screens/mode_selection_screen.dart'
     as quiz_master;
 
@@ -218,16 +216,7 @@ class HomeController extends GetxController {
       icon: Icons.bolt,
       color: Colors.amber,
       gamesCount: 5,
-      games: [
-        GameInfo(
-          name: 'Whack-A-Mole',
-          description:
-              'Test your reflexes! Whack moles as they pop up, but watch out for traps!',
-          icon: Icons.gavel,
-          isAvailable: true,
-          screen: () => const whack_a_mole.WhackAMoleModeSelectionScreen(),
-        ),
-      ],
+      games: [],
     ),
     GameCategory(
       title: 'Educational',

@@ -61,16 +61,10 @@ class _WordInputScreenState extends State<WordInputScreen> {
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).primaryColor.withValues(
-                    red: Theme.of(context).primaryColor.r.toDouble(),
-                    green: Theme.of(context).primaryColor.g.toDouble(),
-                    blue: Theme.of(context).primaryColor.b.toDouble(),
-                    alpha: 0.8 * 255,
+                    alpha: 0.8,
                   ),
               Theme.of(context).primaryColor.withValues(
-                    red: Theme.of(context).primaryColor.r.toDouble(),
-                    green: Theme.of(context).primaryColor.g.toDouble(),
-                    blue: Theme.of(context).primaryColor.b.toDouble(),
-                    alpha: 0.2 * 255,
+                    alpha: 0.2,
                   ),
             ],
           ),

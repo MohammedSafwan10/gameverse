@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 import '../models/card_model.dart';
 import '../models/game_mode.dart';
 import '../models/game_state.dart';
@@ -16,15 +15,10 @@ class MemoryMatchGameController extends GetxController {
   Timer? _gameTimer;
   Timer? _flipBackTimer;
   late final SoundService _soundService;
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 8,
-      lineLength: 120,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+
+  // Challenge mode tracking
+  int _challengeLevel = 1;
+  int get challengeLevel => _challengeLevel;
 
   @override
   void onInit() {
@@ -34,16 +28,15 @@ class MemoryMatchGameController extends GetxController {
 
   @override
   void onClose() {
-    _logger.i('Closing game controller');
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
     super.onClose();
   }
 
   void initGame(MemoryMatchMode mode, GameDifficulty difficulty) {
-    // Cancel any existing timers
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    if (mode == MemoryMatchMode.challenge) _challengeLevel = 1;
 
     final cards = _generateCards(difficulty);
     _state.value = MemoryMatchState(
@@ -52,343 +45,340 @@ class MemoryMatchGameController extends GetxController {
       difficulty: difficulty,
       startTime: DateTime.now(),
       status: GameStatus.playing,
-      moves: 0,
-      score: 0,
-      timeElapsed: 0,
     );
     _startGameTimer();
   }
 
+  // ---- Card Generation ----
+
   List<MemoryCard> _generateCards(GameDifficulty difficulty) {
-    final gridSize = difficulty == GameDifficulty.easy
-        ? 4
-        : difficulty == GameDifficulty.medium
-            ? 6
-            : 8;
-    final pairCount = (gridSize * gridSize) ~/ 2;
+    final cols = switch (difficulty) {
+      GameDifficulty.easy => 4,
+      GameDifficulty.medium => 4,
+      GameDifficulty.hard => 5,
+    };
+    final rows = switch (difficulty) {
+      GameDifficulty.easy => 3,
+      GameDifficulty.medium => 4,
+      GameDifficulty.hard => 4,
+    };
+    final pairCount = (cols * rows) ~/ 2;
 
-    // Create a shuffled list of emojis and take only what we need
-    final shuffledEmojis = List<String>.from(CardThemes.emojis)..shuffle();
-    final selectedEmojis = shuffledEmojis.sublist(0, pairCount);
+    // Pick a random theme or mix themes
+    final random = Random();
+    final themeIndex = random.nextInt(CardThemes.allThemes.length);
+    final themeEmojis = List<String>.from(CardThemes.allThemes[themeIndex])
+      ..shuffle(random);
 
-    // Create pairs of cards
+    // If theme doesn't have enough, pull from other themes
+    final pool = List<String>.from(themeEmojis);
+    if (pool.length < pairCount) {
+      for (final theme in CardThemes.allThemes) {
+        if (theme == CardThemes.allThemes[themeIndex]) continue;
+        for (final emoji in theme) {
+          if (!pool.contains(emoji)) pool.add(emoji);
+          if (pool.length >= pairCount) break;
+        }
+        if (pool.length >= pairCount) break;
+      }
+    }
+
+    final selectedEmojis = pool.sublist(0, pairCount);
     final cards = <MemoryCard>[];
-    for (var i = 0; i < pairCount; i++) {
-      final emoji = selectedEmojis[i];
-      final color = CardThemes.getRandomBackgroundColor();
 
-      // Add two cards with the same emoji (a pair)
+    for (var i = 0; i < pairCount; i++) {
+      final color = CardThemes.getColorForIndex(i);
       for (var j = 0; j < 2; j++) {
         cards.add(MemoryCard(
           id: i * 2 + j,
-          emoji: emoji,
+          emoji: selectedEmojis[i],
           backgroundColor: color,
         ));
       }
     }
 
-    // Shuffle the cards
-    cards.shuffle(Random());
+    cards.shuffle(random);
     return cards;
   }
+
+  // ---- Timer ----
 
   void _startGameTimer() {
     _gameTimer?.cancel();
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final currentState = state;
-      if (currentState != null && currentState.status == GameStatus.playing) {
-        _state.value = currentState.copyWith(
-          timeElapsed: currentState.timeElapsed + 1,
+      final s = state;
+      if (s == null || s.status != GameStatus.playing) return;
+
+      final newTime = s.timeElapsed + 1;
+
+      // Time-trial: check time limit
+      if (s.mode == MemoryMatchMode.timeTrial && newTime >= s.timeLimit) {
+        _state.value = s.copyWith(
+          timeElapsed: newTime,
+          status: GameStatus.timeUp,
         );
+        _gameTimer?.cancel();
+        _soundService.playMatchFail();
+        _onGameOver();
+        return;
       }
+
+      _state.value = s.copyWith(timeElapsed: newTime);
     });
   }
 
-  void showMatchAnimation(int index) {
-    final currentState = state;
-    if (currentState == null) return;
-
-    final card = currentState.cards[index];
-    if (!card.isMatched) return;
-
-    // Update the card to trigger animation
-    final cards = List<MemoryCard>.from(currentState.cards);
-    cards[index] = cards[index].copyWith(
-      isMatched: true,
-      isFlipped: true,
-    );
-
-    _state.value = currentState.copyWith(cards: cards);
-
-    // Play match sound for the animation
-    _soundService.playMatchSuccess();
-
-    // Add a small vibration effect if available
-    try {
-      // HapticFeedback.mediumImpact(); // Uncomment if haptics are added
-    } catch (e) {
-      _logger.d('Haptic feedback not available');
-    }
-  }
+  // ---- Card Flipping ----
 
   void flipCard(int index) {
-    final currentState = state;
-    if (currentState == null) {
-      _logger.w('Cannot flip card: game state is null');
-      return;
-    }
+    final s = state;
+    if (s == null) return;
 
-    final card = currentState.cards[index];
-    _logger.d(
-        'Attempting to flip card $index: ${card.emoji} (isFlipped: ${card.isFlipped}, isMatched: ${card.isMatched})');
+    final card = s.cards[index];
+    if (s.isChecking || card.isFlipped || card.isMatched) return;
+    if (s.status != GameStatus.playing) return;
+    if (s.firstCard?.id == card.id) return;
 
-    // Check if card can be flipped
-    if (currentState.isChecking) {
-      _logger.d('Cannot flip: game is checking matches');
-      return;
-    }
-    if (card.isFlipped) {
-      _logger.d('Cannot flip: card is already flipped');
-      return;
-    }
-    if (card.isMatched) {
-      _logger.d('Cannot flip: card is already matched');
-      return;
-    }
-    if (currentState.status != GameStatus.playing) {
-      _logger.d('Cannot flip: game status is ${currentState.status}');
-      return;
-    }
-
-    // Prevent double-tap issues
-    if (currentState.firstCard?.id == card.id) {
-      _logger.d('Cannot flip: card was just flipped');
-      return;
-    }
-
-    // Cancel any pending flip back timer
     _flipBackTimer?.cancel();
-
     _soundService.playCardFlip();
-    final cards = List<MemoryCard>.from(currentState.cards);
+
+    final cards = List<MemoryCard>.from(s.cards);
     cards[index] = cards[index].copyWith(isFlipped: true);
 
-    if (currentState.firstCard == null) {
-      // First card flipped
-      _logger.d('First card flipped: ${card.emoji}');
-      _state.value = currentState.copyWith(
-        cards: cards,
-        firstCard: cards[index],
-        isChecking: false,
-      );
+    if (s.firstCard == null) {
+      _state.value = s.copyWith(cards: cards, firstCard: cards[index]);
     } else {
-      // Second card flipped
-      _logger.d('Second card flipped: ${card.emoji}');
-      _state.value = currentState.copyWith(
+      _state.value = s.copyWith(
         cards: cards,
         secondCard: cards[index],
-        moves: currentState.moves + 1,
+        moves: s.moves + 1,
         isChecking: true,
       );
-
       _checkMatch();
     }
   }
 
   void _checkMatch() {
     _flipBackTimer?.cancel();
-    _flipBackTimer = Timer(const Duration(milliseconds: 800), () {
-      final currentState = state;
-      if (currentState == null || !currentState.isChecking) {
-        _logger.w('Cannot check match: invalid state');
+    _flipBackTimer = Timer(const Duration(milliseconds: 700), () {
+      final s = state;
+      if (s == null || !s.isChecking) return;
+
+      final first = s.firstCard;
+      final second = s.secondCard;
+      if (first == null || second == null) {
+        _state.value = s.copyWith(isChecking: false);
         return;
       }
 
-      final cards = List<MemoryCard>.from(currentState.cards);
-      final firstCard = currentState.firstCard;
-      final secondCard = currentState.secondCard;
+      final cards = List<MemoryCard>.from(s.cards);
+      final firstIdx = cards.indexWhere((c) => c.id == first.id);
+      final secondIdx = cards.indexWhere((c) => c.id == second.id);
+      if (firstIdx == -1 || secondIdx == -1) return;
 
-      if (firstCard == null || secondCard == null) {
-        _logger.w('Cannot check match: cards are null');
-        _state.value = currentState.copyWith(
-          isChecking: false,
+      if (first.emoji == second.emoji) {
+        // ---- MATCH ----
+        _soundService.playMatchSuccess();
+        cards[firstIdx] =
+            cards[firstIdx].copyWith(isMatched: true, isFlipped: true);
+        cards[secondIdx] =
+            cards[secondIdx].copyWith(isMatched: true, isFlipped: true);
+
+        final newCombo = s.combo + 1;
+        final newBest = max(newCombo, s.bestCombo);
+        final newMatch = s.matchCount + 1;
+        final scoreGain = _calculateScore(s, newCombo);
+
+        final isComplete = cards.every((c) => c.isMatched);
+
+        _state.value = s.copyWith(
+          cards: cards,
           firstCard: null,
           secondCard: null,
+          isChecking: false,
+          score: s.score + scoreGain,
+          combo: newCombo,
+          bestCombo: newBest,
+          matchCount: newMatch,
+          status: isComplete ? GameStatus.completed : GameStatus.playing,
         );
-        return;
-      }
 
-      _logger.d(
-          'Checking match between ${firstCard.emoji} and ${secondCard.emoji}');
+        if (isComplete) {
+          Future.delayed(const Duration(milliseconds: 800), _onGameComplete);
+        }
+      } else {
+        // ---- NO MATCH ----
+        _soundService.playMatchFail();
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (state == null) return;
+          final updatedCards = List<MemoryCard>.from(state!.cards);
+          final fi = updatedCards.indexWhere((c) => c.id == first.id);
+          final si = updatedCards.indexWhere((c) => c.id == second.id);
+          if (fi != -1) {
+            updatedCards[fi] = updatedCards[fi].copyWith(isFlipped: false);
+          }
+          if (si != -1) {
+            updatedCards[si] = updatedCards[si].copyWith(isFlipped: false);
+          }
 
-      if (firstCard.emoji == secondCard.emoji) {
-        // Match found
-        _logger.i('Match found! 🎉');
-        _soundService.playMatchSuccess();
-
-        final firstIndex = cards.indexWhere((card) => card.id == firstCard.id);
-        final secondIndex =
-            cards.indexWhere((card) => card.id == secondCard.id);
-
-        if (firstIndex != -1 && secondIndex != -1) {
-          // First mark as matched and keep flipped
-          cards[firstIndex] = cards[firstIndex].copyWith(
-            isMatched: true,
-            isFlipped: true,
-          );
-          cards[secondIndex] = cards[secondIndex].copyWith(
-            isMatched: true,
-            isFlipped: true,
-          );
-
-          final newScore = currentState.score + _calculateScore();
-          final isCompleted = cards.every((card) => card.isMatched);
-
-          // Update state immediately to show matched cards
-          _state.value = currentState.copyWith(
-            cards: cards,
+          _state.value = state!.copyWith(
+            cards: updatedCards,
             firstCard: null,
             secondCard: null,
             isChecking: false,
-            score: newScore,
-            status: isCompleted ? GameStatus.completed : GameStatus.playing,
+            combo: 0,
           );
-
-          // Trigger match animations with a slight delay between them for better visual effect
-          showMatchAnimation(firstIndex);
-          Future.delayed(const Duration(milliseconds: 200), () {
-            showMatchAnimation(secondIndex);
-          });
-
-          if (isCompleted) {
-            // Add a longer delay before showing completion screen to let animations finish
-            Future.delayed(const Duration(milliseconds: 800), () {
-              _onGameComplete();
-            });
-          }
-        }
-      } else {
-        // No match
-        _logger.d('No match found');
-        _soundService.playMatchFail();
-
-        final firstIndex = cards.indexWhere((card) => card.id == firstCard.id);
-        final secondIndex =
-            cards.indexWhere((card) => card.id == secondCard.id);
-
-        if (firstIndex != -1 && secondIndex != -1) {
-          // Add small delay before flipping back for better UX
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (state == null) return; // Safety check
-
-            final updatedCards = List<MemoryCard>.from(cards);
-            updatedCards[firstIndex] =
-                updatedCards[firstIndex].copyWith(isFlipped: false);
-            updatedCards[secondIndex] =
-                updatedCards[secondIndex].copyWith(isFlipped: false);
-
-            _state.value = currentState.copyWith(
-              cards: updatedCards,
-              firstCard: null,
-              secondCard: null,
-              isChecking: false,
-            );
-          });
-        }
+        });
       }
     });
   }
+
+  // ---- Scoring ----
+
+  int _calculateScore(MemoryMatchState s, int combo) {
+    int base = 100;
+
+    // Combo multiplier: 1x, 1.5x, 2x, 2.5x, 3x...
+    final comboMultiplier = 1.0 + (combo - 1) * 0.5;
+    base = (base * comboMultiplier).round();
+
+    // Time bonus (time trial): faster = more points
+    if (s.mode == MemoryMatchMode.timeTrial) {
+      base += max(0, (s.timeLimit - s.timeElapsed) * 2);
+    }
+
+    // Fewer moves bonus
+    final expectedMoves = s.totalPairs;
+    if (s.moves <= expectedMoves * 2) {
+      base += 50;
+    }
+
+    // Difficulty multiplier
+    final diffMult = switch (s.difficulty) {
+      GameDifficulty.easy => 1.0,
+      GameDifficulty.medium => 1.5,
+      GameDifficulty.hard => 2.0,
+    };
+
+    // Challenge level bonus
+    final challengeBonus =
+        s.mode == MemoryMatchMode.challenge ? _challengeLevel * 25 : 0;
+
+    return (base * diffMult).round() + challengeBonus;
+  }
+
+  // ---- Game Lifecycle ----
 
   void _onGameComplete() {
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
     _soundService.playGameComplete();
 
-    final currentState = state;
-    if (currentState == null) return;
+    final s = state;
+    if (s == null) return;
 
-    Timer(const Duration(milliseconds: 500), () {
+    // Challenge mode: auto-advance difficulty
+    if (s.mode == MemoryMatchMode.challenge) {
+      _challengeLevel++;
+    }
+
+    Timer(const Duration(milliseconds: 400), () {
       Get.to(
         () => GameCompletionScreen(
-          mode: currentState.mode,
-          difficulty: currentState.difficulty,
-          score: currentState.score,
-          moves: currentState.moves,
-          timeElapsed: currentState.timeElapsed,
+          mode: s.mode,
+          difficulty: s.difficulty,
+          score: s.score,
+          moves: s.moves,
+          timeElapsed: s.timeElapsed,
+          combo: s.bestCombo,
+          starRating: s.starRating,
+          challengeLevel: _challengeLevel,
         ),
         transition: Transition.fadeIn,
       );
     });
   }
 
-  int _calculateScore() {
-    final currentState = state;
-    if (currentState == null) return 0;
+  void _onGameOver() {
+    _gameTimer?.cancel();
+    _flipBackTimer?.cancel();
 
-    // Base score for finding a match
-    int baseScore = 100;
+    final s = state;
+    if (s == null) return;
 
-    // Bonus for quick matches (in time trial mode)
-    if (currentState.mode == MemoryMatchMode.timeTrial) {
-      baseScore += max(0, 50 - currentState.timeElapsed ~/ 2);
-    }
-
-    // Bonus for fewer moves
-    baseScore += max(0, 100 - (currentState.moves * 5));
-
-    // Difficulty multiplier
-    final multiplier = switch (currentState.difficulty) {
-      GameDifficulty.easy => 1.0,
-      GameDifficulty.medium => 1.5,
-      GameDifficulty.hard => 2.0,
-    };
-
-    return (baseScore * multiplier).round();
+    Timer(const Duration(milliseconds: 600), () {
+      Get.to(
+        () => GameCompletionScreen(
+          mode: s.mode,
+          difficulty: s.difficulty,
+          score: s.score,
+          moves: s.moves,
+          timeElapsed: s.timeElapsed,
+          combo: s.bestCombo,
+          starRating: 0,
+          challengeLevel: _challengeLevel,
+          isTimeUp: true,
+        ),
+        transition: Transition.fadeIn,
+      );
+    });
   }
 
+  // ---- Controls ----
+
   void pauseGame() {
-    _logger.i('Pausing game');
     _gameTimer?.cancel();
-    final currentState = state;
-    if (currentState != null) {
-      _state.value = currentState.copyWith(status: GameStatus.paused);
-    }
-    update();
+    final s = state;
+    if (s != null) _state.value = s.copyWith(status: GameStatus.paused);
   }
 
   void resumeGame() {
-    _logger.i('Resuming game');
-    final currentState = state;
-    if (currentState?.status == GameStatus.paused) {
-      _state.value = currentState!.copyWith(status: GameStatus.playing);
+    final s = state;
+    if (s?.status == GameStatus.paused) {
+      _state.value = s!.copyWith(status: GameStatus.playing);
       _startGameTimer();
-      update();
     }
   }
 
+  void restartGame() {
+    final s = state;
+    if (s == null) return;
+
+    _gameTimer?.cancel();
+    _flipBackTimer?.cancel();
+
+    final cards = _generateCards(s.difficulty);
+    _state.value = MemoryMatchState(
+      cards: cards,
+      mode: s.mode,
+      difficulty: s.difficulty,
+      startTime: DateTime.now(),
+      status: GameStatus.playing,
+    );
+    _startGameTimer();
+  }
+
+  /// For challenge mode: play the next level with harder difficulty
+  void nextChallengeLevel() {
+    final s = state;
+    if (s == null) return;
+
+    // Cycle difficulty: easy -> medium -> hard -> hard
+    final nextDiff = switch (s.difficulty) {
+      GameDifficulty.easy => GameDifficulty.medium,
+      GameDifficulty.medium => GameDifficulty.hard,
+      GameDifficulty.hard => GameDifficulty.hard,
+    };
+
+    initGame(MemoryMatchMode.challenge, nextDiff);
+  }
+
   void cleanupGame() {
-    _logger.i('Cleaning up game resources');
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
     state = null;
-    update();
   }
 
-  void restartGame() {
-    final currentState = state;
-    if (currentState == null) return;
-
-    final cards = _generateCards(currentState.difficulty);
-    _state.value = currentState.copyWith(
-      cards: cards,
-      status: GameStatus.playing,
-      moves: 0,
-      score: 0,
-      timeElapsed: 0,
-      startTime: DateTime.now(),
-      firstCard: null,
-      secondCard: null,
-      isChecking: false,
-    );
+  void showMatchAnimation(int index) {
+    // Kept for backward compatibility - animation is handled by widget
   }
 }

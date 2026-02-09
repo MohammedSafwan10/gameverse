@@ -23,16 +23,8 @@ class ProfileScreen extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   primaryColor,
-                  primaryColor.withValues(
-                      alpha: 0.8 * 255,
-                      red: primaryColor.r,
-                      green: primaryColor.g,
-                      blue: primaryColor.b),
-                  primaryColor.withValues(
-                      alpha: 0.6 * 255,
-                      red: primaryColor.r,
-                      green: primaryColor.g,
-                      blue: primaryColor.b),
+                  primaryColor.withValues(alpha: 0.8),
+                  primaryColor.withValues(alpha: 0.6),
                 ],
               ),
               borderRadius: const BorderRadius.only(
@@ -231,20 +223,26 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
             ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

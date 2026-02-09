@@ -4,29 +4,89 @@ import '../models/game_state.dart';
 class WordService {
   static final Map<WordCategory, List<String>> _wordDatabase = {
     WordCategory.animals: [
-      'ELEPHANT', 'GIRAFFE', 'PENGUIN', 'DOLPHIN', 'KANGAROO',
-      'OCTOPUS', 'CHEETAH', 'ZEBRA', 'LION', 'TIGER',
-      'PANDA', 'KOALA', 'MONKEY', 'GORILLA', 'RHINOCEROS',
+      'ELEPHANT',
+      'GIRAFFE',
+      'PENGUIN',
+      'DOLPHIN',
+      'KANGAROO',
+      'OCTOPUS',
+      'CHEETAH',
+      'ZEBRA',
+      'LION',
+      'TIGER',
+      'PANDA',
+      'KOALA',
+      'MONKEY',
+      'GORILLA',
+      'RHINOCEROS',
     ],
     WordCategory.countries: [
-      'BRAZIL', 'JAPAN', 'FRANCE', 'AUSTRALIA', 'CANADA',
-      'ITALY', 'SPAIN', 'EGYPT', 'INDIA', 'MEXICO',
-      'RUSSIA', 'CHINA', 'GERMANY', 'THAILAND', 'GREECE',
+      'BRAZIL',
+      'JAPAN',
+      'FRANCE',
+      'AUSTRALIA',
+      'CANADA',
+      'ITALY',
+      'SPAIN',
+      'EGYPT',
+      'INDIA',
+      'MEXICO',
+      'RUSSIA',
+      'CHINA',
+      'GERMANY',
+      'THAILAND',
+      'GREECE',
     ],
     WordCategory.sports: [
-      'FOOTBALL', 'BASKETBALL', 'TENNIS', 'VOLLEYBALL', 'CRICKET',
-      'BASEBALL', 'HOCKEY', 'RUGBY', 'SWIMMING', 'BOXING',
-      'GOLF', 'SKIING', 'SURFING', 'CYCLING', 'WRESTLING',
+      'FOOTBALL',
+      'BASKETBALL',
+      'TENNIS',
+      'VOLLEYBALL',
+      'CRICKET',
+      'BASEBALL',
+      'HOCKEY',
+      'RUGBY',
+      'SWIMMING',
+      'BOXING',
+      'GOLF',
+      'SKIING',
+      'SURFING',
+      'CYCLING',
+      'WRESTLING',
     ],
     WordCategory.food: [
-      'PIZZA', 'SUSHI', 'BURGER', 'PASTA', 'TACOS',
-      'PANCAKES', 'CHOCOLATE', 'SANDWICH', 'NOODLES', 'CURRY',
-      'SALAD', 'STEAK', 'ICECREAM', 'COOKIES', 'SMOOTHIE',
+      'PIZZA',
+      'SUSHI',
+      'BURGER',
+      'PASTA',
+      'TACOS',
+      'PANCAKES',
+      'CHOCOLATE',
+      'SANDWICH',
+      'NOODLES',
+      'CURRY',
+      'SALAD',
+      'STEAK',
+      'ICECREAM',
+      'COOKIES',
+      'SMOOTHIE',
     ],
     WordCategory.movies: [
-      'AVATAR', 'TITANIC', 'STARWARS', 'MATRIX', 'INCEPTION',
-      'JAWS', 'FROZEN', 'GLADIATOR', 'BATMAN', 'SPIDERMAN',
-      'JURASSIC', 'AVENGERS', 'GODFATHER', 'TERMINATOR', 'ALIEN',
+      'AVATAR',
+      'TITANIC',
+      'STARWARS',
+      'MATRIX',
+      'INCEPTION',
+      'JAWS',
+      'FROZEN',
+      'GLADIATOR',
+      'BATMAN',
+      'SPIDERMAN',
+      'JURASSIC',
+      'AVENGERS',
+      'GODFATHER',
+      'TERMINATOR',
+      'ALIEN',
     ],
   };
 
@@ -34,18 +94,20 @@ class WordService {
     if (category == WordCategory.custom) {
       throw ArgumentError('Custom category requires a specific word');
     }
-    
+
     final words = _wordDatabase[category]!;
     return words[Random().nextInt(words.length)];
   }
 
   static String getDailyWord() {
     // Get a random category
-    final categories = WordCategory.values.where((c) => c != WordCategory.custom).toList();
+    final categories =
+        WordCategory.values.where((c) => c != WordCategory.custom).toList();
     final category = categories[Random().nextInt(categories.length)];
-    
+
     // Use the day of year as seed for consistent daily word
-    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
+    final dayOfYear =
+        DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
     final words = _wordDatabase[category]!;
     return words[dayOfYear % words.length];
   }
@@ -58,7 +120,8 @@ class WordService {
   static int calculateScore(HangmanGameState state) {
     if (state.status != HangmanGameStatus.won) return 0;
 
-    final timeBonus = max(0, 300 - DateTime.now().difference(state.startTime).inSeconds);
+    final timeBonus =
+        max(0, 300 - DateTime.now().difference(state.startTime).inSeconds);
     final livesBonus = state.remainingLives * 50;
     final wordLengthBonus = state.word.length * 10;
     final hintsDeduction = (3 - state.hintsRemaining) * 30;
@@ -71,8 +134,8 @@ class WordService {
         .split('')
         .where((letter) => !state.guessedLetters.contains(letter.toLowerCase()))
         .toList();
-    
+
     if (unguessedLetters.isEmpty) return '';
     return unguessedLetters[Random().nextInt(unguessedLetters.length)];
   }
-} 
+}

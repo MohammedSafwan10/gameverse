@@ -94,6 +94,7 @@ class _TicTacToeStatsScreenState extends State<TicTacToeStatsScreen>
           _buildDifficultyStats(),
           const SizedBox(height: 24),
           _buildAchievements(),
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -291,6 +292,7 @@ class _TicTacToeStatsScreenState extends State<TicTacToeStatsScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
       );
@@ -417,11 +419,11 @@ class _TicTacToeStatsScreenState extends State<TicTacToeStatsScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                        LinearProgressIndicator(
-                          value: stats.winRate,
-                          backgroundColor:
-                              _getDifficultyColor(difficulty).withValues(alpha: 0.15),
-                          color: _getDifficultyColor(difficulty),
+                      LinearProgressIndicator(
+                        value: stats.winRate,
+                        backgroundColor: _getDifficultyColor(difficulty)
+                            .withValues(alpha: 0.15),
+                        color: _getDifficultyColor(difficulty),
                         minHeight: 8,
                       ),
                       const SizedBox(height: 4),
@@ -581,19 +583,25 @@ class _TicTacToeStatsScreenState extends State<TicTacToeStatsScreen>
       children: [
         Icon(icon, size: 32, color: color),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
         ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade700,
-              ),
-          textAlign: TextAlign.center,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade700,
+                ),
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );

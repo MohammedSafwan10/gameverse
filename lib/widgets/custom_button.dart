@@ -41,10 +41,7 @@ class CustomButton extends StatelessWidget {
             side: isOutlined
                 ? BorderSide(
                     color: theme.colorScheme.primary.withValues(
-                      red: theme.colorScheme.primary.r.toDouble(),
-                      green: theme.colorScheme.primary.g.toDouble(),
-                      blue: theme.colorScheme.primary.b.toDouble(),
-                      alpha: 0.5 * 255,
+                      alpha: 0.5,
                     ),
                   )
                 : BorderSide.none,

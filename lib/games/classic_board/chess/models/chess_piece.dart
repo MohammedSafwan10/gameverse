@@ -2,7 +2,7 @@ abstract class ChessPiece {
   final PieceColor color;
   String position;
   bool hasMoved = false;
-  
+
   ChessPiece({
     required this.color,
     required this.position,
@@ -26,19 +26,20 @@ abstract class ChessPiece {
     }
     final file = notation[0].toLowerCase();
     final rank = notation[1];
-    
-    if (file.codeUnitAt(0) < 'a'.codeUnitAt(0) || file.codeUnitAt(0) > 'h'.codeUnitAt(0)) {
+
+    if (file.codeUnitAt(0) < 'a'.codeUnitAt(0) ||
+        file.codeUnitAt(0) > 'h'.codeUnitAt(0)) {
       throw RangeError('Invalid file: $file');
     }
-    
+
     final rankNum = int.tryParse(rank);
     if (rankNum == null || rankNum < 1 || rankNum > 8) {
       throw RangeError('Invalid rank: $rank');
     }
-    
+
     final col = file.codeUnitAt(0) - 'a'.codeUnitAt(0);
     final row = 8 - rankNum;
-    
+
     return (row, col);
   }
 
@@ -57,7 +58,8 @@ abstract class ChessPiece {
     return moves;
   }
 
-  bool isValidMove(int fromRow, int fromCol, int toRow, int toCol, List<List<ChessPiece?>> board) {
+  bool isValidMove(int fromRow, int fromCol, int toRow, int toCol,
+      List<List<ChessPiece?>> board) {
     // Basic validation
     if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
     if (fromRow == toRow && fromCol == toCol) return false;
@@ -67,19 +69,24 @@ abstract class ChessPiece {
     if (targetPiece != null && targetPiece.color == color) return false;
 
     // Check if move pattern is valid for piece type
-    if (!isValidMovePattern(fromRow, fromCol, toRow, toCol, board)) return false;
+    if (!isValidMovePattern(fromRow, fromCol, toRow, toCol, board)) {
+      return false;
+    }
 
     // Check if path is clear (except for knights)
-    if (type != PieceType.knight && !isPathClear(fromRow, fromCol, toRow, toCol, board)) {
+    if (type != PieceType.knight &&
+        !isPathClear(fromRow, fromCol, toRow, toCol, board)) {
       return false;
     }
 
     return true;
   }
 
-  bool isValidMovePattern(int fromRow, int fromCol, int toRow, int toCol, List<List<ChessPiece?>> board);
+  bool isValidMovePattern(int fromRow, int fromCol, int toRow, int toCol,
+      List<List<ChessPiece?>> board);
 
-  bool isPathClear(int fromRow, int fromCol, int toRow, int toCol, List<List<ChessPiece?>> board) {
+  bool isPathClear(int fromRow, int fromCol, int toRow, int toCol,
+      List<List<ChessPiece?>> board) {
     final rowDir = toRow.compareTo(fromRow);
     final colDir = toCol.compareTo(fromCol);
     var currentRow = fromRow + rowDir;
@@ -96,11 +103,13 @@ abstract class ChessPiece {
     return true;
   }
 
-  bool isValidCapture(int fromRow, int fromCol, int toRow, int toCol, List<List<ChessPiece?>> board) {
+  bool isValidCapture(int fromRow, int fromCol, int toRow, int toCol,
+      List<List<ChessPiece?>> board) {
     final targetPiece = board[toRow][toCol];
     return targetPiece != null && targetPiece.color != color;
   }
 }
 
 enum PieceColor { white, black }
-enum PieceType { pawn, rook, knight, bishop, queen, king } 
+
+enum PieceType { pawn, rook, knight, bishop, queen, king }

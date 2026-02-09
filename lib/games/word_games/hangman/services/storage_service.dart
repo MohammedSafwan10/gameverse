@@ -54,8 +54,8 @@ class HangmanStorageService {
 
   // Statistics
   Map<String, int> getStats() {
-    return (_storage.read(_statsKey) as Map<dynamic, dynamic>?)?.map(
-            (key, value) => MapEntry(key.toString(), value as int)) ??
+    return (_storage.read(_statsKey) as Map<dynamic, dynamic>?)
+            ?.map((key, value) => MapEntry(key.toString(), value as int)) ??
         {
           'gamesPlayed': 0,
           'gamesWon': 0,
@@ -77,15 +77,14 @@ class HangmanStorageService {
         stats['bestStreak'] ?? 0,
         stats['currentStreak'] ?? 0,
       );
-      stats['totalScore'] =
-          (stats['totalScore'] ?? 0) + WordService.calculateScore(state).toInt();
+      stats['totalScore'] = (stats['totalScore'] ?? 0) +
+          WordService.calculateScore(state).toInt();
     } else {
       stats['currentStreak'] = 0;
     }
 
-    stats['hintsUsed'] =
-        (stats['hintsUsed'] ?? 0) + (3 - state.hintsRemaining);
+    stats['hintsUsed'] = (stats['hintsUsed'] ?? 0) + (3 - state.hintsRemaining);
 
     await _storage.write(_statsKey, stats);
   }
-} 
+}

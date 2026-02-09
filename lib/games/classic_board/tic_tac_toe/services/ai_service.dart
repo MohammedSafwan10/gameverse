@@ -150,6 +150,7 @@ class AIService extends GetxService {
     // 5% chance for a non-optimal move
     return emptyPositions[_random.nextInt(emptyPositions.length)];
   }
+
   // Impossible: Perfect play using minimax
   int _makeImpossibleMove(TicTacToeState state, List<int> emptyPositions) {
     // First move optimization: always take center or corner for first move

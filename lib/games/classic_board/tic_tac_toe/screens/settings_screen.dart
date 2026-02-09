@@ -57,6 +57,7 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
               _buildStatsSection(context),
               const SizedBox(height: 24),
               _buildResetSection(context),
+              const SizedBox(height: 40),
             ],
           ),
         ),

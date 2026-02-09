@@ -43,4 +43,4 @@ class HangmanSoundService {
   Future<void> dispose() async {
     await _audioPlayer.dispose();
   }
-} 
+}

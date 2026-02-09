@@ -10,8 +10,9 @@ class Rook extends ChessPiece {
   PieceType get type => PieceType.rook;
 
   @override
-  bool isValidMovePattern(int fromRow, int fromCol, int toRow, int toCol, List<List<ChessPiece?>> board) {
+  bool isValidMovePattern(int fromRow, int fromCol, int toRow, int toCol,
+      List<List<ChessPiece?>> board) {
     // Rook can only move horizontally or vertically
     return fromRow == toRow || fromCol == toCol;
   }
-} 
+}

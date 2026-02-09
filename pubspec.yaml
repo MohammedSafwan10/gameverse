@@ -15,7 +15,7 @@ dependencies:
   get: ^4.6.6  # For state management and navigation
   equatable: ^2.0.5
   get_storage: ^2.1.1
-  google_fonts: ^6.1.0  # For custom fonts
+  google_fonts: ^6.2.1  # For custom fonts
   shared_preferences: ^2.2.2  # For local storage
   flutter_animate: ^4.5.2  # For smooth animations
   cached_network_image: ^3.3.0  # For image caching

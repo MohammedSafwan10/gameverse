@@ -21,98 +21,43 @@ class ChessPieceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     Widget pieceWidget = GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: size,
         height: size,
-        decoration: isSelected
-            ? BoxDecoration(
-                color: theme.colorScheme.primary.withValues(
-                  red: theme.colorScheme.primary.r.toDouble(),
-                  green: theme.colorScheme.primary.g.toDouble(),
-                  blue: theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.3,
-                ),
-                shape: BoxShape.circle,
-              )
-            : null,
         child: Stack(
           children: [
-            // Shadow effect for depth
-            if (!isSelected)
-              Center(
-                child: Container(
-                  width: size * 0.9,
-                  height: size * 0.9,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          red: 0.0,
-                          green: 0.0,
-                          blue: 0.0,
-                          alpha: 0.2,
-                        ),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-            // Piece SVG with improved contrast
+            // piece SVG with standard contrast
             Center(
               child: SvgPicture.asset(
                 piece.imagePath,
                 width: size * 0.9,
                 height: size * 0.9,
                 fit: BoxFit.contain,
-                placeholderBuilder: (context) => Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: theme.colorScheme.primary.withValues(
-                      red: theme.colorScheme.primary.r.toDouble(),
-                      green: theme.colorScheme.primary.g.toDouble(),
-                      blue: theme.colorScheme.primary.b.toDouble(),
-                      alpha: 0.5,
-                    ),
-                  ),
-                ),
                 colorFilter: ColorFilter.mode(
                   piece.color == PieceColor.white ? Colors.white : Colors.black,
-                  BlendMode.srcATop,
+                  BlendMode.srcIn,
                 ),
               ),
             ),
 
-            // Highlight effect for white pieces
+            // Subtle reflection for 3D feel
             if (piece.color == PieceColor.white)
               Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.white.withValues(
-                          red: 1.0,
-                          green: 1.0,
-                          blue: 1.0,
-                          alpha: 0.2,
-                        ),
-                        Colors.white.withValues(
-                          red: 1.0,
-                          green: 1.0,
-                          blue: 1.0,
-                          alpha: 0.0,
-                        ),
-                      ],
-                      center: Alignment.topLeft,
-                      radius: 0.8,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.4),
+                          Colors.white.withValues(alpha: 0),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -124,18 +69,21 @@ class ChessPieceWidget extends StatelessWidget {
 
     if (isAnimated) {
       pieceWidget = pieceWidget
-          .animate(target: isSelected ? 1 : 0)
+          .animate(key: ValueKey(piece.position))
+          .fadeIn(duration: 400.ms)
           .scale(
-            begin: const Offset(1, 1),
-            end: const Offset(1.1, 1.1),
-            curve: Curves.easeOutBack,
-            duration: const Duration(milliseconds: 200),
-          )
-          .elevation(
-            end: 8,
-            curve: Curves.easeOutBack,
-            duration: const Duration(milliseconds: 200),
-          );
+              begin: const Offset(0.5, 0.5),
+              duration: 400.ms,
+              curve: Curves.easeOutBack);
+
+      if (isSelected) {
+        pieceWidget = pieceWidget
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.15, 1.15),
+                duration: 600.ms);
+      }
     }
 
     return pieceWidget;

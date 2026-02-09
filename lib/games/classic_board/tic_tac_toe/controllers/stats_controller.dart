@@ -50,9 +50,9 @@ class TicTacToeStatsController extends GetxController {
 
   Future<void> _loadStats() async {
     try {
-    final loadedStats = await _storage.loadStats();
-        _stats.value = loadedStats;
-      } catch (e) {
+      final loadedStats = await _storage.loadStats();
+      _stats.value = loadedStats;
+    } catch (e) {
       _stats.value = const GameStats(
         difficultyStats: {},
         unlockedAchievements: {},
@@ -193,7 +193,7 @@ class TicTacToeStatsController extends GetxController {
         multiplayerStats: MultiplayerStats(),
       );
       await _storage.saveStats(_stats.value);
-      } catch (_) {}
+    } catch (_) {}
   }
 
   Future<void> resetSinglePlayerStats() async {

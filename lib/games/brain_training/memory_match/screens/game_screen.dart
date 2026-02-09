@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../models/game_mode.dart';
 import '../models/game_state.dart';
@@ -25,46 +25,29 @@ class MemoryMatchGameScreen extends StatefulWidget {
 class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   late final MemoryMatchGameController controller;
   late final SoundService soundService;
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 8,
-      lineLength: 120,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+
+  static const _bgDark = Color(0xFF0F0F1A);
+  static const _surfaceDark = Color(0xFF1A1A2E);
+  static const _surfaceLight = Color(0xFF22223A);
 
   @override
   void initState() {
     super.initState();
-    _logger.i('Initializing MemoryMatchGameScreen');
-    try {
-      controller = Get.find<MemoryMatchGameController>();
-      soundService = Get.find<SoundService>();
-
-      // Initialize game after frame is built
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _logger.i(
-            'Initializing game with mode: ${widget.mode}, difficulty: ${widget.difficulty}');
-        controller.initGame(widget.mode, widget.difficulty);
-      });
-    } catch (e, stackTrace) {
-      _logger.e(
-          'Error during initialization\nError: $e\nStack trace: $stackTrace');
-      rethrow; // Rethrow to let the error handler deal with it
-    }
+    controller = Get.find<MemoryMatchGameController>();
+    soundService = Get.find<SoundService>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.initGame(widget.mode, widget.difficulty);
+    });
   }
 
   @override
   void dispose() {
-    _logger.i('Disposing MemoryMatchGameScreen');
-    // Ensure we cleanup the game state before disposing
-    if (Get.isRegistered<MemoryMatchGameController>()) {
-      controller.cleanupGame();
-    }
+    // Only cleanup if we're actually leaving the game (not just pushing completion)
+    // cleanupGame is called explicitly by exit buttons
     super.dispose();
   }
+
+  Color get _accent => widget.mode.color;
 
   @override
   Widget build(BuildContext context) {
@@ -72,30 +55,24 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, dynamic result) async {
         if (!didPop) {
-          _logger.d('Back button pressed, showing exit confirmation');
           controller.pauseGame();
           final shouldPop = await _showExitConfirmation();
           if (shouldPop) {
-            _logger.i('User confirmed exit');
+            controller.cleanupGame();
             Get.back();
           } else {
-            _logger.d('User cancelled exit');
             controller.resumeGame();
           }
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: _bgDark,
         body: SafeArea(
           child: Column(
             children: [
               _buildHeader(),
-              Expanded(
-                child: Container(
-                  color: Colors.grey[50],
-                  child: _buildGameBoard(),
-                ),
-              ),
+              _buildStatsBar(),
+              Expanded(child: _buildGameBoard()),
             ],
           ),
         ),
@@ -106,53 +83,66 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   Future<bool> _showExitConfirmation() async {
     return await Get.dialog<bool>(
           Dialog(
+            backgroundColor: _surfaceDark,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  Icon(Icons.pause_circle_outline, size: 48, color: _accent),
+                  const SizedBox(height: 16),
+                  const Text(
                     'Exit Game?',
-                    style: Get.textTheme.titleLarge?.copyWith(
+                    style: TextStyle(
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Text(
-                    'Are you sure you want to exit?\nYour progress will be lost.',
+                    'Your progress will be lost.',
                     textAlign: TextAlign.center,
-                    style: Get.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black54,
-                    ),
+                    style:
+                        TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                   ),
                   const SizedBox(height: 24),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      TextButton(
-                        onPressed: () => Get.back(result: false),
-                        child: Text(
-                          'Continue',
-                          style: TextStyle(color: widget.mode.color),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(result: false),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _accent,
+                            side: BorderSide(
+                                color: _accent.withValues(alpha: 0.5)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: const Text('Continue'),
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Cleanup before exiting
-                          controller.cleanupGame();
-                          Get.back(result: true);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: widget.mode.color,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Get.back(result: true);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _accent,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
+                          child: const Text('Exit'),
                         ),
-                        child: const Text('Exit'),
                       ),
                     ],
                   ),
@@ -164,179 +154,181 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
         false;
   }
 
+  // ---------- HEADER ----------
+
   Widget _buildHeader() {
     return Obx(() {
-      final gameState = controller.state;
-      if (gameState == null) {
-        return const SizedBox.shrink();
-      }
-
-      // Check screen size to adjust layout
-      final screenWidth = MediaQuery.of(context).size.width;
-      final isSmallScreen = screenWidth < 360;
+      final s = controller.state;
+      if (s == null) return const SizedBox.shrink();
 
       return Padding(
-        padding: EdgeInsets.fromLTRB(
-            isSmallScreen ? 8 : 16,
-            isSmallScreen ? 4 : 8,
-            isSmallScreen ? 8 : 16,
-            isSmallScreen ? 4 : 8),
-        child: Column(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.mode.color.withValues(
-                          red: widget.mode.color.r.toDouble(),
-                          green: widget.mode.color.g.toDouble(),
-                          blue: widget.mode.color.b.toDouble(),
-                          alpha: 0.2,
-                        ),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Get.back(),
-                    color: widget.mode.color,
-                    iconSize: isSmallScreen ? 18 : 20,
-                    padding: isSmallScreen
-                        ? const EdgeInsets.all(8)
-                        : const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        widget.mode.displayName,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: Get.textTheme.titleMedium?.copyWith(
-                          color: widget.mode.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: isSmallScreen ? 14 : 16,
-                        ),
-                      ),
-                      Text(
-                        '${gameState.remainingPairs} pairs left',
-                        style: Get.textTheme.bodySmall?.copyWith(
-                          color: Colors.black54,
-                          fontSize: isSmallScreen ? 10 : 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.mode.color.withValues(
-                          red: widget.mode.color.r.toDouble(),
-                          green: widget.mode.color.g.toDouble(),
-                          blue: widget.mode.color.b.toDouble(),
-                          alpha: 0.2,
-                        ),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      soundService.isMuted ? Icons.volume_off : Icons.volume_up,
-                      size: 20,
+            // Back button
+            _backButton(),
+            const SizedBox(width: 12),
+
+            // Title
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.mode.displayName,
+                    style: TextStyle(
+                      color: _accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
-                    onPressed: soundService.toggleMute,
-                    color: widget.mode.color,
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: widget.mode.color.withValues(
-                      red: widget.mode.color.r.toDouble(),
-                      green: widget.mode.color.g.toDouble(),
-                      blue: widget.mode.color.b.toDouble(),
-                      alpha: 0.1,
+                  Text(
+                    '${s.remainingPairs} pairs left',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12,
                     ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.timer,
-                        color: widget.mode.color,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${gameState.timeElapsed}s',
-                        style: TextStyle(
-                          color: widget.mode.color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.mode.color.withValues(
-                      red: widget.mode.color.r.toDouble(),
-                      green: widget.mode.color.g.toDouble(),
-                      blue: widget.mode.color.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
                   ),
                 ],
+              ),
+            ),
+
+            // Combo badge
+            if (s.combo > 1)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orangeAccent, Colors.deepOrange],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_fire_department,
+                        size: 16, color: Colors.white),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${s.combo}x',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().scale(duration: 200.ms, curve: Curves.elasticOut),
+
+            // Mute button
+            _iconButton(
+              soundService.isMuted ? Icons.volume_off : Icons.volume_up,
+              soundService.toggleMute,
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _backButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: _surfaceDark,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _accent.withValues(alpha: 0.15)),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.arrow_back, size: 20),
+        onPressed: () {
+          controller.cleanupGame();
+          Get.back();
+        },
+        color: _accent,
+        padding: const EdgeInsets.all(8),
+        constraints: const BoxConstraints(),
+      ),
+    );
+  }
+
+  Widget _iconButton(IconData icon, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _surfaceDark,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _accent.withValues(alpha: 0.15)),
+      ),
+      child: IconButton(
+        icon: Icon(icon, size: 20),
+        onPressed: onTap,
+        color: _accent,
+        padding: const EdgeInsets.all(8),
+        constraints: const BoxConstraints(),
+      ),
+    );
+  }
+
+  // ---------- STATS BAR ----------
+
+  Widget _buildStatsBar() {
+    return Obx(() {
+      final s = controller.state;
+      if (s == null) return const SizedBox.shrink();
+
+      final isTimeTrial = s.mode == MemoryMatchMode.timeTrial;
+      final timeText =
+          isTimeTrial ? '${s.timeRemaining}s' : '${s.timeElapsed}s';
+      final timeColor =
+          isTimeTrial && s.timeRemaining <= 10 ? Colors.redAccent : _accent;
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+        child: Column(
+          children: [
+            // Time-trial progress bar
+            if (isTimeTrial)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: s.timeRemaining / s.timeLimit,
+                    backgroundColor: _surfaceLight,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      s.timeRemaining <= 10 ? Colors.redAccent : _accent,
+                    ),
+                    minHeight: 4,
+                  ),
+                ),
+              ),
+
+            // Stats row
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              decoration: BoxDecoration(
+                color: _surfaceDark,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _accent.withValues(alpha: 0.1)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStat(
-                    icon: Icons.star,
-                    value: gameState.score.toString(),
-                    label: 'Score',
+                  _statChip(Icons.star_rounded, s.score.toString(), 'Score'),
+                  _statChip(
+                      Icons.touch_app_rounded, s.moves.toString(), 'Moves'),
+                  _statChip(
+                    isTimeTrial ? Icons.hourglass_bottom : Icons.timer_outlined,
+                    timeText,
+                    isTimeTrial ? 'Left' : 'Time',
+                    valueColor: timeColor,
                   ),
-                  _buildStat(
-                    icon: Icons.swap_horiz,
-                    value: gameState.moves.toString(),
-                    label: 'Moves',
-                  ),
-                  _buildStat(
-                    icon: Icons.grid_view,
-                    value: '${gameState.gridSize}x${gameState.gridSize}',
-                    label: 'Grid',
+                  _statChip(
+                    Icons.grid_view_rounded,
+                    '${s.columns}×${s.rows}',
+                    'Grid',
                   ),
                 ],
               ),
@@ -347,43 +339,26 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     });
   }
 
-  Widget _buildStat({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
+  Widget _statChip(IconData icon, String value, String label,
+      {Color? valueColor}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: widget.mode.color.withValues(
-              red: widget.mode.color.r.toDouble(),
-              green: widget.mode.color.g.toDouble(),
-              blue: widget.mode.color.b.toDouble(),
-              alpha: 0.1,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: widget.mode.color,
-            size: 20,
-          ),
-        ),
-        const SizedBox(height: 4),
+        Icon(icon,
+            color: valueColor ?? _accent.withValues(alpha: 0.7), size: 18),
+        const SizedBox(height: 2),
         Text(
           value,
-          style: Get.textTheme.titleMedium?.copyWith(
+          style: TextStyle(
+            color: valueColor ?? Colors.white,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            fontSize: 14,
           ),
         ),
         Text(
           label,
-          style: Get.textTheme.bodySmall?.copyWith(
-            color: Colors.black54,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.4),
             fontSize: 10,
           ),
         ),
@@ -391,138 +366,71 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
     );
   }
 
+  // ---------- GAME BOARD ----------
+
   Widget _buildGameBoard() {
     return Obx(() {
-      final gameState = controller.state;
-      if (gameState == null) {
-        _logger.d('Game state is null, showing loading indicator');
-        return const Center(
-          child: CircularProgressIndicator(),
+      final s = controller.state;
+      if (s == null) {
+        return Center(
+          child: CircularProgressIndicator(color: _accent),
         );
       }
 
-      _logger.d('Building game board with grid size: ${gameState.gridSize}');
-      final gridSize = gameState.gridSize;
+      final cols = s.columns;
+      final rows = s.rows;
 
-      // Calculate spacing based on grid size and screen size
-      final screenWidth = MediaQuery.of(context).size.width;
-      final screenHeight = MediaQuery.of(context).size.height;
-      final isSmallScreen = screenWidth < 360 || screenHeight < 600;
-      final gridSpacing = isSmallScreen
-          ? (gridSize <= 4 ? 4.0 : 2.0)
-          : (gridSize <= 4 ? 8.0 : 4.0);
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final spacing = 6.0;
+          final availW = constraints.maxWidth - 24; // horizontal padding
+          final availH = constraints.maxHeight - 16;
 
-      return Container(
-        margin: EdgeInsets.all(isSmallScreen ? 8 : 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                red: 0.0,
-                green: 0.0,
-                blue: 0.0,
-                alpha: 0.05,
-              ),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Calculate available space considering device size
-              final availableWidth =
-                  constraints.maxWidth - (gridSize + 1) * gridSpacing;
-              final availableHeight =
-                  constraints.maxHeight - (gridSize + 1) * gridSpacing;
+          // Calculate card size to fit grid
+          final cardW = (availW - (cols - 1) * spacing) / cols;
+          final cardH = (availH - (rows - 1) * spacing) / rows;
+          final cardSize = min(cardW, cardH);
 
-              // Calculate maximum possible card size based on available space
-              final maxCardSize = min(
-                availableWidth / gridSize,
-                availableHeight / gridSize,
-              );
+          final gridW = cardSize * cols + (cols - 1) * spacing;
+          final gridH = cardSize * rows + (rows - 1) * spacing;
 
-              // Adjust card size based on grid size and screen size
-              double cardSize;
-              if (isSmallScreen) {
-                // Smaller cards on small screens
-                cardSize = maxCardSize * 0.95;
-              } else if (gridSize <= 4) {
-                cardSize = maxCardSize;
-              } else if (gridSize == 6) {
-                cardSize = maxCardSize * 0.95;
-              } else {
-                // For 8x8 grid
-                cardSize = maxCardSize * 0.9;
-              }
-
-              // Ensure we never create overflow by limiting size
-              cardSize = min(cardSize, (screenWidth - 40) / gridSize);
-
-              // Calculate total grid size based on card size
-              final totalWidth =
-                  cardSize * gridSize + (gridSize + 1) * gridSpacing;
-              final totalHeight =
-                  cardSize * gridSize + (gridSize + 1) * gridSpacing;
-
-              _logger.t('Card size calculated: $cardSize');
-
-              return Center(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Container(
-                      width: totalWidth,
-                      height: totalHeight,
-                      padding: EdgeInsets.all(gridSpacing),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: gridSize,
-                          crossAxisSpacing: gridSpacing,
-                          mainAxisSpacing: gridSpacing,
-                        ),
-                        itemCount: gameState.cards.length,
-                        itemBuilder: (context, index) {
-                          final card = gameState.cards[index];
-                          return Hero(
-                            tag: 'card_${card.id}',
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  _logger.t('Card tapped: $index');
-                                  controller.flipCard(index);
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: FlipCard(
-                                  card: card,
-                                  mode: widget.mode,
-                                  onFlipComplete: (bool isFrontSide) {
-                                    if (isFrontSide && card.isMatched) {
-                                      controller.showMatchAnimation(index);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+          return Center(
+            child: SizedBox(
+              width: gridW,
+              height: gridH,
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: cols,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
                 ),
-              );
-            },
-          ),
-        ),
+                itemCount: s.cards.length,
+                itemBuilder: (context, index) {
+                  final card = s.cards[index];
+                  return GestureDetector(
+                    onTap: () => controller.flipCard(index),
+                    child: FlipCard(
+                      card: card,
+                      mode: widget.mode,
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(
+                        delay: Duration(milliseconds: 30 * index),
+                        duration: 300.ms,
+                      )
+                      .scale(
+                        begin: const Offset(0.8, 0.8),
+                        delay: Duration(milliseconds: 30 * index),
+                        duration: 300.ms,
+                        curve: Curves.easeOutBack,
+                      );
+                },
+              ),
+            ),
+          );
+        },
       );
     });
   }

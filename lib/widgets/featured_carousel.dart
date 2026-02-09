@@ -174,6 +174,7 @@ class _FeaturedCarouselState extends State<FeaturedCarousel> {
               right: 20,
               bottom: 20,
               child: FloatingActionButton.small(
+                heroTag: 'featured_fab_$index',
                 onPressed: () => widget.onCategoryTap(index),
                 backgroundColor: Colors.white,
                 elevation: 4,

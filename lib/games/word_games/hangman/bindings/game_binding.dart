@@ -16,4 +16,4 @@ class HangmanBinding extends Bindings {
           Get.find<HangmanSoundService>(),
         ));
   }
-} 
+}

@@ -35,4 +35,4 @@ class FlappyBirdBinding extends Bindings {
 
     dev.log('Flappy Bird dependencies initialized', name: 'FlappyBird');
   }
-} 
+}

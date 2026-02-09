@@ -76,10 +76,7 @@ class _CategoryCardState extends State<CategoryCard>
               boxShadow: [
                 BoxShadow(
                   color: primaryColor.withValues(
-                    red: primaryColor.r.toDouble(),
-                    green: primaryColor.g.toDouble(),
-                    blue: primaryColor.b.toDouble(),
-                    alpha: 0.4 * 255,
+                    alpha: 0.4,
                   ),
                   blurRadius: 8,
                   offset: Offset(0, 3),
@@ -93,16 +90,10 @@ class _CategoryCardState extends State<CategoryCard>
               child: InkWell(
                 onTap: widget.onTap,
                 splashColor: Colors.white.withValues(
-                  red: 255,
-                  green: 255,
-                  blue: 255,
-                  alpha: 0.1 * 255,
+                  alpha: 0.1,
                 ),
                 highlightColor: Colors.white.withValues(
-                  red: 255,
-                  green: 255,
-                  blue: 255,
-                  alpha: 0.05 * 255,
+                  alpha: 0.05,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -117,10 +108,7 @@ class _CategoryCardState extends State<CategoryCard>
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(
-                                red: 0,
-                                green: 0,
-                                blue: 0,
-                                alpha: 0.15 * 255,
+                                alpha: 0.15,
                               ),
                               blurRadius: 4,
                               offset: Offset(0, 2),
@@ -162,10 +150,7 @@ class _CategoryCardState extends State<CategoryCard>
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(
-                                      red: 0,
-                                      green: 0,
-                                      blue: 0,
-                                      alpha: 0.1 * 255,
+                                      alpha: 0.1,
                                     ),
                                     blurRadius: 2,
                                     offset: Offset(0, 1),
@@ -192,10 +177,7 @@ class _CategoryCardState extends State<CategoryCard>
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(
-                              red: 255,
-                              green: 255,
-                              blue: 255,
-                              alpha: 0.2 * 255,
+                              alpha: 0.2,
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -213,10 +195,7 @@ class _CategoryCardState extends State<CategoryCard>
                           '${widget.gamesCount} Games',
                           style: TextStyle(
                             color: Colors.white.withValues(
-                              red: 255,
-                              green: 255,
-                              blue: 255,
-                              alpha: 0.85 * 255,
+                              alpha: 0.85,
                             ),
                             fontSize: 14,
                           ),

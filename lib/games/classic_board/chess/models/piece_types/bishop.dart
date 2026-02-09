@@ -10,11 +10,12 @@ class Bishop extends ChessPiece {
   PieceType get type => PieceType.bishop;
 
   @override
-  bool isValidMovePattern(int fromRow, int fromCol, int toRow, int toCol, List<List<ChessPiece?>> board) {
+  bool isValidMovePattern(int fromRow, int fromCol, int toRow, int toCol,
+      List<List<ChessPiece?>> board) {
     final rowDiff = (toRow - fromRow).abs();
     final colDiff = (toCol - fromCol).abs();
-    
+
     // Bishop can only move diagonally
     return rowDiff == colDiff;
   }
-} 
+}

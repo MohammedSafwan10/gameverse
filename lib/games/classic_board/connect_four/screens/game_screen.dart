@@ -7,7 +7,7 @@ import '../controllers/stats_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../models/board.dart';
 import '../widgets/board_widget.dart';
-import '../services/sound_service.dart';
+import 'package:gameverse/widgets/premium_background.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 
@@ -17,11 +17,7 @@ class ConnectFourGameScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ConnectFourController>();
-    final screenHeight = MediaQuery.of(context).size.height;
-    final boardSize =
-        MediaQuery.of(context).size.width - 32; // Full width minus margins
-    final topPadding =
-        (screenHeight - boardSize - 160) / 2; // 160 for header and status
+    final theme = Theme.of(context);
 
     return PopScope(
       canPop: false,
@@ -34,608 +30,481 @@ class ConnectFourGameScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
             onPressed: () =>
                 _showExitConfirmationDialog(context).then((result) {
               if (result) Get.back();
             }),
           ),
           title: Obx(() {
-            final text = _getGameStatusText(controller);
             final isWinning =
-                controller.board.value.status == GameStatus.player1Won ||
-                    controller.board.value.status == GameStatus.player2Won;
+                controller.board.value.status != GameStatus.playing;
             return Text(
-              text,
-              style: TextStyle(
-                color: isWinning ? Get.theme.colorScheme.primary : null,
-                fontWeight: FontWeight.bold,
-              ),
+              isWinning ? "Game Over" : "Connect Four",
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             );
           }),
           centerTitle: true,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
           actions: [
             IconButton(
-              icon: const Icon(Icons.settings),
+              icon: const Icon(Icons.bar_chart_rounded),
+              tooltip: 'Statistics',
+              onPressed: () => Get.to(() => const ConnectFourStatsScreen()),
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
               tooltip: 'Settings',
               onPressed: () {
-                // Ensure the settings controller is initialized
                 if (!Get.isRegistered<ConnectFourSettingsController>()) {
                   Get.put(ConnectFourSettingsController(), permanent: true);
                 }
                 Get.to(() => ConnectFourSettingsScreen());
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.bar_chart),
-              tooltip: 'Statistics',
-              onPressed: () => Get.to(() => const ConnectFourStatsScreen()),
-            ),
           ],
         ),
-        extendBodyBehindAppBar: true,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Get.theme.colorScheme.primary.withValues(
-                  red: Get.theme.colorScheme.primary.r.toDouble(),
-                  green: Get.theme.colorScheme.primary.g.toDouble(),
-                  blue: Get.theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.2,
-                ),
-                Get.theme.colorScheme.surface,
-                Get.theme.colorScheme.secondary.withValues(
-                  red: Get.theme.colorScheme.secondary.r.toDouble(),
-                  green: Get.theme.colorScheme.secondary.g.toDouble(),
-                  blue: Get.theme.colorScheme.secondary.b.toDouble(),
-                  alpha: 0.1,
-                ),
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildControls(context, controller),
-                SizedBox(height: topPadding.clamp(20, 40)),
-                _buildGameBoard(controller),
-                const Spacer(),
-                _buildGameStatus(controller),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildControls(
-      BuildContext context, ConnectFourController controller) {
-    final soundService = Get.find<SoundService>();
-    final settingsController = Get.find<ConnectFourSettingsController>();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Obx(() => IconButton(
-                    icon: Icon(
-                      soundService.isEnabled.value
-                          ? Icons.volume_up
-                          : Icons.volume_off,
-                      color: soundService.isEnabled.value
-                          ? Get.theme.colorScheme.primary
-                          : null,
+        body: Stack(
+          children: [
+            const PremiumBackground(),
+            SafeArea(
+              child: Column(
+                children: [
+                  _buildTopInfoBar(context, controller),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            _buildGameBoard(context, controller),
+                            const SizedBox(height: 32),
+                            _buildPlayerStats(context, controller),
+                            const SizedBox(height: 32),
+                            _buildGameStatusMessage(context, controller),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
                     ),
-                    onPressed: () {
-                      soundService.toggleSound();
-                      settingsController.toggleSound();
-                    },
-                    tooltip: 'Sound',
-                  )),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Restart Game',
-                onPressed: () =>
-                    _showRestartConfirmationDialog(context, controller),
-              ),
-            ],
-          ),
-        ),
-        Obx(() {
-          if (controller.gameMode.value == GameMode.vsAI) {
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surface.withValues(
-                  red: Get.theme.colorScheme.surface.r.toDouble(),
-                  green: Get.theme.colorScheme.surface.g.toDouble(),
-                  blue: Get.theme.colorScheme.surface.b.toDouble(),
-                  alpha: 0.9,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Get.theme.colorScheme.primary.withValues(
-                      red: Get.theme.colorScheme.primary.r.toDouble(),
-                      green: Get.theme.colorScheme.primary.g.toDouble(),
-                      blue: Get.theme.colorScheme.primary.b.toDouble(),
-                      alpha: 0.1,
-                    ),
-                    blurRadius: 4,
                   ),
                 ],
               ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'AI Difficulty:',
-                      style: Get.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: AIDifficulty.values
-                          .map((difficulty) => Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: _buildDifficultyChip(
-                                  difficulty,
-                                  controller.aiDifficulty.value == difficulty,
-                                  () {
-                                    // Update both controller and settings
-                                    controller.setAIDifficulty(difficulty);
-                                    settingsController
-                                        .setDifficulty(difficulty);
-                                  },
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        }),
-      ],
+            ),
+
+            // Winning Animation Overlay
+            Obx(() {
+              final status = controller.board.value.status;
+              if (status == GameStatus.playing) return const SizedBox.shrink();
+              return _buildWinOverlay(context, controller);
+            }),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildDifficultyChip(
-      AIDifficulty difficulty, bool isSelected, VoidCallback onTap) {
-    final colors = {
-      AIDifficulty.easy: Colors.green,
-      AIDifficulty.medium: Colors.orange,
-      AIDifficulty.hard: Colors.red,
-    };
-    final icons = {
-      AIDifficulty.easy: Icons.sentiment_satisfied,
-      AIDifficulty.medium: Icons.sentiment_neutral,
-      AIDifficulty.hard: Icons.sentiment_very_dissatisfied,
-    };
-    final color = colors[difficulty]!;
-    final icon = icons[difficulty]!;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(
-                    red: color.r.toDouble(),
-                    green: color.g.toDouble(),
-                    blue: color.b.toDouble(),
-                    alpha: 0.1,
-                  )
-                : Colors.transparent,
-            border: Border.all(
-              color: isSelected
-                  ? color
-                  : Get.theme.colorScheme.onSurface.withValues(
-                      red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                      green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                      blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                      alpha: 0.3,
-                    ),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected
-                    ? color
-                    : Get.theme.colorScheme.onSurface.withValues(
-                        red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                        green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                        blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                        alpha: 0.7,
-                      ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                difficulty.name.capitalize!,
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? color
-                      : Get.theme.colorScheme.onSurface.withValues(
-                          red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                          green: Get.theme.colorScheme.onSurface.g.toDouble(),
-                          blue: Get.theme.colorScheme.onSurface.b.toDouble(),
-                          alpha: 0.7,
-                        ),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    )
-        .animate(
-          target: isSelected ? 1 : 0,
-        )
-        .scale(
-          begin: const Offset(1, 1),
-          end: const Offset(1.05, 1.05),
-          duration: const Duration(milliseconds: 200),
-        );
-  }
-
-  Widget _buildGameBoard(ConnectFourController controller) {
-    return Obx(() {
-      final isWinning =
-          controller.board.value.status == GameStatus.player1Won ||
-              controller.board.value.status == GameStatus.player2Won;
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Get.theme.colorScheme.primary.withValues(
-                red: Get.theme.colorScheme.primary.r.toDouble(),
-                green: Get.theme.colorScheme.primary.g.toDouble(),
-                blue: Get.theme.colorScheme.primary.b.toDouble(),
-                alpha: 0.2,
-              ),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: AspectRatio(
-          aspectRatio: 7 / 6,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              children: [
-                BoardWidget(controller: controller),
-                if (isWinning)
-                  Container(
-                    color: Colors.black.withValues(
-                      red: 0.0,
-                      green: 0.0,
-                      blue: 0.0,
-                      alpha: 0.1,
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Lottie.network(
-                            'https://assets2.lottiefiles.com/packages/lf20_obhph3sh.json',
-                            width: 150,
-                            height: 150,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Get.theme.colorScheme.primary,
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      Get.theme.colorScheme.primary.withValues(
-                                    red: Get.theme.colorScheme.primary.r
-                                        .toDouble(),
-                                    green: Get.theme.colorScheme.primary.g
-                                        .toDouble(),
-                                    blue: Get.theme.colorScheme.primary.b
-                                        .toDouble(),
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              _getWinnerText(controller),
-                              style: Get.textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(),
-              ],
-            ),
-          ),
-        ),
-      )
-          .animate(
-            target: isWinning ? 1 : 0,
-          )
-          .shimmer(
-            duration: const Duration(milliseconds: 2000),
-            color: Get.theme.colorScheme.primary.withValues(
-              red: Get.theme.colorScheme.primary.r.toDouble(),
-              green: Get.theme.colorScheme.primary.g.toDouble(),
-              blue: Get.theme.colorScheme.primary.b.toDouble(),
-              alpha: 0.3,
-            ),
-          );
-    });
-  }
-
-  Widget _buildGameStatus(ConnectFourController controller) {
-    final statsController = Get.find<ConnectFourStatsController>();
-
-    return Obx(() => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          decoration: BoxDecoration(
-            color: Get.theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Get.theme.colorScheme.primary.withValues(
-                  red: Get.theme.colorScheme.primary.r.toDouble(),
-                  green: Get.theme.colorScheme.primary.g.toDouble(),
-                  blue: Get.theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.1,
-                ),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildPlayerIndicator(
-                "Player 1",
-                CellState.player1,
-                controller.currentPlayer.value == CellState.player1,
-                Colors.red,
-                controller,
-                controller.gameMode.value == GameMode.vsAI
-                    ? statsController.playerWins.value
-                    : statsController.player1Wins.value,
-              ),
-              Container(
-                height: 40,
-                width: 2,
-                color: Get.theme.colorScheme.primary.withValues(
-                  red: Get.theme.colorScheme.primary.r.toDouble(),
-                  green: Get.theme.colorScheme.primary.g.toDouble(),
-                  blue: Get.theme.colorScheme.primary.b.toDouble(),
-                  alpha: 0.1,
-                ),
-              ),
-              _buildPlayerIndicator(
-                controller.gameMode.value == GameMode.vsAI ? "AI" : "Player 2",
-                CellState.player2,
-                controller.currentPlayer.value == CellState.player2,
-                Colors.yellow,
-                controller,
-                controller.gameMode.value == GameMode.vsAI
-                    ? statsController.aiWins.value
-                    : statsController.player2Wins.value,
-              ),
-            ],
-          ),
-        ));
-  }
-
-  Widget _buildPlayerIndicator(
-    String name,
-    CellState player,
-    bool isCurrentPlayer,
-    Color color,
-    ConnectFourController controller,
-    int wins,
-  ) {
-    final isWinner = (player == CellState.player1 &&
-            controller.board.value.status == GameStatus.player1Won) ||
-        (player == CellState.player2 &&
-            controller.board.value.status == GameStatus.player2Won);
-
-    // Show active indicator only when game is still in progress
-    final showActiveIndicator = isCurrentPlayer && !controller.isGameOver;
-
+  Widget _buildTopInfoBar(
+      BuildContext context, ConnectFourController controller) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: showActiveIndicator
-            ? Border.all(color: Get.theme.colorScheme.primary, width: 2)
-            : null,
+        color: theme.colorScheme.surface.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(24),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
         boxShadow: [
-          if (isWinner)
-            BoxShadow(
-              color: color.withValues(
-                red: color.r.toDouble(),
-                green: color.g.toDouble(),
-                blue: color.b.toDouble(),
-                alpha: 0.3,
-              ),
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(
-                    red: color.r.toDouble(),
-                    green: color.g.toDouble(),
-                    blue: color.b.toDouble(),
-                    alpha: 0.3,
+          Obx(() => Row(
+                children: [
+                  AnimatedContainer(
+                    duration: 400.ms,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: controller.currentPlayer.value == CellState.player1
+                          ? Colors.red
+                          : Colors.yellow.shade600,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (controller.currentPlayer.value ==
+                                      CellState.player1
+                                  ? Colors.red
+                                  : Colors.yellow.shade600)
+                              .withValues(alpha: 0.4),
+                          blurRadius: 8,
+                        )
+                      ],
+                    ),
+                    child: Icon(
+                      controller.currentPlayer.value == CellState.player1
+                          ? Icons.person
+                          : (controller.gameMode.value == GameMode.vsAI
+                              ? Icons.smart_toy_rounded
+                              : Icons.person),
+                      size: 16,
+                      color: controller.currentPlayer.value == CellState.player1
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
                   ),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        controller.currentPlayer.value == CellState.player1
+                            ? 'Player 1\'s Turn'
+                            : (controller.gameMode.value == GameMode.vsAI
+                                ? 'AI\'s Turn'
+                                : 'Player 2\'s Turn'),
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (controller.isAIThinking.value)
+                        Text(
+                          'Thinking...',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ).animate(onPlay: (c) => c.repeat()).shimmer(),
+                    ],
+                  ),
+                ],
+              )),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () =>
+                _showRestartConfirmationDialog(context, controller),
+            tooltip: 'Restart',
+            style: IconButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+              padding: const EdgeInsets.all(8),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: -0.2);
+  }
+
+  Widget _buildDifficultySelector(
+      BuildContext context, ConnectFourController controller) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: AIDifficulty.values.map((diff) {
+            return Obx(() {
+              final isSelected = controller.aiDifficulty.value == diff;
+              final color = diff == AIDifficulty.easy
+                  ? Colors.green
+                  : (diff == AIDifficulty.medium ? Colors.orange : Colors.red);
+              return GestureDetector(
+                onTap: () => controller.setAIDifficulty(diff),
+                child: AnimatedContainer(
+                  duration: 300.ms,
+                  margin: const EdgeInsets.only(right: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected ? color : color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    diff.name.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : color,
+                    ),
+                  ),
+                ),
+              );
+            });
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameBoard(
+      BuildContext context, ConnectFourController controller) {
+    final size = MediaQuery.of(context).size.width - 32;
+
+    return Container(
+      width: size,
+      height: size * (6 / 7),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade900,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      child: BoardWidget(controller: controller),
+    ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack);
+  }
+
+  Widget _buildPlayerStats(
+      BuildContext context, ConnectFourController controller) {
+    final statsController = Get.find<ConnectFourStatsController>();
+
+    return Obx(() => Row(
+          children: [
+            Expanded(
+              child: _buildStatTile(
+                context,
+                'Player 1',
+                controller.gameMode.value == GameMode.vsAI
+                    ? statsController.playerWins.value
+                    : statsController.player1Wins.value,
+                Colors.red,
+                Icons.person,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatTile(
+                context,
+                controller.gameMode.value == GameMode.vsAI ? 'AI' : 'Player 2',
+                controller.gameMode.value == GameMode.vsAI
+                    ? statsController.aiWins.value
+                    : statsController.player2Wins.value,
+                Colors.yellow.shade700,
+                controller.gameMode.value == GameMode.vsAI
+                    ? Icons.smart_toy_rounded
+                    : Icons.person,
+              ),
+            ),
+          ],
+        ));
+  }
+
+  Widget _buildStatTile(BuildContext context, String label, int wins,
+      Color color, IconData icon) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: Get.textTheme.titleMedium?.copyWith(
-                  fontWeight:
-                      showActiveIndicator ? FontWeight.bold : FontWeight.normal,
-                ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              wins.toString(),
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: color,
               ),
-              Row(
-                children: [
-                  Text(
-                    'Wins: $wins',
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (isWinner)
-                    Text(
-                      ' Winner! 🎉',
-                      style: Get.textTheme.bodySmall?.copyWith(
-                        color: Get.theme.colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
-              ),
-            ],
+            ),
+          ),
+          Text(
+            'WINS',
+            style: theme.textTheme.bodySmall?.copyWith(
+              letterSpacing: 1.5,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
           ),
         ],
       ),
-    )
-        .animate(
-          target: showActiveIndicator ? 1 : 0,
-        )
-        .scale(
-          begin: const Offset(1, 1),
-          end: const Offset(1.05, 1.05),
-          duration: const Duration(milliseconds: 200),
-        )
-        .animate(
-          target: isWinner ? 1 : 0,
-        )
-        .shimmer(
-          duration: const Duration(milliseconds: 1000),
-          color: color.withValues(
-            red: color.r.toDouble(),
-            green: color.g.toDouble(),
-            blue: color.b.toDouble(),
-            alpha: 0.5,
-          ),
-        );
+    );
   }
 
-  String _getGameStatusText(ConnectFourController controller) {
-    switch (controller.board.value.status) {
-      case GameStatus.playing:
-        if (controller.isAIThinking.value) {
-          return "AI is thinking...";
+  Widget _buildGameStatusMessage(
+      BuildContext context, ConnectFourController controller) {
+    final theme = Theme.of(context);
+    return Obx(() {
+      final status = controller.board.value.status;
+      if (status == GameStatus.playing) {
+        if (controller.gameMode.value == GameMode.vsAI) {
+          return _buildDifficultySelector(context, controller);
         }
-        return "Connect Four";
-      case GameStatus.draw:
-        return "It's a Draw!";
-      case GameStatus.player1Won:
-      case GameStatus.player2Won:
-        return "Game Over!";
-    }
+        return const SizedBox.shrink();
+      }
+
+      String message = "";
+      IconData icon = Icons.info_outline_rounded;
+      Color color = theme.colorScheme.primary;
+
+      if (status == GameStatus.draw) {
+        message = "It's a Draw!";
+        icon = Icons.balance_rounded;
+        color = Colors.blueGrey;
+      } else {
+        final isP1 = status == GameStatus.player1Won;
+        final name = isP1
+            ? "Player 1"
+            : (controller.gameMode.value == GameMode.vsAI ? "AI" : "Player 2");
+        message = "$name Wins!";
+        icon = Icons.emoji_events_rounded;
+        color = isP1 ? Colors.red : Colors.yellow.shade700;
+      }
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold, color: color),
+            ),
+          ],
+        ),
+      ).animate().fadeIn().slideY(begin: 0.5);
+    });
   }
 
-  String _getWinnerText(ConnectFourController controller) {
-    switch (controller.board.value.status) {
-      case GameStatus.player1Won:
-        return "Player 1 Wins! 🎉";
-      case GameStatus.player2Won:
-        return controller.gameMode.value == GameMode.vsAI
-            ? "AI Wins! 🤖"
-            : "Player 2 Wins! 🎉";
-      default:
-        return "";
-    }
+  Widget _buildWinOverlay(
+      BuildContext context, ConnectFourController controller) {
+    final status = controller.board.value.status;
+    final isP1 = status == GameStatus.player1Won;
+    final color = status == GameStatus.draw
+        ? Colors.blueGrey
+        : (isP1 ? Colors.red : Colors.yellow.shade700);
+
+    return Container(
+      color: Colors.black.withValues(alpha: 0.4),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (status != GameStatus.draw)
+              Lottie.network(
+                'https://assets2.lottiefiles.com/packages/lf20_obhph3sh.json',
+                width: 250,
+                height: 250,
+              ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.5),
+                    blurRadius: 20,
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    status == GameStatus.draw ? "DRAW!" : "VICTORY!",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: color,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => controller.resetGame(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: const Text('PLAY AGAIN',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+          ],
+        ),
+      ),
+    ).animate().fadeIn();
   }
 
   Future<bool> _showExitConfirmationDialog(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: const Text('Exit Game?'),
-            content: const Text(
-                'Are you sure you want to exit the game? Any progress will not be saved.'),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            content: const Text('Your current match progress will be lost.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('CANCEL'),
-              ),
-              FilledButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('CANCEL')),
+              TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Get.theme.colorScheme.primary,
-                ),
-                child: const Text('EXIT'),
+                child: const Text('EXIT',
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -648,24 +517,16 @@ class ConnectFourGameScreen extends StatelessWidget {
     final shouldRestart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Restart Game?'),
-        content: const Text(
-            'Are you sure you want to restart the game? The current game will be lost.'),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Restart?'),
+        content: const Text('Current board state will be cleared.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('CANCEL'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Get.theme.colorScheme.primary,
-            ),
-            child: const Text('RESTART'),
-          ),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('CANCEL')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('RESTART')),
         ],
       ),
     );

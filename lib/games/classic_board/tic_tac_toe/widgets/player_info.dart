@@ -28,13 +28,13 @@ class PlayerInfo extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: isCurrentPlayer
-          ? TicTacToeTheme.primaryColor.withValues(alpha: 0.1)
-          : theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: isCurrentPlayer
-            ? TicTacToeTheme.primaryColor
-            : onSurface.withValues(alpha: 0.1),
+            ? TicTacToeTheme.primaryColor.withValues(alpha: 0.1)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isCurrentPlayer
+              ? TicTacToeTheme.primaryColor
+              : onSurface.withValues(alpha: 0.1),
           width: isCurrentPlayer ? 2 : 1,
         ),
         boxShadow: [
@@ -57,13 +57,12 @@ class PlayerInfo extends StatelessWidget {
                 child: Text(
                   label,
                   style: theme.textTheme.titleMedium?.copyWith(
-                        color: isCurrentPlayer
-                            ? TicTacToeTheme.primaryColor
-                            : onSurface,
-                        fontWeight: isCurrentPlayer
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
+                    color: isCurrentPlayer
+                        ? TicTacToeTheme.primaryColor
+                        : onSurface,
+                    fontWeight:
+                        isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -76,12 +75,15 @@ class PlayerInfo extends StatelessWidget {
               color: onSurface.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              'Wins: $wins',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                    color: onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Wins: $wins',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
           if (isWinner)
@@ -93,21 +95,24 @@ class PlayerInfo extends StatelessWidget {
                 color: TicTacToeTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.emoji_events,
                     color: TicTacToeTheme.primaryColor,
                     size: 16,
                   ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Winner!',
-                    style: TextStyle(
-                      color: TicTacToeTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                  const SizedBox(width: 4),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: const Text(
+                      'Winner!',
+                      style: TextStyle(
+                        color: TicTacToeTheme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],

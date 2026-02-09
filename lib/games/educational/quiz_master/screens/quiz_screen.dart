@@ -51,10 +51,7 @@ class QuizScreen extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 category.color.withValues(
-                  red: category.color.r.toDouble(),
-                  green: category.color.g.toDouble(),
-                  blue: category.color.b.toDouble(),
-                  alpha: 0.05 * 255,
+                  alpha: 0.05,
                 ),
                 Colors.white,
               ],
@@ -124,10 +121,7 @@ class QuizScreen extends StatelessWidget {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(
-                          red: 0,
-                          green: 0,
-                          blue: 0,
-                          alpha: 0.05 * 255,
+                          alpha: 0.05,
                         ),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
@@ -146,10 +140,7 @@ class QuizScreen extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.amber.withValues(
-                        red: Colors.amber.r.toDouble(),
-                        green: Colors.amber.g.toDouble(),
-                        blue: Colors.amber.b.toDouble(),
-                        alpha: 0.1 * 255,
+                        alpha: 0.1,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -179,10 +170,7 @@ class QuizScreen extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withValues(
-                        red: Colors.orange.r.toDouble(),
-                        green: Colors.orange.g.toDouble(),
-                        blue: Colors.orange.b.toDouble(),
-                        alpha: 0.1 * 255,
+                        alpha: 0.1,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -215,10 +203,7 @@ class QuizScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: category.color.withValues(
-                    red: category.color.r.toDouble(),
-                    green: category.color.g.toDouble(),
-                    blue: category.color.b.toDouble(),
-                    alpha: 0.1 * 255,
+                    alpha: 0.1,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -253,10 +238,7 @@ class QuizScreen extends StatelessWidget {
                 height: 8,
                 decoration: BoxDecoration(
                   color: category.color.withValues(
-                    red: category.color.r.toDouble(),
-                    green: category.color.g.toDouble(),
-                    blue: category.color.b.toDouble(),
-                    alpha: 0.1 * 255,
+                    alpha: 0.1,
                   ),
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -293,10 +275,7 @@ class QuizScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(
-                      red: Colors.green.r.toDouble(),
-                      green: Colors.green.g.toDouble(),
-                      blue: Colors.green.b.toDouble(),
-                      alpha: 0.1 * 255,
+                      alpha: 0.1,
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -334,10 +313,7 @@ class QuizScreen extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white.withValues(
-          red: 255,
-          green: 255,
-          blue: 255,
-          alpha: 0.9 * 255,
+          alpha: 0.9,
         ),
         borderRadius: BorderRadius.circular(24),
       ),
@@ -373,25 +349,7 @@ class QuizScreen extends StatelessWidget {
                         ? Colors.green
                         : Colors.red)
                     .withValues(
-                  red: (controller.selectedAnswer.value ==
-                              question.correctOptionIndex
-                          ? Colors.green
-                          : Colors.red)
-                      .r
-                      .toDouble(),
-                  green: (controller.selectedAnswer.value ==
-                              question.correctOptionIndex
-                          ? Colors.green
-                          : Colors.red)
-                      .g
-                      .toDouble(),
-                  blue: (controller.selectedAnswer.value ==
-                              question.correctOptionIndex
-                          ? Colors.green
-                          : Colors.red)
-                      .b
-                      .toDouble(),
-                  alpha: 0.1 * 255,
+                  alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -482,10 +440,7 @@ class QuizScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: getOptionColor().withValues(
-                    red: getOptionColor().r.toDouble(),
-                    green: getOptionColor().g.toDouble(),
-                    blue: getOptionColor().b.toDouble(),
-                    alpha: isSelected ? 0.15 * 255 : 0.05 * 255,
+                    alpha: isSelected ? 0.15 : 0.05,
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -496,10 +451,7 @@ class QuizScreen extends StatelessWidget {
                       height: 32,
                       decoration: BoxDecoration(
                         color: getOptionColor().withValues(
-                          red: getOptionColor().r.toDouble(),
-                          green: getOptionColor().g.toDouble(),
-                          blue: getOptionColor().b.toDouble(),
-                          alpha: isSelected ? 0.2 * 255 : 0.1 * 255,
+                          alpha: isSelected ? 0.2 : 0.1,
                         ),
                         shape: BoxShape.circle,
                       ),
@@ -607,10 +559,7 @@ class QuizScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: category.color.withValues(
-                    red: category.color.r.toDouble(),
-                    green: category.color.g.toDouble(),
-                    blue: category.color.b.toDouble(),
-                    alpha: 0.1 * 255,
+                    alpha: 0.1,
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -674,7 +623,7 @@ class QuizScreen extends StatelessWidget {
                             red: category.color.r.toDouble(),
                             green: category.color.g.toDouble(),
                             blue: category.color.b.toDouble(),
-                            alpha: 0.5 * 255,
+                            alpha: 0.5,
                           ),
                         ),
                       ),
@@ -739,10 +688,7 @@ class QuizScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(
-          red: color.r.toDouble(),
-          green: color.g.toDouble(),
-          blue: color.b.toDouble(),
-          alpha: 0.1 * 255,
+          alpha: 0.1,
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -752,10 +698,7 @@ class QuizScreen extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: color.withValues(
-                red: color.r.toDouble(),
-                green: color.g.toDouble(),
-                blue: color.b.toDouble(),
-                alpha: 0.2 * 255,
+                alpha: 0.2,
               ),
               shape: BoxShape.circle,
             ),
@@ -805,10 +748,7 @@ class QuizScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(
-                    red: Colors.red.r.toDouble(),
-                    green: Colors.red.g.toDouble(),
-                    blue: Colors.red.b.toDouble(),
-                    alpha: 0.1 * 255,
+                    alpha: 0.1,
                   ),
                   shape: BoxShape.circle,
                 ),
@@ -850,10 +790,7 @@ class QuizScreen extends StatelessWidget {
                         ),
                         side: BorderSide(
                           color: Colors.grey.withValues(
-                            red: Colors.grey.r.toDouble(),
-                            green: Colors.grey.g.toDouble(),
-                            blue: Colors.grey.b.toDouble(),
-                            alpha: 0.5 * 255,
+                            alpha: 0.5,
                           ),
                         ),
                       ),

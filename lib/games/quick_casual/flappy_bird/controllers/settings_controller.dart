@@ -55,4 +55,4 @@ class FlappyBirdSettingsController extends GetxController {
   void toggleVibration() {
     vibrationEnabled.value = !vibrationEnabled.value;
   }
-} 
+}

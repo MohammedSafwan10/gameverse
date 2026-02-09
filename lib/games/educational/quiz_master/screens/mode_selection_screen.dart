@@ -50,10 +50,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(
-                                red: 0,
-                                green: 0,
-                                blue: 0,
-                                alpha: 0.05 * 255,
+                                alpha: 0.05,
                               ),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
@@ -104,10 +101,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(
-                      red: 255,
-                      green: 255,
-                      blue: 255,
-                      alpha: 0.8 * 255,
+                      alpha: 0.8,
                     ),
                     borderRadius: BorderRadius.circular(24),
                   ),
@@ -173,37 +167,37 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color.withValues(
-                red: color.r.toDouble(),
-                green: color.g.toDouble(),
-                blue: color.b.toDouble(),
-                alpha: 0.1 * 255,
+                alpha: 0.1,
               ),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
           ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.black.withValues(
-                red: 0,
-                green: 0,
-                blue: 0,
-                alpha: 0.6 * 255,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.black.withValues(
+                  alpha: 0.6,
+                ),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -215,10 +209,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
       height: 40,
       width: 1,
       color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.05 * 255,
+        alpha: 0.05,
       ),
     );
   }
@@ -229,10 +220,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
       child: Container(
         decoration: BoxDecoration(
           color: category.color.withValues(
-            red: category.color.r.toDouble(),
-            green: category.color.g.toDouble(),
-            blue: category.color.b.toDouble(),
-            alpha: 0.05 * 255,
+            alpha: 0.05,
           ),
           borderRadius: BorderRadius.circular(24),
         ),
@@ -250,10 +238,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                     height: 56,
                     decoration: BoxDecoration(
                       color: category.color.withValues(
-                        red: category.color.r.toDouble(),
-                        green: category.color.g.toDouble(),
-                        blue: category.color.b.toDouble(),
-                        alpha: 0.15 * 255,
+                        alpha: 0.15,
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -330,10 +315,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
       ),
       decoration: BoxDecoration(
         color: color.withValues(
-          red: color.r.toDouble(),
-          green: color.g.toDouble(),
-          blue: color.b.toDouble(),
-          alpha: 0.1 * 255,
+          alpha: 0.1,
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -377,10 +359,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: category.color.withValues(
-                        red: category.color.r.toDouble(),
-                        green: category.color.g.toDouble(),
-                        blue: category.color.b.toDouble(),
-                        alpha: 0.1 * 255,
+                        alpha: 0.1,
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -440,10 +419,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                           boxShadow: [
                             BoxShadow(
                               color: category.color.withValues(
-                                red: category.color.r.toDouble(),
-                                green: category.color.g.toDouble(),
-                                blue: category.color.b.toDouble(),
-                                alpha: 0.05 * 255,
+                                alpha: 0.05,
                               ),
                               blurRadius: 8,
                               spreadRadius: 0,
@@ -531,10 +507,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.blue.withValues(
-                        red: Colors.blue.r.toDouble(),
-                        green: Colors.blue.g.toDouble(),
-                        blue: Colors.blue.b.toDouble(),
-                        alpha: 0.1 * 255,
+                        alpha: 0.1,
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -626,10 +599,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: color.withValues(
-              red: color.r.toDouble(),
-              green: color.g.toDouble(),
-              blue: color.b.toDouble(),
-              alpha: 0.1 * 255,
+              alpha: 0.1,
             ),
             borderRadius: BorderRadius.circular(12),
           ),
@@ -653,10 +623,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black.withValues(
-                    red: 0,
-                    green: 0,
-                    blue: 0,
-                    alpha: 0.6 * 255,
+                    alpha: 0.6,
                   ),
                 ),
               ),

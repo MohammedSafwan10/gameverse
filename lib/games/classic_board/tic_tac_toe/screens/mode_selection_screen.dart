@@ -16,25 +16,28 @@ class ModeSelectionScreen extends StatelessWidget {
         title: const Text('Select Game Mode'),
         backgroundColor: TicTacToeTheme.primaryColor,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildModeCard(
-              icon: Icons.person,
-              title: 'Single Player',
-              subtitle: 'Play against AI',
-              mode: GameMode.singlePlayer,
-            ),
-            const SizedBox(height: 16),
-            _buildModeCard(
-              icon: Icons.people,
-              title: 'Two Players',
-              subtitle: 'Play with a friend',
-              mode: GameMode.multiPlayer,
-            ),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildModeCard(
+                icon: Icons.person,
+                title: 'Single Player',
+                subtitle: 'Play against AI',
+                mode: GameMode.singlePlayer,
+              ),
+              const SizedBox(height: 16),
+              _buildModeCard(
+                icon: Icons.people,
+                title: 'Two Players',
+                subtitle: 'Play with a friend',
+                mode: GameMode.multiPlayer,
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

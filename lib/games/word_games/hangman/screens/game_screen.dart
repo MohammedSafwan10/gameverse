@@ -227,7 +227,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
           red: color.r.toDouble(),
           green: color.g.toDouble(),
           blue: color.b.toDouble(),
-          alpha: 0.1 * 255,
+          alpha: 0.1,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
@@ -235,7 +235,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
             red: color.r.toDouble(),
             green: color.g.toDouble(),
             blue: color.b.toDouble(),
-            alpha: 0.3 * 255,
+            alpha: 0.3,
           ),
         ),
       ),
@@ -346,7 +346,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
                                       .primary
                                       .b
                                       .toDouble(),
-                                  alpha: 0.1 * 255,
+                                  alpha: 0.1,
                                 ),
                         foregroundColor: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(

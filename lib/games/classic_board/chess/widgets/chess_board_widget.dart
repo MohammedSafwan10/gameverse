@@ -9,26 +9,19 @@ class ChessBoardWidget extends GetView<ChessGameController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return AspectRatio(
       aspectRatio: 1,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                red: 0.0,
-                green: 0.0,
-                blue: 0.0,
-                alpha: 0.2,
-              ),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+              width: 1),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(15),
           child: Stack(
             children: [
               // Board squares
@@ -83,64 +76,52 @@ class ChessBoardWidget extends GetView<ChessGameController> {
               ),
 
               // Rank labels (1-8)
-              Positioned(
-                left: 4,
-                top: 0,
-                bottom: 0,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(8, (index) {
-                    return SizedBox(
-                      height: 20,
-                      child: Center(
-                        child: Text(
-                          '${8 - index}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Get.theme.colorScheme.onSurface.withValues(
-                              red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                              green:
-                                  Get.theme.colorScheme.onSurface.g.toDouble(),
-                              blue:
-                                  Get.theme.colorScheme.onSurface.b.toDouble(),
-                              alpha: 0.6,
+              IgnorePointer(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 2, top: 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(8, (index) {
+                      return Expanded(
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            '${8 - index}',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
               ),
 
               // File labels (a-h)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 4,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(8, (index) {
-                    return SizedBox(
-                      width: 20,
-                      child: Center(
-                        child: Text(
-                          String.fromCharCode('a'.codeUnitAt(0) + index),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Get.theme.colorScheme.onSurface.withValues(
-                              red: Get.theme.colorScheme.onSurface.r.toDouble(),
-                              green:
-                                  Get.theme.colorScheme.onSurface.g.toDouble(),
-                              blue:
-                                  Get.theme.colorScheme.onSurface.b.toDouble(),
-                              alpha: 0.6,
+              IgnorePointer(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 4, bottom: 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(8, (index) {
+                      return Expanded(
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            String.fromCharCode('a'.codeUnitAt(0) + index),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
               ),
             ],
@@ -161,7 +142,6 @@ class ChessBoardWidget extends GetView<ChessGameController> {
     final selectedPiece = controller.selectedPiece.value;
     final tappedPiece = controller.board.getPieceAt(position);
 
-    // If no piece is selected
     if (selectedPiece == null) {
       if (tappedPiece != null &&
           tappedPiece.color ==
@@ -174,18 +154,14 @@ class ChessBoardWidget extends GetView<ChessGameController> {
       return;
     }
 
-    // If a piece is already selected
     if (position == selectedPiece.position) {
-      // Deselect the piece
       controller.selectedPiece.value = null;
       controller.soundService.playDeselectSound();
     } else if (tappedPiece != null &&
         tappedPiece.color == selectedPiece.color) {
-      // Select another piece of the same color
       controller.selectedPiece.value = tappedPiece;
       controller.soundService.playSelectSound();
     } else {
-      // Try to make a move
       final validMoves = controller.board.getValidMoves(selectedPiece.position);
       if (validMoves.contains(position)) {
         controller.makeMove(selectedPiece.position, position);

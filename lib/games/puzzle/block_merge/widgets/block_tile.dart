@@ -78,6 +78,7 @@ class BlockTile extends StatelessWidget {
         );
     }
   }
+
   Color _getTextColor(int value) {
     if (value <= 4) {
       return const Color(0xFF776E65);

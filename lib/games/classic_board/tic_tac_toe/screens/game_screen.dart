@@ -105,16 +105,12 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                                         .animate(target: _showContent ? 1 : 0)
                                         .fadeIn(duration: 600.ms)
                                         .slideY(begin: -0.2, end: 0),
-
                                     SizedBox(height: isLandscape ? 16.0 : 40.0),
-
                                     _buildGameBoard(constraints, theme)
                                         .animate(target: _showContent ? 1 : 0)
                                         .fadeIn(duration: 800.ms)
                                         .scale(begin: const Offset(0.9, 0.9)),
-
                                     SizedBox(height: isLandscape ? 16.0 : 40.0),
-
                                     _buildGameStatus(theme)
                                         .animate(target: _showContent ? 1 : 0)
                                         .fadeIn(duration: 600.ms)
@@ -324,9 +320,9 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             Text(
               message,
               style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: messageColor,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: messageColor,
+              ),
             ).animate().scale(curve: Curves.elasticOut),
             const SizedBox(height: 16),
             FilledButton.icon(
@@ -388,7 +384,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
           color: (currentPlayer == Player.x
                   ? TicTacToeTheme.xColor
                   : TicTacToeTheme.oColor)
-                .withValues(alpha: 0.1),
+              .withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(30),
         ),
         child: Text(

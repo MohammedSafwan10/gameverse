@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:async';
 
 class CountdownTimer extends StatefulWidget {
@@ -10,47 +11,30 @@ class CountdownTimer extends StatefulWidget {
     super.key,
     required this.onComplete,
     this.duration = const Duration(seconds: 3),
-    this.message = 'Game Starting',
+    this.message = 'Ready?',
   });
 
   @override
   State<CountdownTimer> createState() => _CountdownTimerState();
 }
 
-class _CountdownTimerState extends State<CountdownTimer>
-    with SingleTickerProviderStateMixin {
+class _CountdownTimerState extends State<CountdownTimer> {
   late Timer _timer;
   late int _secondsRemaining;
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
     _secondsRemaining = widget.duration.inSeconds;
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-
     _startTimer();
   }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
       setState(() {
         if (_secondsRemaining > 1) {
           _secondsRemaining--;
-          _controller.forward(from: 0.0);
         } else {
           _timer.cancel();
           widget.onComplete();
@@ -62,7 +46,6 @@ class _CountdownTimerState extends State<CountdownTimer>
   @override
   void dispose() {
     _timer.cancel();
-    _controller.dispose();
     super.dispose();
   }
 
@@ -73,65 +56,45 @@ class _CountdownTimerState extends State<CountdownTimer>
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.black54,
+      color: Colors.black.withValues(alpha: 0.6),
       child: Center(
-        child: Card(
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.message,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.message.toUpperCase(),
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: 4,
+                color: Colors.white70,
+              ),
+            ).animate().fadeIn().slideY(begin: -0.5),
+            const SizedBox(height: 24),
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  _secondsRemaining.toString(),
+                  key: ValueKey(_secondsRemaining),
+                  style: theme.textTheme.displayLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
                   ),
-                ),
-                const SizedBox(height: 24),
-                AnimatedBuilder(
-                  animation: _scaleAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: 1.0 - _scaleAnimation.value,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: theme.colorScheme.primary,
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withValues(
-                                red: theme.colorScheme.primary.r.toDouble(),
-                                green: theme.colorScheme.primary.g.toDouble(),
-                                blue: theme.colorScheme.primary.b.toDouble(),
-                                alpha: 0.3,
-                              ),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            _secondsRemaining.toString(),
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              color: theme.colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+                )
+                    .animate(key: ValueKey(_secondsRemaining))
+                    .scale(
+                        begin: const Offset(1.5, 1.5),
+                        duration: 400.ms,
+                        curve: Curves.easeOutBack)
+                    .fadeOut(delay: 600.ms),
+              ),
+            ).animate().scale(duration: 400.ms),
+          ],
         ),
       ),
     );

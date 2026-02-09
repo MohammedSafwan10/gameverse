@@ -19,264 +19,140 @@ class FlipCard extends StatefulWidget {
   State<FlipCard> createState() => _FlipCardState();
 }
 
-class _FlipCardState extends State<FlipCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _matchAnimationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
-  bool _isAnimating = false;
+class _FlipCardState extends State<FlipCard> with TickerProviderStateMixin {
+  late AnimationController _flipController;
+  late AnimationController _matchController;
+  late Animation<double> _flipAnimation;
+  late Animation<double> _matchScale;
+
+  bool _showFront = false;
 
   @override
   void initState() {
     super.initState();
-    _matchAnimationController = AnimationController(
+
+    _flipController = AnimationController(
+      duration: const Duration(milliseconds: 350),
+      vsync: this,
+    );
+    _flipAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _flipController, curve: Curves.easeInOutBack),
+    );
+
+    _matchController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-
-    _scaleAnimation = TweenSequence<double>([
+    _matchScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.2)
-            .chain(CurveTween(curve: Curves.easeOutBack)),
+        tween: Tween(begin: 1.0, end: 1.15)
+            .chain(CurveTween(curve: Curves.easeOut)),
         weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1.0)
+        tween: Tween(begin: 1.15, end: 1.0)
             .chain(CurveTween(curve: Curves.easeInOut)),
         weight: 60,
       ),
-    ]).animate(_matchAnimationController);
+    ]).animate(_matchController);
 
-    _opacityAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeIn)),
-        weight: 40,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.7)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 60,
-      ),
-    ]).animate(_matchAnimationController);
+    _showFront = widget.card.isFlipped || widget.card.isMatched;
+    if (_showFront) _flipController.value = 1.0;
   }
 
   @override
   void didUpdateWidget(FlipCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.card.isFlipped != oldWidget.card.isFlipped) {
-      _isAnimating = true;
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) {
-          setState(() {
-            _isAnimating = false;
-          });
-          widget.onFlipComplete?.call(widget.card.isFlipped);
-        }
-      });
+
+    final shouldShowFront = widget.card.isFlipped || widget.card.isMatched;
+    if (shouldShowFront != _showFront) {
+      _showFront = shouldShowFront;
+      if (_showFront) {
+        _flipController.forward().then((_) {
+          widget.onFlipComplete?.call(true);
+        });
+      } else {
+        _flipController.reverse().then((_) {
+          widget.onFlipComplete?.call(false);
+        });
+      }
     }
 
-    // Trigger match animation when card is matched
     if (widget.card.isMatched && !oldWidget.card.isMatched) {
-      _showMatchAnimation();
+      _matchController.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
-    _matchAnimationController.dispose();
+    _flipController.dispose();
+    _matchController.dispose();
     super.dispose();
-  }
-
-  void _showMatchAnimation() {
-    if (!_matchAnimationController.isAnimating) {
-      _matchAnimationController.forward().then((_) {
-        if (mounted) {
-          _matchAnimationController.value = 0.0;
-        }
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.card.isMatched && !_matchAnimationController.isAnimating) {
-      _showMatchAnimation();
-    }
+    return AnimatedBuilder(
+      animation: Listenable.merge([_flipAnimation, _matchScale]),
+      builder: (context, _) {
+        final angle = _flipAnimation.value * pi;
+        final isFrontVisible = angle < pi / 2;
+        final scale = widget.card.isMatched ? _matchScale.value : 1.0;
 
-    return IgnorePointer(
-      ignoring: _isAnimating,
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          margin: const EdgeInsets.all(4),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              final rotateAnim = Tween(begin: 0.0, end: pi)
-                  .chain(CurveTween(curve: Curves.easeInOutCubic))
-                  .animate(animation);
-
-              return AnimatedBuilder(
-                animation: rotateAnim,
-                child: child,
-                builder: (context, child) {
-                  var tilt = rotateAnim.value;
-                  final isBack = child?.key == const ValueKey('back');
-
-                  if (isBack) {
-                    tilt = pi - tilt;
-                  }
-
-                  if (tilt > pi / 2) {
-                    child = Transform(
-                      transform: Matrix4.rotationY(pi),
-                      alignment: Alignment.center,
-                      child: child,
-                    );
-                  }
-
-                  Widget result = Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.002)
-                      ..rotateY(tilt),
-                    alignment: Alignment.center,
-                    child: child,
-                  );
-
-                  if (widget.card.isMatched) {
-                    result = AnimatedBuilder(
-                      animation: _matchAnimationController,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _scaleAnimation.value,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              child!,
-                              FadeTransition(
-                                opacity: _opacityAnimation,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: widget.mode.color.withValues(
-                                        red: widget.mode.color.r.toDouble(),
-                                        green: widget.mode.color.g.toDouble(),
-                                        blue: widget.mode.color.b.toDouble(),
-                                        alpha: 0.5,
-                                      ),
-                                      width: 3,
-                                    ),
-                                    gradient: RadialGradient(
-                                      colors: [
-                                        widget.mode.color.withValues(
-                                          red: widget.mode.color.r.toDouble(),
-                                          green: widget.mode.color.g.toDouble(),
-                                          blue: widget.mode.color.b.toDouble(),
-                                          alpha: 0.2,
-                                        ),
-                                        widget.mode.color.withValues(
-                                          red: widget.mode.color.r.toDouble(),
-                                          green: widget.mode.color.g.toDouble(),
-                                          blue: widget.mode.color.b.toDouble(),
-                                          alpha: 0.0,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.check_circle_outline,
-                                    color: widget.mode.color.withValues(
-                                      red: widget.mode.color.r.toDouble(),
-                                      green: widget.mode.color.g.toDouble(),
-                                      blue: widget.mode.color.b.toDouble(),
-                                      alpha: 0.8,
-                                    ),
-                                    size: 40,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      child: result,
-                    );
-                  }
-
-                  return result;
-                },
-              );
-            },
-            layoutBuilder: (currentChild, previousChildren) {
-              return Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  if (currentChild != null) currentChild,
-                ],
-              );
-            },
-            child: widget.card.isFlipped || widget.card.isMatched
-                ? _buildFrontSide()
-                : _buildBackSide(),
+        return Transform.scale(
+          scale: scale,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0015)
+              ..rotateY(angle),
+            child: isFrontVisible ? _buildBackSide() : _buildFrontSide(),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildFrontSide() {
-    return Container(
-      key: const ValueKey('front'),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              red: 0.0,
-              green: 0.0,
-              blue: 0.0,
-              alpha: 0.1,
-            ),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final cardColor = widget.card.backgroundColor;
+
+    return Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.rotationY(pi),
       child: Container(
-        margin: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: widget.card.backgroundColor.withValues(
-            red: widget.card.backgroundColor.r.toDouble(),
-            green: widget.card.backgroundColor.g.toDouble(),
-            blue: widget.card.backgroundColor.b.toDouble(),
-            alpha: 0.15,
-          ),
+          color: const Color(0xFF1A1A2E),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: widget.card.backgroundColor,
-            width: 2,
+            color: widget.card.isMatched
+                ? Colors.greenAccent.withValues(alpha: 0.8)
+                : cardColor.withValues(alpha: 0.6),
+            width: widget.card.isMatched ? 2.5 : 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: (widget.card.isMatched ? Colors.greenAccent : cardColor)
+                  .withValues(alpha: widget.card.isMatched ? 0.4 : 0.25),
+              blurRadius: widget.card.isMatched ? 12 : 6,
+              spreadRadius: widget.card.isMatched ? 1 : 0,
+            ),
+          ],
         ),
-        child: Center(
-          child: Text(
-            widget.card.emoji,
-            style: TextStyle(
-              fontSize: 28,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withValues(
-                    red: 0.0,
-                    green: 0.0,
-                    blue: 0.0,
-                    alpha: 0.2,
-                  ),
-                  offset: const Offset(0, 1),
-                  blurRadius: 2,
-                ),
+        child: Container(
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            gradient: RadialGradient(
+              colors: [
+                cardColor.withValues(alpha: 0.2),
+                Colors.transparent,
               ],
+            ),
+          ),
+          child: Center(
+            child: Text(
+              widget.card.emoji,
+              style: const TextStyle(fontSize: 28),
             ),
           ),
         ),
@@ -285,61 +161,49 @@ class _FlipCardState extends State<FlipCard>
   }
 
   Widget _buildBackSide() {
+    final modeColor = widget.mode.color;
+
     return Container(
-      key: const ValueKey('back'),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF2D2D44),
+            const Color(0xFF1A1A2E),
+          ],
+        ),
+        border: Border.all(
+          color: modeColor.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              red: 0.0,
-              green: 0.0,
-              blue: 0.0,
-              alpha: 0.1,
-            ),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Container(
-        margin: const EdgeInsets.all(4),
+        margin: const EdgeInsets.all(3),
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(11),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              widget.mode.color.withValues(
-                red: widget.mode.color.r.toDouble(),
-                green: widget.mode.color.g.toDouble(),
-                blue: widget.mode.color.b.toDouble(),
-                alpha: 0.15,
-              ),
-              widget.mode.color.withValues(
-                red: widget.mode.color.r.toDouble(),
-                green: widget.mode.color.g.toDouble(),
-                blue: widget.mode.color.b.toDouble(),
-                alpha: 0.25,
-              ),
+              modeColor.withValues(alpha: 0.08),
+              modeColor.withValues(alpha: 0.15),
             ],
-          ),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: widget.mode.color,
-            width: 2,
           ),
         ),
         child: Center(
           child: Icon(
             Icons.question_mark_rounded,
-            size: 28,
-            color: widget.mode.color.withValues(
-              red: widget.mode.color.r.toDouble(),
-              green: widget.mode.color.g.toDouble(),
-              blue: widget.mode.color.b.toDouble(),
-              alpha: 0.8,
-            ),
+            size: 26,
+            color: modeColor.withValues(alpha: 0.5),
           ),
         ),
       ),

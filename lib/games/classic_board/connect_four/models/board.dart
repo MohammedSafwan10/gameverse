@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' show Point;
 
 enum CellState { empty, player1, player2 }
+
 enum GameStatus { playing, draw, player1Won, player2Won }
 
 @immutable
@@ -28,8 +29,9 @@ class Board extends Equatable {
     );
   }
 
-  bool get isFull => cells.every((row) => row.every((cell) => cell != CellState.empty));
-  
+  bool get isFull =>
+      cells.every((row) => row.every((cell) => cell != CellState.empty));
+
   bool isValidMove(int col) {
     return col >= 0 && col < cols && cells[0][col] == CellState.empty;
   }
@@ -55,4 +57,4 @@ class Board extends Equatable {
 
   @override
   List<Object?> get props => [cells, status, winningCells];
-} 
+}

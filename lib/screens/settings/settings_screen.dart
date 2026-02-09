@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../widgets/premium_background.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -8,7 +9,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
           'Settings',
@@ -23,113 +24,118 @@ class SettingsScreen extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
+      body: Stack(
+        children: [
+          const PremiumBackground(),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
 
-            // App Info Section
-            _buildSectionHeader('System'),
-            _buildSettingsGroup([
-              _buildSettingTile(
-                'Version',
-                '1.0.0',
-                Icons.info_outline,
-                Colors.blue,
-              ),
-              _buildDivider(),
-              _buildSettingTile(
-                'Storage',
-                '12.4 MB used',
-                Icons.storage_rounded,
-                Colors.orange,
-              ),
-            ]),
-
-            const SizedBox(height: 32),
-
-            // Community & Social
-            _buildSectionHeader('Support'),
-            _buildSettingsGroup([
-              _buildSettingTile(
-                'Contact Us',
-                'itzmesafwan1@gmail.com',
-                Icons.email_outlined,
-                Colors.teal,
-                onTap: () {},
-              ),
-              _buildDivider(),
-              _buildSettingTile(
-                'Developer',
-                'NEXDARK TEAM',
-                Icons.code_rounded,
-                Colors.indigo,
-                onTap: () {},
-              ),
-              _buildDivider(),
-              _buildSettingTile(
-                'Rate Game',
-                'Enjoying GameVerse?',
-                Icons.star_outline_rounded,
-                Colors.amber,
-                onTap: () {},
-              ),
-            ]),
-
-            const SizedBox(height: 32),
-
-            // Legal
-            _buildSectionHeader('Legal'),
-            _buildSettingsGroup([
-              _buildSettingTile(
-                'Privacy Policy',
-                'How we handle your data',
-                Icons.security_rounded,
-                Colors.green,
-                onTap: () {},
-              ),
-              _buildDivider(),
-              _buildSettingTile(
-                'Terms of Service',
-                'Usage rules and info',
-                Icons.description_outlined,
-                Colors.grey,
-                onTap: () {},
-              ),
-            ]),
-
-            const SizedBox(height: 48),
-
-            // App Footer
-            Center(
-              child: Column(
-                children: [
-                  const Text(
-                    'GameVerse',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                      color: Colors.black54,
-                    ),
+                // App Info Section
+                _buildSectionHeader('System'),
+                _buildSettingsGroup([
+                  _buildSettingTile(
+                    'Version',
+                    '1.0.0',
+                    Icons.info_outline,
+                    Colors.blue,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Built with ❤️ by NEXDARK',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[400],
-                    ),
+                  _buildDivider(),
+                  _buildSettingTile(
+                    'Storage',
+                    '12.4 MB used',
+                    Icons.storage_rounded,
+                    Colors.orange,
                   ),
-                ],
-              ),
+                ]),
+
+                const SizedBox(height: 32),
+
+                // Community & Social
+                _buildSectionHeader('Support'),
+                _buildSettingsGroup([
+                  _buildSettingTile(
+                    'Contact Us',
+                    'itzmesafwan1@gmail.com',
+                    Icons.email_outlined,
+                    Colors.teal,
+                    onTap: () {},
+                  ),
+                  _buildDivider(),
+                  _buildSettingTile(
+                    'Developer',
+                    'NEXDARK TEAM',
+                    Icons.code_rounded,
+                    Colors.indigo,
+                    onTap: () {},
+                  ),
+                  _buildDivider(),
+                  _buildSettingTile(
+                    'Rate Game',
+                    'Enjoying GameVerse?',
+                    Icons.star_outline_rounded,
+                    Colors.amber,
+                    onTap: () {},
+                  ),
+                ]),
+
+                const SizedBox(height: 32),
+
+                // Legal
+                _buildSectionHeader('Legal'),
+                _buildSettingsGroup([
+                  _buildSettingTile(
+                    'Privacy Policy',
+                    'How we handle your data',
+                    Icons.security_rounded,
+                    Colors.green,
+                    onTap: () {},
+                  ),
+                  _buildDivider(),
+                  _buildSettingTile(
+                    'Terms of Service',
+                    'Usage rules and info',
+                    Icons.description_outlined,
+                    Colors.grey,
+                    onTap: () {},
+                  ),
+                ]),
+
+                const SizedBox(height: 48),
+
+                // App Footer
+                Center(
+                  child: Column(
+                    children: [
+                      const Text(
+                        'GameVerse',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Built with ❤️ by NEXDARK',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
             ),
-            const SizedBox(height: 40),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

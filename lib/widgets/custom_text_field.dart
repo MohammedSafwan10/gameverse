@@ -32,10 +32,7 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: Theme.of(context).colorScheme.primary.withValues(
-                  red: Theme.of(context).colorScheme.primary.r.toDouble(),
-                  green: Theme.of(context).colorScheme.primary.g.toDouble(),
-                  blue: Theme.of(context).colorScheme.primary.b.toDouble(),
-                  alpha: 0.5 * 255,
+                  alpha: 0.5,
                 ),
           ),
         ),
@@ -43,10 +40,7 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: Theme.of(context).colorScheme.primary.withValues(
-                  red: Theme.of(context).colorScheme.primary.r.toDouble(),
-                  green: Theme.of(context).colorScheme.primary.g.toDouble(),
-                  blue: Theme.of(context).colorScheme.primary.b.toDouble(),
-                  alpha: 0.3 * 255,
+                  alpha: 0.3,
                 ),
           ),
         ),

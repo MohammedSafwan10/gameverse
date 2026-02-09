@@ -107,7 +107,9 @@ class HangmanGameController extends GetxController {
   }
 
   Future<void> useHint() async {
-    if (gameState.value.isGameOver || gameState.value.hintsRemaining <= 0) return;
+    if (gameState.value.isGameOver || gameState.value.hintsRemaining <= 0) {
+      return;
+    }
 
     final hint = WordService.getRandomHint(gameState.value);
     if (hint.isEmpty) return;

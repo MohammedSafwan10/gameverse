@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class TicTacToeAnimations {
   static const duration = Duration(milliseconds: 300);
   static const curve = Curves.easeInOut;
-  
+
   static const defaultDuration = Duration(milliseconds: 300);
   static const defaultCurve = Curves.easeInOut;
-  
+
   static const fastDuration = Duration(milliseconds: 150);
   static const slowDuration = Duration(milliseconds: 500);
-  
+
   static const bounceOutCurve = Curves.bounceOut;
   static const elasticOutCurve = Curves.elasticOut;
 

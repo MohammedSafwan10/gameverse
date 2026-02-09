@@ -48,7 +48,7 @@ class CategorySelectionScreen extends StatelessWidget {
             red: category.color.r.toDouble(),
             green: category.color.g.toDouble(),
             blue: category.color.b.toDouble(),
-            alpha: 0.3 * 255,
+            alpha: 0.3,
           ),
         ),
       ),
@@ -62,7 +62,7 @@ class CategorySelectionScreen extends StatelessWidget {
               red: category.color.r.toDouble(),
               green: category.color.g.toDouble(),
               blue: category.color.b.toDouble(),
-              alpha: 0.1 * 255,
+              alpha: 0.1,
             ),
           ),
           child: Column(

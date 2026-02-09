@@ -35,36 +35,36 @@ class MyApp extends StatelessWidget {
       themeMode: themeController.themeMode,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
-        initialBinding: TicTacToeBinding(),
-        getPages: [
-          GetPage(
-            name: '/',
-            page: () => MainNavigationScreen(),
-          ),
-          GetPage(
-            name: '/settings',
-            page: () => const SettingsScreen(),
-          ),
-          // Tic Tac Toe Routes
-          GetPage(
-            name: '/tic-tac-toe',
-            page: () => ModeSelectionScreen(),
-            children: [
-              GetPage(
-                name: '/game',
-                page: () => const TicTacToeGameScreen(),
-              ),
-              GetPage(
-                name: '/stats',
-                page: () => const TicTacToeStatsScreen(),
-              ),
-              GetPage(
-                name: '/settings',
-                page: () => const TicTacToeSettingsScreen(),
-              ),
-            ],
-          ),
-        ],
+      initialBinding: TicTacToeBinding(),
+      getPages: [
+        GetPage(
+          name: '/',
+          page: () => MainNavigationScreen(),
+        ),
+        GetPage(
+          name: '/settings',
+          page: () => const SettingsScreen(),
+        ),
+        // Tic Tac Toe Routes
+        GetPage(
+          name: '/tic-tac-toe',
+          page: () => ModeSelectionScreen(),
+          children: [
+            GetPage(
+              name: '/game',
+              page: () => const TicTacToeGameScreen(),
+            ),
+            GetPage(
+              name: '/stats',
+              page: () => const TicTacToeStatsScreen(),
+            ),
+            GetPage(
+              name: '/settings',
+              page: () => const TicTacToeSettingsScreen(),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

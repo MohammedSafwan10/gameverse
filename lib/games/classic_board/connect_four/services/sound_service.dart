@@ -30,19 +30,19 @@ class SoundService extends GetxService {
     try {
       _dropPlayer = AudioPlayer();
       _winPlayer = AudioPlayer();
-      
+
       // Configure players
       await _dropPlayer.setReleaseMode(ReleaseMode.stop);
       await _winPlayer.setReleaseMode(ReleaseMode.stop);
-      
+
       // Set shorter timeout
       await _dropPlayer.setPlayerMode(PlayerMode.lowLatency);
       await _winPlayer.setPlayerMode(PlayerMode.lowLatency);
-      
+
       // Pre-load sound files
       await _dropPlayer.setSourceAsset('sounds/drop.mp3');
       await _winPlayer.setSourceAsset('sounds/win.mp3');
-      
+
       _isInitialized = true;
     } catch (e) {
       _logger.e('Error initializing sound players: $e');
@@ -57,23 +57,23 @@ class SoundService extends GetxService {
 
   Future<void> playDropSound() async {
     if (!isEnabled.value || !_isInitialized) return;
-    
+
     try {
       // Use a timeout to prevent hanging
       await _dropPlayer.stop().timeout(
-        const Duration(milliseconds: 100),
-        onTimeout: () => null,
-      );
-      
+            const Duration(milliseconds: 100),
+            onTimeout: () => null,
+          );
+
       await _dropPlayer.seek(Duration.zero).timeout(
-        const Duration(milliseconds: 100),
-        onTimeout: () => null,
-      );
-      
+            const Duration(milliseconds: 100),
+            onTimeout: () => null,
+          );
+
       await _dropPlayer.resume().timeout(
-        const Duration(milliseconds: 500),
-        onTimeout: () => null,
-      );
+            const Duration(milliseconds: 500),
+            onTimeout: () => null,
+          );
     } catch (e) {
       // If there's an error, try to reinitialize the player
       _logger.w('Error playing drop sound: $e');
@@ -83,23 +83,23 @@ class SoundService extends GetxService {
 
   Future<void> playWinSound() async {
     if (!isEnabled.value || !_isInitialized) return;
-    
+
     try {
       // Use a timeout to prevent hanging
       await _winPlayer.stop().timeout(
-        const Duration(milliseconds: 100),
-        onTimeout: () => null,
-      );
-      
+            const Duration(milliseconds: 100),
+            onTimeout: () => null,
+          );
+
       await _winPlayer.seek(Duration.zero).timeout(
-        const Duration(milliseconds: 100),
-        onTimeout: () => null,
-      );
-      
+            const Duration(milliseconds: 100),
+            onTimeout: () => null,
+          );
+
       await _winPlayer.resume().timeout(
-        const Duration(milliseconds: 500),
-        onTimeout: () => null,
-      );
+            const Duration(milliseconds: 500),
+            onTimeout: () => null,
+          );
     } catch (e) {
       // If there's an error, try to reinitialize the player
       _logger.w('Error playing win sound: $e');
@@ -117,4 +117,4 @@ class SoundService extends GetxService {
     }
     super.onClose();
   }
-} 
+}
