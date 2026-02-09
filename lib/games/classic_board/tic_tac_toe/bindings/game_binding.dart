@@ -9,21 +9,23 @@ import '../services/navigation_service.dart';
 class TicTacToeBinding extends Bindings {
   @override
   void dependencies() {
-    // Initialize services
-    Get.put(StorageService());
-    Get.put(AIService());
-    Get.put(TicTacToeNavigationService());
+    // Services
+    Get.lazyPut(() => StorageService(), fenix: true);
+    Get.lazyPut(() => AIService(), fenix: true);
+    Get.lazyPut(() => TicTacToeNavigationService(), fenix: true);
 
-    // Initialize controllers - Note: order matters!
-    // Stats controller must be initialized before settings controller
-    // since settings controller depends on stats controller
-    Get.put(TicTacToeStatsController(Get.find<StorageService>()));
-    Get.put(TicTacToeSettingsController());
-    Get.put(
-      TicTacToeGameController(
+    // Controllers - order matters: stats before settings, settings before game
+    Get.lazyPut(
+      () => TicTacToeStatsController(Get.find<StorageService>()),
+      fenix: true,
+    );
+    Get.lazyPut(() => TicTacToeSettingsController(), fenix: true);
+    Get.lazyPut(
+      () => TicTacToeGameController(
         Get.find<TicTacToeNavigationService>(),
         Get.find<AIService>(),
       ),
+      fenix: true,
     );
   }
 }

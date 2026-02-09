@@ -37,14 +37,6 @@ class TicTacToeSettingsController extends GetxController {
         settings.copyWith(vibrationEnabled: !settings.vibrationEnabled);
   }
 
-  void toggleHints() {
-    _settings.value = settings.copyWith(showHints: !settings.showHints);
-  }
-
-  void updateMoveDelay(Duration delay) {
-    _settings.value = settings.copyWith(moveDelay: delay);
-  }
-
   void toggleAutoRestart() {
     _settings.value = settings.copyWith(autoRestart: !settings.autoRestart);
   }

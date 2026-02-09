@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Modern Vibrant Color Palette
-  static const Color _primaryColor = Color(0xFF6C63FF); // Modern Indigo
+  static const Color primaryColor = Color(0xFF6C63FF); // Modern Indigo
   static const Color _secondaryColor = Color(0xFF2A2D3E); // Dark Gunmetal
   static const Color _accentColor = Color(0xFFFF6584); // Vibrant Pink
 
@@ -80,17 +80,17 @@ class AppTheme {
       fontSize: 14,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.5,
-      color: _primaryColor,
+      color: primaryColor,
     ),
   );
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    primaryColor: _primaryColor,
+    primaryColor: primaryColor,
     scaffoldBackgroundColor: _backgroundColor,
     colorScheme: ColorScheme.light(
-      primary: _primaryColor,
+      primary: primaryColor,
       secondary: _accentColor,
       surface: _surfaceColor,
       error: _errorColor,
@@ -117,7 +117,7 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: _primaryColor,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -129,7 +129,7 @@ class AppTheme {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: _primaryColor,
+        foregroundColor: primaryColor,
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -151,10 +151,10 @@ class AppTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: _primaryColor,
+    primaryColor: primaryColor,
     scaffoldBackgroundColor: Color(0xFF121212),
     colorScheme: ColorScheme.dark(
-      primary: _primaryColor,
+      primary: primaryColor,
       secondary: _accentColor,
       surface: Color(0xFF1E1E1E),
       error: _errorColor,

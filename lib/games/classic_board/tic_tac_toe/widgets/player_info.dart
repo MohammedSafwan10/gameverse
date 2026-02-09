@@ -20,35 +20,28 @@ class PlayerInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: isCurrentPlayer
-            ? TicTacToeTheme.primaryColor.withValues(
-                red: TicTacToeTheme.primaryColor.r.toDouble(),
-                green: TicTacToeTheme.primaryColor.g.toDouble(),
-                blue: TicTacToeTheme.primaryColor.b.toDouble(),
-                alpha: 0.1,
-              )
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isCurrentPlayer
-              ? TicTacToeTheme.primaryColor
-              : Colors.black.withValues(
-                  red: 0,
-                  green: 0,
-                  blue: 0,
-                  alpha: 0.1,
-                ),
+          ? TicTacToeTheme.primaryColor.withValues(alpha: 0.1)
+          : theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: isCurrentPlayer
+            ? TicTacToeTheme.primaryColor
+            : onSurface.withValues(alpha: 0.1),
           width: isCurrentPlayer ? 2 : 1,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: onSurface.withValues(alpha: 0.08),
             blurRadius: 8,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -63,10 +56,10 @@ class PlayerInfo extends StatelessWidget {
               Flexible(
                 child: Text(
                   label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                         color: isCurrentPlayer
                             ? TicTacToeTheme.primaryColor
-                            : Colors.black87,
+                            : onSurface,
                         fontWeight: isCurrentPlayer
                             ? FontWeight.bold
                             : FontWeight.normal,
@@ -80,18 +73,13 @@ class PlayerInfo extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(
-                red: Colors.grey.r.toDouble(),
-                green: Colors.grey.g.toDouble(),
-                blue: Colors.grey.b.toDouble(),
-                alpha: 0.1,
-              ),
+              color: onSurface.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               'Wins: $wins',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.black87,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                    color: onSurface,
                     fontWeight: FontWeight.w500,
                   ),
             ),
@@ -102,12 +90,7 @@ class PlayerInfo extends StatelessWidget {
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               decoration: BoxDecoration(
-                color: TicTacToeTheme.primaryColor.withValues(
-                  red: TicTacToeTheme.primaryColor.r.toDouble(),
-                  green: TicTacToeTheme.primaryColor.g.toDouble(),
-                  blue: TicTacToeTheme.primaryColor.b.toDouble(),
-                  alpha: 0.2,
-                ),
+                color: TicTacToeTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Row(
@@ -140,12 +123,7 @@ class PlayerInfo extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: TicTacToeTheme.primaryColor.withValues(
-                      red: TicTacToeTheme.primaryColor.r.toDouble(),
-                      green: TicTacToeTheme.primaryColor.g.toDouble(),
-                      blue: TicTacToeTheme.primaryColor.b.toDouble(),
-                      alpha: 0.4,
-                    ),
+                    color: TicTacToeTheme.primaryColor.withValues(alpha: 0.4),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -165,12 +143,7 @@ class PlayerInfo extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withValues(
-          red: color.r.toDouble(),
-          green: color.g.toDouble(),
-          blue: color.b.toDouble(),
-          alpha: 0.1,
-        ),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(

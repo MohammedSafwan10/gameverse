@@ -29,7 +29,7 @@ class _TicTacToeSettingsScreenState extends State<TicTacToeSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: TicTacToeTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: TicTacToeTheme.primaryColor,
         leading: IconButton(

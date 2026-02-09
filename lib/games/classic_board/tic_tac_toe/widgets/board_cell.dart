@@ -63,7 +63,6 @@ class _BoardCellState extends State<BoardCell>
       _controller.reverse();
     }
 
-    // Update winning cell animation
     if (widget.isWinningCell && !oldWidget.isWinningCell) {
       _pulseAnimation();
     }
@@ -132,25 +131,13 @@ class _BoardCellState extends State<BoardCell>
 
   Color _getCellBackgroundColor() {
     if (widget.isWinningCell) {
-      return TicTacToeTheme.primaryColor.withValues(
-        red: TicTacToeTheme.primaryColor.r.toDouble(),
-        green: TicTacToeTheme.primaryColor.g.toDouble(),
-        blue: TicTacToeTheme.primaryColor.b.toDouble(),
-        alpha: 0.1,
-      );
+      return TicTacToeTheme.primaryColor.withValues(alpha: 0.1);
     }
-
     if (widget.isHighlighted) {
-      return Colors.grey.withValues(
-        red: Colors.grey.r.toDouble(),
-        green: Colors.grey.g.toDouble(),
-        blue: Colors.grey.b.toDouble(),
-        alpha: 0.1,
-      );
+      return Colors.grey.withValues(alpha: 0.1);
     }
-
     return widget.isEnabled && widget.player == Player.none
-        ? Colors.white
+        ? Theme.of(context).colorScheme.surface
         : Theme.of(context).colorScheme.surface;
   }
 
@@ -158,49 +145,26 @@ class _BoardCellState extends State<BoardCell>
     if (widget.isWinningCell) {
       return TicTacToeTheme.primaryColor;
     }
-
     return widget.isHighlighted
-        ? TicTacToeTheme.primaryColor.withValues(
-            red: TicTacToeTheme.primaryColor.r.toDouble(),
-            green: TicTacToeTheme.primaryColor.g.toDouble(),
-            blue: TicTacToeTheme.primaryColor.b.toDouble(),
-            alpha: 0.5,
-          )
-        : TicTacToeTheme.gridColor.withValues(
-            red: TicTacToeTheme.gridColor.r.toDouble(),
-            green: TicTacToeTheme.gridColor.g.toDouble(),
-            blue: TicTacToeTheme.gridColor.b.toDouble(),
-            alpha: 0.2,
-          );
+        ? TicTacToeTheme.primaryColor.withValues(alpha: 0.5)
+        : TicTacToeTheme.gridColor.withValues(alpha: 0.2);
   }
 
   List<BoxShadow> _getCellShadow() {
     final shadows = <BoxShadow>[];
-
     if (widget.isWinningCell) {
       shadows.add(BoxShadow(
-        color: TicTacToeTheme.primaryColor.withValues(
-          red: TicTacToeTheme.primaryColor.r.toDouble(),
-          green: TicTacToeTheme.primaryColor.g.toDouble(),
-          blue: TicTacToeTheme.primaryColor.b.toDouble(),
-          alpha: 0.3,
-        ),
+        color: TicTacToeTheme.primaryColor.withValues(alpha: 0.3),
         blurRadius: 8,
         spreadRadius: 2,
       ));
     } else if (widget.isHighlighted) {
       shadows.add(BoxShadow(
-        color: Theme.of(context).colorScheme.secondary.withValues(
-              red: Theme.of(context).colorScheme.secondary.r.toDouble(),
-              green: Theme.of(context).colorScheme.secondary.g.toDouble(),
-              blue: Theme.of(context).colorScheme.secondary.b.toDouble(),
-              alpha: 0.2,
-            ),
+        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
         blurRadius: 4,
         spreadRadius: 1,
       ));
     }
-
     return shadows;
   }
 
@@ -220,12 +184,7 @@ class _BoardCellState extends State<BoardCell>
       shaderCallback: (bounds) => LinearGradient(
         colors: [
           TicTacToeTheme.xColor,
-          TicTacToeTheme.xColor.withValues(
-            red: TicTacToeTheme.xColor.r.toDouble(),
-            green: TicTacToeTheme.xColor.g.toDouble(),
-            blue: TicTacToeTheme.xColor.b.toDouble(),
-            alpha: 0.7,
-          ),
+          TicTacToeTheme.xColor.withValues(alpha: 0.7),
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -237,12 +196,7 @@ class _BoardCellState extends State<BoardCell>
         shadows: widget.isWinningCell
             ? [
                 Shadow(
-                  color: TicTacToeTheme.xColor.withValues(
-                    red: TicTacToeTheme.xColor.r.toDouble(),
-                    green: TicTacToeTheme.xColor.g.toDouble(),
-                    blue: TicTacToeTheme.xColor.b.toDouble(),
-                    alpha: 0.5,
-                  ),
+                  color: TicTacToeTheme.xColor.withValues(alpha: 0.5),
                   blurRadius: 8,
                 ),
               ]
@@ -256,12 +210,7 @@ class _BoardCellState extends State<BoardCell>
       shaderCallback: (bounds) => LinearGradient(
         colors: [
           TicTacToeTheme.oColor,
-          TicTacToeTheme.oColor.withValues(
-            red: TicTacToeTheme.oColor.r.toDouble(),
-            green: TicTacToeTheme.oColor.g.toDouble(),
-            blue: TicTacToeTheme.oColor.b.toDouble(),
-            alpha: 0.7,
-          ),
+          TicTacToeTheme.oColor.withValues(alpha: 0.7),
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -273,12 +222,7 @@ class _BoardCellState extends State<BoardCell>
         shadows: widget.isWinningCell
             ? [
                 Shadow(
-                  color: TicTacToeTheme.oColor.withValues(
-                    red: TicTacToeTheme.oColor.r.toDouble(),
-                    green: TicTacToeTheme.oColor.g.toDouble(),
-                    blue: TicTacToeTheme.oColor.b.toDouble(),
-                    alpha: 0.5,
-                  ),
+                  color: TicTacToeTheme.oColor.withValues(alpha: 0.5),
                   blurRadius: 8,
                 ),
               ]
@@ -296,12 +240,7 @@ class _BoardCellState extends State<BoardCell>
         height: 10,
         decoration: BoxDecoration(
           color: _isPressed
-              ? TicTacToeTheme.primaryColor.withValues(
-                  red: TicTacToeTheme.primaryColor.r.toDouble(),
-                  green: TicTacToeTheme.primaryColor.g.toDouble(),
-                  blue: TicTacToeTheme.primaryColor.b.toDouble(),
-                  alpha: 0.2,
-                )
+              ? TicTacToeTheme.primaryColor.withValues(alpha: 0.2)
               : Colors.transparent,
           shape: BoxShape.circle,
         ),

@@ -1,10 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'player.dart';
 import 'game_move.dart';
 import 'game_settings.dart';
-
-part 'game_state.g.dart';
 
 enum GameStatus {
   playing,
@@ -12,7 +9,6 @@ enum GameStatus {
   won,
 }
 
-@JsonSerializable()
 class TicTacToeState extends Equatable {
   final List<Player> board;
   final Player currentPlayer;
@@ -62,9 +58,6 @@ class TicTacToeState extends Equatable {
       settings: settings ?? this.settings,
     );
   }
-
-  factory TicTacToeState.fromJson(Map<String, dynamic> json) => _$TicTacToeStateFromJson(json);
-  Map<String, dynamic> toJson() => _$TicTacToeStateToJson(this);
 
   @override
   List<Object?> get props => [

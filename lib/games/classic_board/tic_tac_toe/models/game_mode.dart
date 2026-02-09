@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 enum GameMode {
   singlePlayer,
-  multiPlayer,
-  online;
+  multiPlayer;
 
   String get displayName {
     switch (this) {
@@ -11,8 +10,6 @@ enum GameMode {
         return 'Single Player';
       case GameMode.multiPlayer:
         return 'Two Players';
-      case GameMode.online:
-        return 'Online';
     }
   }
 
@@ -22,8 +19,6 @@ enum GameMode {
         return 'Play against AI with different difficulty levels';
       case GameMode.multiPlayer:
         return 'Play with a friend on the same device';
-      case GameMode.online:
-        return 'Challenge players online';
     }
   }
 
@@ -33,8 +28,6 @@ enum GameMode {
         return Icons.person;
       case GameMode.multiPlayer:
         return Icons.people;
-      case GameMode.online:
-        return Icons.public;
     }
   }
 }

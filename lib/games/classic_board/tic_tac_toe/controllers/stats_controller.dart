@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 import 'dart:math' as math;
 import '../models/game_stats.dart';
 import '../models/game_difficulty.dart';
@@ -9,7 +8,6 @@ import '../services/storage_service.dart';
 
 class TicTacToeStatsController extends GetxController {
   final StorageService _storage;
-  final _logger = Logger();
   final Rx<GameStats> _stats = const GameStats(
     difficultyStats: {},
     unlockedAchievements: {},
@@ -52,12 +50,9 @@ class TicTacToeStatsController extends GetxController {
 
   Future<void> _loadStats() async {
     try {
-      final loadedStats = await _storage.loadStats();
-      _stats.value = loadedStats;
-      _logger.i(
-          'Stats loaded - Player wins: $playerWins, AI wins: $aiWins, Multiplayer: P1[$player1Wins] P2[$player2Wins]');
-    } catch (e) {
-      _logger.e('Failed to load stats: $e');
+    final loadedStats = await _storage.loadStats();
+        _stats.value = loadedStats;
+      } catch (e) {
       _stats.value = const GameStats(
         difficultyStats: {},
         unlockedAchievements: {},
@@ -89,9 +84,7 @@ class TicTacToeStatsController extends GetxController {
           gameDuration: gameDuration,
         );
       }
-    } catch (e) {
-      _logger.e('Failed to update stats: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _updateSinglePlayerStats({
@@ -139,8 +132,6 @@ class TicTacToeStatsController extends GetxController {
     );
 
     await _storage.saveStats(_stats.value);
-    _logger.i(
-        'Single player stats updated - Player wins: $playerWins, AI wins: $aiWins');
   }
 
   Future<void> _updateMultiplayerStats({
@@ -166,8 +157,6 @@ class TicTacToeStatsController extends GetxController {
     );
 
     await _storage.saveStats(_stats.value);
-    _logger.i(
-        'Multiplayer stats updated - P1: $player1Wins, P2: $player2Wins, Draws: $multiplayerDraws');
   }
 
   Set<Achievement> _checkAchievements(
@@ -204,10 +193,7 @@ class TicTacToeStatsController extends GetxController {
         multiplayerStats: MultiplayerStats(),
       );
       await _storage.saveStats(_stats.value);
-      _logger.i('All stats reset successfully');
-    } catch (e) {
-      _logger.e('Failed to reset stats: $e');
-    }
+      } catch (_) {}
   }
 
   Future<void> resetSinglePlayerStats() async {
@@ -216,10 +202,7 @@ class TicTacToeStatsController extends GetxController {
         difficultyStats: {},
       );
       await _storage.saveStats(_stats.value);
-      _logger.i('Single player stats reset successfully');
-    } catch (e) {
-      _logger.e('Failed to reset single player stats: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> resetMultiplayerStats() async {
@@ -228,9 +211,6 @@ class TicTacToeStatsController extends GetxController {
         multiplayerStats: const MultiplayerStats(),
       );
       await _storage.saveStats(_stats.value);
-      _logger.i('Multiplayer stats reset successfully');
-    } catch (e) {
-      _logger.e('Failed to reset multiplayer stats: $e');
-    }
+    } catch (_) {}
   }
 }

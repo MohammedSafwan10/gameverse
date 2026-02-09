@@ -173,7 +173,45 @@ class HomeController extends GetxController {
       icon: Icons.psychology_outlined,
       color: Colors.teal,
       gamesCount: 5,
-      games: [],
+      games: [
+        GameInfo(
+          name: 'Battle Tanks',
+          description: 'Strategic tank warfare with tactical planning.',
+          icon: Icons.shield_rounded,
+          isAvailable: false,
+          screen: () => const Placeholder(),
+        ),
+      ],
+    ),
+    GameCategory(
+      title: 'Simulation',
+      icon: Icons.precision_manufacturing_rounded,
+      color: Colors.blueGrey,
+      gamesCount: 3,
+      games: [
+        GameInfo(
+          name: 'City Builder',
+          description: 'Build and manage your own thriving metropolis.',
+          icon: Icons.location_city_rounded,
+          isAvailable: false,
+          screen: () => const Placeholder(),
+        ),
+      ],
+    ),
+    GameCategory(
+      title: 'Sports',
+      icon: Icons.sports_basketball_rounded,
+      color: Colors.deepOrange,
+      gamesCount: 4,
+      games: [
+        GameInfo(
+          name: 'Hoop Master',
+          description: 'Master the art of the perfect basketball shot.',
+          icon: Icons.sports_basketball_rounded,
+          isAvailable: false,
+          screen: () => const Placeholder(),
+        ),
+      ],
     ),
     GameCategory(
       title: 'Reaction',
@@ -208,6 +246,22 @@ class HomeController extends GetxController {
       ],
     ),
   ];
+
+  // Getters for organized sections
+  List<GameCategory> get featuredCategories => [
+        categories[1], // Classic Board
+        categories[3], // Brain Training
+        categories[4], // Puzzle
+        categories[0], // Arcade
+      ];
+
+  List<GameCategory> get quickPlayCategories => [
+        categories[3], // Brain Training
+        categories[4], // Puzzle
+        categories[5], // Quick Casual
+        categories[8], // Educational
+      ];
+  List<GameCategory> get allCategories => categories;
 
   void onCategoryTap(int index) {
     final category = categories[index];

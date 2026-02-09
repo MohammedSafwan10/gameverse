@@ -52,14 +52,26 @@ class StorageService extends GetxService {
         }
       }
 
-      return GameStats(
-        difficultyStats: difficultyStats,
-        unlockedAchievements: achievements,
-        lastPlayed: json['lastPlayed'] != null 
-            ? DateTime.parse(json['lastPlayed'])
-            : null,
-        totalPlayTime: Duration(milliseconds: json['totalPlayTime'] ?? 0),
-      );
+        MultiplayerStats multiplayerStats = const MultiplayerStats();
+        if (json['multiplayerStats'] != null) {
+          final mp = json['multiplayerStats'] as Map<String, dynamic>;
+          multiplayerStats = MultiplayerStats(
+            gamesPlayed: mp['gamesPlayed'] ?? 0,
+            player1Wins: mp['player1Wins'] ?? 0,
+            player2Wins: mp['player2Wins'] ?? 0,
+            draws: mp['draws'] ?? 0,
+          );
+        }
+
+        return GameStats(
+          difficultyStats: difficultyStats,
+          unlockedAchievements: achievements,
+          multiplayerStats: multiplayerStats,
+          lastPlayed: json['lastPlayed'] != null 
+              ? DateTime.parse(json['lastPlayed'])
+              : null,
+          totalPlayTime: Duration(milliseconds: json['totalPlayTime'] ?? 0),
+        );
     } catch (e) {
       return const GameStats();
     }
@@ -78,14 +90,20 @@ class StorageService extends GetxService {
       };
     });
 
-    final data = {
-      'difficultyStats': difficultyStats,
-      'achievements': stats.unlockedAchievements
-          .map((a) => a.toString())
-          .toList(),
-      'lastPlayed': stats.lastPlayed?.toIso8601String(),
-      'totalPlayTime': stats.totalPlayTime.inMilliseconds,
-    };
+      final data = {
+        'difficultyStats': difficultyStats,
+        'multiplayerStats': {
+          'gamesPlayed': stats.multiplayerStats.gamesPlayed,
+          'player1Wins': stats.multiplayerStats.player1Wins,
+          'player2Wins': stats.multiplayerStats.player2Wins,
+          'draws': stats.multiplayerStats.draws,
+        },
+        'achievements': stats.unlockedAchievements
+            .map((a) => a.toString())
+            .toList(),
+        'lastPlayed': stats.lastPlayed?.toIso8601String(),
+        'totalPlayTime': stats.totalPlayTime.inMilliseconds,
+      };
 
     await _storage.write(_statsKey, jsonEncode(data));
   }

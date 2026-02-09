@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/stats_controller.dart';
@@ -22,32 +21,22 @@ class TicTacToeGameScreen extends StatefulWidget {
 class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
   final _controller = Get.find<TicTacToeGameController>();
   final _navigationService = Get.find<TicTacToeNavigationService>();
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
 
   bool _showContent = false;
 
   @override
   void initState() {
     super.initState();
-    _logger.i('Game screen initialized');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _showContent = true;
-        _logger.d('Game board visibility enabled');
-      });
+      setState(() => _showContent = true);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -59,7 +48,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: TicTacToeTheme.backgroundColor,
+        backgroundColor: colorScheme.surface,
         body: Stack(
           children: [
             // Decorative Background Elements
@@ -91,7 +80,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             SafeArea(
               child: Column(
                 children: [
-                  _buildCustomHeader(),
+                  _buildCustomHeader(theme),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
@@ -112,24 +101,21 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Player status
-                                    _buildPlayerStatus()
+                                    _buildPlayerStatus(theme)
                                         .animate(target: _showContent ? 1 : 0)
                                         .fadeIn(duration: 600.ms)
                                         .slideY(begin: -0.2, end: 0),
 
                                     SizedBox(height: isLandscape ? 16.0 : 40.0),
 
-                                    // Game Board
-                                    _buildGameBoard(constraints)
+                                    _buildGameBoard(constraints, theme)
                                         .animate(target: _showContent ? 1 : 0)
                                         .fadeIn(duration: 800.ms)
                                         .scale(begin: const Offset(0.9, 0.9)),
 
                                     SizedBox(height: isLandscape ? 16.0 : 40.0),
 
-                                    // Game Status
-                                    _buildGameStatus()
+                                    _buildGameStatus(theme)
                                         .animate(target: _showContent ? 1 : 0)
                                         .fadeIn(duration: 600.ms)
                                         .slideY(begin: 0.2, end: 0),
@@ -151,7 +137,9 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     );
   }
 
-  Widget _buildCustomHeader() {
+  Widget _buildCustomHeader(ThemeData theme) {
+    final onSurface = theme.colorScheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -159,7 +147,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            color: Colors.black87,
+            color: onSurface,
             onPressed: () async {
               final shouldPop = await _showExitConfirmationDialog();
               if (shouldPop) {
@@ -172,19 +160,19 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: onSurface,
             ),
           ),
           Row(
             children: [
               IconButton(
                 icon: const Icon(Icons.refresh_rounded),
-                color: Colors.black87,
+                color: onSurface,
                 onPressed: () => _showRestartConfirmationDialog(),
               ),
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
-                color: Colors.black87,
+                color: onSurface,
                 onPressed: _navigationService.toSettings,
               ),
             ],
@@ -194,22 +182,23 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     );
   }
 
-  Widget _buildPlayerStatus() {
+  Widget _buildPlayerStatus(ThemeData theme) {
     return Obx(() {
       final gameState = _controller.gameState;
       final isThinking = _controller.isThinking;
       final stats = Get.find<TicTacToeStatsController>();
       final settings = Get.find<TicTacToeSettingsController>();
       final isMultiplayer = settings.settings.gameMode == GameMode.multiPlayer;
+      final colorScheme = theme.colorScheme;
 
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: colorScheme.onSurface.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -232,7 +221,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             Container(
               height: 40,
               width: 1,
-              color: Colors.grey.withValues(alpha: 0.2),
+              color: colorScheme.onSurface.withValues(alpha: 0.1),
               margin: const EdgeInsets.symmetric(horizontal: 16),
             ),
             Expanded(
@@ -254,13 +243,10 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     });
   }
 
-  Widget _buildGameBoard(BoxConstraints constraints) {
-    _logger.d('Building game board');
-
-    // Calculate the maximum size for the board while keeping it square
+  Widget _buildGameBoard(BoxConstraints constraints, ThemeData theme) {
     final double maxSize = constraints.maxWidth > constraints.maxHeight
         ? constraints.maxHeight * 0.7
-        : constraints.maxWidth * 0.9; // Adjusted size for better proportions
+        : constraints.maxWidth * 0.9;
 
     return Center(
       child: SizedBox(
@@ -268,7 +254,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
         height: maxSize,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -308,13 +294,14 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     );
   }
 
-  Widget _buildGameStatus() {
+  Widget _buildGameStatus(ThemeData theme) {
     return Obx(() {
       final gameState = _controller.gameState;
       final isThinking = _controller.isThinking;
       final isGameOver = _controller.isGameOver;
       final settings = Get.find<TicTacToeSettingsController>();
       final isMultiplayer = settings.settings.gameMode == GameMode.multiPlayer;
+      final onSurface = theme.colorScheme.onSurface;
 
       if (isGameOver) {
         final winner = gameState.winner;
@@ -336,7 +323,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
           children: [
             Text(
               message,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: messageColor,
                   ),
@@ -377,7 +364,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
             Text(
               'AI is thinking...',
               style: TextStyle(
-                color: Colors.black54,
+                color: onSurface.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -401,7 +388,7 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
           color: (currentPlayer == Player.x
                   ? TicTacToeTheme.xColor
                   : TicTacToeTheme.oColor)
-              .withValues(alpha: 0.1),
+                .withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(30),
         ),
         child: Text(
@@ -422,8 +409,6 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            surfaceTintColor: Colors.transparent,
             title: const Text('Exit Game?'),
             content: const Text('Are you sure you want to exit the game?'),
             shape: RoundedRectangleBorder(
@@ -454,8 +439,6 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
     final shouldRestart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
         title: const Text('Restart Game?'),
         content: const Text('Are you sure you want to restart the game?'),
         shape: RoundedRectangleBorder(

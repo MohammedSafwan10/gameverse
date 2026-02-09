@@ -417,16 +417,11 @@ class _TicTacToeStatsScreenState extends State<TicTacToeStatsScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: stats.winRate,
-                        backgroundColor:
-                            _getDifficultyColor(difficulty).withValues(
-                          red: _getDifficultyColor(difficulty).r.toDouble(),
-                          green: _getDifficultyColor(difficulty).g.toDouble(),
-                          blue: _getDifficultyColor(difficulty).b.toDouble(),
-                          alpha: 0.3 * 255,
-                        ),
-                        color: _getDifficultyColor(difficulty),
+                        LinearProgressIndicator(
+                          value: stats.winRate,
+                          backgroundColor:
+                              _getDifficultyColor(difficulty).withValues(alpha: 0.15),
+                          color: _getDifficultyColor(difficulty),
                         minHeight: 8,
                       ),
                       const SizedBox(height: 4),

@@ -35,41 +35,36 @@ class MyApp extends StatelessWidget {
       themeMode: themeController.themeMode,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
-      initialBinding: TicTacToeBinding(),
-      getPages: [
-        GetPage(
-          name: '/',
-          page: () => MainNavigationScreen(),
-          binding: TicTacToeBinding(),
-        ),
-        GetPage(
-          name: '/settings',
-          page: () => const SettingsScreen(),
-        ),
-        // Tic Tac Toe Routes
-        GetPage(
-          name: '/tic-tac-toe',
-          page: () => ModeSelectionScreen(),
-          binding: TicTacToeBinding(),
-          children: [
-            GetPage(
-              name: '/game',
-              page: () => const TicTacToeGameScreen(),
-              binding: TicTacToeBinding(),
-            ),
-            GetPage(
-              name: '/stats',
-              page: () => const TicTacToeStatsScreen(),
-              binding: TicTacToeBinding(),
-            ),
-            GetPage(
-              name: '/settings',
-              page: () => const TicTacToeSettingsScreen(),
-              binding: TicTacToeBinding(),
-            ),
-          ],
-        ),
-      ],
+        initialBinding: TicTacToeBinding(),
+        getPages: [
+          GetPage(
+            name: '/',
+            page: () => MainNavigationScreen(),
+          ),
+          GetPage(
+            name: '/settings',
+            page: () => const SettingsScreen(),
+          ),
+          // Tic Tac Toe Routes
+          GetPage(
+            name: '/tic-tac-toe',
+            page: () => ModeSelectionScreen(),
+            children: [
+              GetPage(
+                name: '/game',
+                page: () => const TicTacToeGameScreen(),
+              ),
+              GetPage(
+                name: '/stats',
+                page: () => const TicTacToeStatsScreen(),
+              ),
+              GetPage(
+                name: '/settings',
+                page: () => const TicTacToeSettingsScreen(),
+              ),
+            ],
+          ),
+        ],
     );
   }
 }

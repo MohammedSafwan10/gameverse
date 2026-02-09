@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import '../models/game_mode.dart';
 import '../controllers/settings_controller.dart';
 import '../theme/game_theme.dart';
-import '../screens/game_screen.dart';
-import '../bindings/game_binding.dart';
 
 class ModeSelectionScreen extends StatelessWidget {
   final _settingsController = Get.find<TicTacToeSettingsController>();
@@ -63,12 +61,7 @@ class ModeSelectionScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: TicTacToeTheme.primaryColor.withValues(
-                    red: TicTacToeTheme.primaryColor.r.toDouble(),
-                    green: TicTacToeTheme.primaryColor.g.toDouble(),
-                    blue: TicTacToeTheme.primaryColor.b.toDouble(),
-                    alpha: 0.1,
-                  ),
+                  color: TicTacToeTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -113,11 +106,6 @@ class ModeSelectionScreen extends StatelessWidget {
 
   void _handleModeSelection(GameMode mode) {
     _settingsController.updateGameMode(mode);
-
-    Get.to(
-      () => const TicTacToeGameScreen(),
-      binding: TicTacToeBinding(),
-      transition: Transition.rightToLeft,
-    );
+    Get.toNamed('/tic-tac-toe/game');
   }
 }
