@@ -617,10 +617,12 @@ class BlockMergeController extends GetxController {
     return true;
   }
 
-  void exitGame() {
+  void exitGame({bool popRoute = true}) {
     _gameTimer?.cancel();
     clearGameState();
-    Get.back();
+    if (popRoute) {
+      Get.back();
+    }
   }
 
   Future<bool> onWillPop() async {

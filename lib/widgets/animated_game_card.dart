@@ -82,18 +82,20 @@ class AnimatedGameCard extends StatelessWidget {
                   ),
 
                   Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(
+                      MediaQuery.of(context).size.width > 600 ? 24 : 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Icon Container with soft glow
                         Container(
-                          width: 54,
-                          height: 54,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             color: color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: color.withValues(alpha: 0.1),
                               width: 1,
@@ -102,11 +104,11 @@ class AnimatedGameCard extends StatelessWidget {
                           child: Icon(
                             icon,
                             color: color,
-                            size: 30,
+                            size: 26,
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const Spacer(),
 
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,10 +121,11 @@ class AnimatedGameCard extends StatelessWidget {
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black87,
-                                    fontSize: 18,
+                                    fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 15,
                                     letterSpacing: -0.2,
+                                    height: 1.2,
                                   ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
