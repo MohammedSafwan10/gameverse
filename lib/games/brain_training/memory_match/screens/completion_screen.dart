@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 import '../models/game_mode.dart';
 import '../models/game_state.dart';
 import '../controllers/game_controller.dart';
@@ -311,10 +312,10 @@ class _GameCompletionScreenState extends State<GameCompletionScreen> {
             onPressed: () {
               final controller = Get.find<MemoryMatchGameController>();
               if (isChallenge) {
-                Get.back(); // pop completion screen
+                Navigator.of(context).pop();
                 controller.nextChallengeLevel();
               } else {
-                Get.back(); // pop completion screen
+                Navigator.of(context).pop();
                 controller.restartGame(); // restart with same mode/difficulty
               }
             },
@@ -342,8 +343,11 @@ class _GameCompletionScreenState extends State<GameCompletionScreen> {
               if (Get.isRegistered<MemoryMatchGameController>()) {
                 Get.find<MemoryMatchGameController>().cleanupGame();
               }
-              Get.back(); // completion screen
-              Get.back(); // game screen
+              Navigator.of(context).pop();
+              popAfterConfirmation(
+                context,
+                confirmExit: () async => true,
+              );
             },
             icon: const Icon(Icons.home_outlined),
             label: const Text('Exit'),

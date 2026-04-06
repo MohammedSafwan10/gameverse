@@ -10,6 +10,7 @@ import '../widgets/board_cell.dart';
 import '../theme/game_theme.dart';
 import '../services/navigation_service.dart';
 import '../widgets/player_info.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 
 class TicTacToeGameScreen extends StatefulWidget {
   const TicTacToeGameScreen({super.key});
@@ -41,10 +42,10 @@ class _TicTacToeGameScreenState extends State<TicTacToeGameScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          final shouldPop = await _showExitConfirmationDialog();
-          if (shouldPop) {
-            _navigationService.back();
-          }
+          await popAfterConfirmation(
+            context,
+            confirmExit: _showExitConfirmationDialog,
+          );
         }
       },
       child: Scaffold(

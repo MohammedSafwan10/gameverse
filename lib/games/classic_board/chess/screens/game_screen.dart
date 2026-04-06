@@ -7,6 +7,7 @@ import '../widgets/chess_board_widget.dart';
 import '../widgets/countdown_timer.dart';
 import 'settings_screen.dart';
 import 'package:gameverse/widgets/premium_background.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 
 class ChessGameScreen extends StatelessWidget {
   const ChessGameScreen({super.key});
@@ -20,11 +21,10 @@ class ChessGameScreen extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          final shouldPop =
-              await _showExitConfirmationDialog(context, controller);
-          if (shouldPop) {
-            Get.back();
-          }
+          await popAfterConfirmation(
+            context,
+            confirmExit: () => _showExitConfirmationDialog(context, controller),
+          );
         }
       },
       child: Scaffold(
@@ -40,13 +40,10 @@ class ChessGameScreen extends StatelessWidget {
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: () async {
-              final shouldPop =
-                  await _showExitConfirmationDialog(context, controller);
-              if (shouldPop) {
-                Get.back();
-              }
-            },
+            onPressed: () => popAfterConfirmation(
+              context,
+              confirmExit: () => _showExitConfirmationDialog(context, controller),
+            ),
           ),
           actions: [
             IconButton(
@@ -440,7 +437,7 @@ class ChessGameScreen extends StatelessWidget {
                     child: TextButton(
                       onPressed: () {
                         controller.forfeitGame();
-                        Get.back();
+                        Navigator.of(context).pop();
                       },
                       child: const Text('FORFEIT',
                           style: TextStyle(
@@ -541,10 +538,10 @@ class ChessGameScreen extends StatelessWidget {
             content: const Text('Your current progress will be lost.'),
             actions: [
               TextButton(
-                  onPressed: () => Get.back(result: false),
+                  onPressed: () => Navigator.of(context).pop(false),
                   child: const Text('CANCEL')),
               TextButton(
-                onPressed: () => Get.back(result: true),
+                onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('EXIT',
                     style: TextStyle(
                         color: Colors.red, fontWeight: FontWeight.bold)),
@@ -565,10 +562,10 @@ class ChessGameScreen extends StatelessWidget {
         content: const Text('This will reset the current match.'),
         actions: [
           TextButton(
-              onPressed: () => Get.back(result: false),
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('CANCEL')),
           TextButton(
-            onPressed: () => Get.back(result: true),
+            onPressed: () => Navigator.of(context).pop(true),
             child: const Text('RESTART',
                 style: TextStyle(fontWeight: FontWeight.bold)),
           ),

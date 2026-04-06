@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter/widgets.dart';
 
 class TicTacToeNavigationService extends GetxService {
   static TicTacToeNavigationService get to =>
@@ -14,6 +15,10 @@ class TicTacToeNavigationService extends GetxService {
 
   void back() {
     Get.back();
+  }
+
+  void backWithContext(BuildContext context, {Object? result}) {
+    Navigator.of(context).pop(result);
   }
 
   void toSettings() {

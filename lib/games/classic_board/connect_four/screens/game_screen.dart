@@ -8,6 +8,7 @@ import '../controllers/settings_controller.dart';
 import '../models/board.dart';
 import '../widgets/board_widget.dart';
 import 'package:gameverse/widgets/premium_background.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
 
@@ -23,10 +24,11 @@ class ConnectFourGameScreen extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          final shouldPop = await _showExitConfirmationDialog(context);
-          if (shouldPop) {
-            Get.back(result: true);
-          }
+          await popAfterConfirmation(
+            context,
+            confirmExit: () => _showExitConfirmationDialog(context),
+            result: true,
+          );
         }
       },
       child: Scaffold(
@@ -36,10 +38,10 @@ class ConnectFourGameScreen extends StatelessWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: () =>
-                _showExitConfirmationDialog(context).then((result) {
-              if (result) Get.back();
-            }),
+            onPressed: () => popAfterConfirmation(
+              context,
+              confirmExit: () => _showExitConfirmationDialog(context),
+            ),
           ),
           title: Obx(() {
             final isWinning =

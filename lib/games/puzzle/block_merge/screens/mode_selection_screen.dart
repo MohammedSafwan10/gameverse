@@ -7,6 +7,7 @@ import '../controllers/game_controller.dart';
 import '../bindings/game_binding.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 
 class BlockMergeModeSelectionScreen extends StatelessWidget {
   const BlockMergeModeSelectionScreen({super.key});
@@ -81,6 +82,7 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     dev.log('Building BlockMergeModeSelectionScreen', name: 'BlockMerge');
+    final isCompact = MediaQuery.of(context).size.width < 380;
 
     // Initialize services using the binding
     if (!Get.isRegistered<BlockMergeController>()) {
@@ -99,7 +101,11 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
         if (!didPop) {
           final shouldPop = await _showExitConfirmationDialog(context);
           if (shouldPop) {
-            Get.back();
+            if (!context.mounted) return;
+            await popAfterConfirmation(
+              context,
+              confirmExit: () async => true,
+            );
           }
         }
       },
@@ -113,7 +119,11 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
             onPressed: () async {
               final shouldPop = await _showExitConfirmationDialog(context);
               if (shouldPop) {
-                Get.back();
+                if (!context.mounted) return;
+                await popAfterConfirmation(
+                  context,
+                  confirmExit: () async => true,
+                );
               }
             },
           ).animate().fadeIn(delay: 100.ms),
@@ -139,11 +149,16 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
           child: SafeArea(
             child: Column(
               children: [
-                _buildHeader(settingsController),
+                _buildHeader(settingsController, isCompact),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.fromLTRB(
+                      isCompact ? 12 : 16,
+                      isCompact ? 8 : 16,
+                      isCompact ? 12 : 16,
+                      16,
+                    ),
                     child: Column(
                       children: [
                         _buildModeCard(
@@ -159,8 +174,9 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
                             'Track your high score',
                           ],
                           settingsController: settingsController,
+                          isCompact: isCompact,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isCompact ? 12 : 16),
                         _buildModeCard(
                           title: 'Time Challenge',
                           description:
@@ -174,8 +190,9 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
                             'Perfect for speed runs',
                           ],
                           settingsController: settingsController,
+                          isCompact: isCompact,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: isCompact ? 12 : 16),
                         _buildModeCard(
                           title: 'Zen Mode',
                           description:
@@ -189,6 +206,7 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
                             'Perfect for beginners',
                           ],
                           settingsController: settingsController,
+                          isCompact: isCompact,
                         ),
                       ],
                     ),
@@ -209,6 +227,7 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
     required BlockMergeMode mode,
     required List<String> features,
     required BlockMergeSettingsController settingsController,
+    required bool isCompact,
   }) {
     return Card(
       elevation: 4,
@@ -228,14 +247,14 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(isCompact ? 16 : 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(isCompact ? 10 : 12),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
                       borderRadius: BorderRadius.circular(12),
@@ -252,42 +271,48 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(icon, color: Colors.orange.shade800, size: 28),
+                    child: Icon(
+                      icon,
+                      color: Colors.orange.shade800,
+                      size: isCompact ? 24 : 28,
+                    ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: isCompact ? 12 : 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            fontSize: 20,
+                          style: TextStyle(
+                            fontSize: isCompact ? 18 : 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           description,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: isCompact ? 13 : 14,
                             color: Colors.grey.shade600,
                           ),
+                          maxLines: isCompact ? 2 : 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: isCompact ? 12 : 16),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: isCompact ? 6 : 8,
+                runSpacing: isCompact ? 6 : 8,
                 children: features
-                    .map((feature) => _buildFeatureChip(feature))
+                    .map((feature) => _buildFeatureChip(feature, isCompact))
                     .toList(),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: isCompact ? 8 : 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -315,9 +340,12 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
     ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2);
   }
 
-  Widget _buildFeatureChip(String feature) {
+  Widget _buildFeatureChip(String feature, bool isCompact) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 10 : 12,
+        vertical: isCompact ? 5 : 6,
+      ),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
         borderRadius: BorderRadius.circular(20),
@@ -332,7 +360,7 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
           Text(
             feature,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: isCompact ? 11 : 12,
               color: Colors.orange.shade800,
               fontWeight: FontWeight.w500,
             ),
@@ -342,12 +370,18 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BlockMergeSettingsController settingsController) {
+  Widget _buildHeader(
+      BlockMergeSettingsController settingsController, bool isCompact) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(
+        isCompact ? 12 : 16,
+        12,
+        isCompact ? 12 : 16,
+        isCompact ? 8 : 16,
+      ),
       child: Column(
         children: [
-          const SizedBox(height: 8),
+          SizedBox(height: isCompact ? 0 : 8),
           Text(
             'Block Merge',
             style: Get.textTheme.headlineMedium?.copyWith(
@@ -355,35 +389,38 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ).animate().fadeIn().slideY(begin: -0.3, curve: Curves.easeOutBack),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             'Choose Your Game Mode',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isCompact ? 14 : 16,
               color: Colors.orange.shade600,
               fontWeight: FontWeight.w500,
             ),
           ).animate().fadeIn(delay: 200.ms),
-          const SizedBox(height: 16),
-          Obx(() => Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          SizedBox(height: isCompact ? 12 : 16),
+          Obx(() => Wrap(
+                alignment: WrapAlignment.center,
+                spacing: isCompact ? 8 : 12,
+                runSpacing: isCompact ? 8 : 12,
                 children: [
                   _buildStatChip(
                     'Best Score',
                     settingsController.bestScore.value.toString(),
                     Icons.emoji_events,
+                    isCompact,
                   ),
-                  const SizedBox(width: 12),
                   _buildStatChip(
                     'Games Won',
                     settingsController.gamesWon.value.toString(),
                     Icons.workspace_premium,
+                    isCompact,
                   ),
-                  const SizedBox(width: 12),
                   _buildStatChip(
                     'Win Rate',
                     settingsController.getWinRate(),
                     Icons.analytics,
+                    isCompact,
                   ),
                 ],
               )).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
@@ -392,9 +429,13 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatChip(String label, String value, IconData icon) {
+  Widget _buildStatChip(
+      String label, String value, IconData icon, bool isCompact) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 10 : 12,
+        vertical: isCompact ? 7 : 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -414,7 +455,7 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.orange.shade800),
+          Icon(icon, size: isCompact ? 14 : 16, color: Colors.orange.shade800),
           const SizedBox(width: 4),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,14 +463,14 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: isCompact ? 9 : 10,
                   color: Colors.grey.shade600,
                 ),
               ),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: isCompact ? 13 : 14,
                   color: Colors.orange.shade900,
                   fontWeight: FontWeight.bold,
                 ),

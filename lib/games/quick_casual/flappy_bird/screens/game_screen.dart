@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:developer' as developer;
+import 'package:gameverse/widgets/guarded_exit.dart';
 import '../controllers/game_controller.dart';
 import '../widgets/bird_widget.dart';
 import '../widgets/pipe_widget.dart';
@@ -125,12 +126,16 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
             controller.pauseGame();
             final shouldPop =
                 await _showExitConfirmationDialog(context, controller);
-            if (shouldPop) {
-              controller.endGame();
-              Get.back();
-            } else {
+            if (!shouldPop) {
               controller.resumeGame();
+              return;
             }
+            if (!context.mounted) return;
+            controller.endGame();
+            await popAfterConfirmation(
+              context,
+              confirmExit: () async => true,
+            );
           }
         },
         child: Scaffold(
@@ -144,12 +149,16 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
                 controller.pauseGame();
                 final shouldPop =
                     await _showExitConfirmationDialog(context, controller);
-                if (shouldPop) {
-                  controller.endGame();
-                  Get.back();
-                } else {
+                if (!shouldPop) {
                   controller.resumeGame();
+                  return;
                 }
+                if (!context.mounted) return;
+                controller.endGame();
+                await popAfterConfirmation(
+                  context,
+                  confirmExit: () async => true,
+                );
               },
             ),
           ),

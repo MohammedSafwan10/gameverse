@@ -7,6 +7,7 @@ import '../models/game_mode.dart';
 import '../models/game_state.dart';
 import '../widgets/flip_card.dart';
 import '../services/sound_service.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 
 class MemoryMatchGameScreen extends StatefulWidget {
   final MemoryMatchMode mode;
@@ -24,7 +25,7 @@ class MemoryMatchGameScreen extends StatefulWidget {
 
 class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   late final MemoryMatchGameController controller;
-  late final SoundService soundService;
+  late final MemoryMatchSoundService soundService;
 
   static const _bgDark = Color(0xFF0F0F1A);
   static const _surfaceDark = Color(0xFF1A1A2E);
@@ -34,7 +35,7 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
   void initState() {
     super.initState();
     controller = Get.find<MemoryMatchGameController>();
-    soundService = Get.find<SoundService>();
+    soundService = Get.find<MemoryMatchSoundService>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.initGame(widget.mode, widget.difficulty);
     });
@@ -57,12 +58,16 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
         if (!didPop) {
           controller.pauseGame();
           final shouldPop = await _showExitConfirmation();
-          if (shouldPop) {
-            controller.cleanupGame();
-            Get.back();
-          } else {
+          if (!shouldPop) {
             controller.resumeGame();
+            return;
           }
+          if (!context.mounted) return;
+          controller.cleanupGame();
+          await popAfterConfirmation(
+            context,
+            confirmExit: () async => true,
+          );
         }
       },
       child: Scaffold(
@@ -244,8 +249,18 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
       child: IconButton(
         icon: const Icon(Icons.arrow_back, size: 20),
         onPressed: () {
-          controller.cleanupGame();
-          Get.back();
+          controller.pauseGame();
+          popAfterConfirmation(
+            context,
+            confirmExit: _showExitConfirmation,
+          ).then((_) {
+            if (!mounted) return;
+            if (!ModalRoute.of(context)!.isCurrent) {
+              controller.cleanupGame();
+            } else {
+              controller.resumeGame();
+            }
+          });
         },
         color: _accent,
         padding: const EdgeInsets.all(8),

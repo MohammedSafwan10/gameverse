@@ -5,6 +5,7 @@ import '../controllers/game_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../widgets/block_tile.dart';
 import 'settings_screen.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 
 class BlockMergeGameScreen extends StatefulWidget {
   const BlockMergeGameScreen({super.key});
@@ -42,7 +43,12 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
         if (!didPop) {
           final shouldPop = await _showExitConfirmationDialog(context);
           if (shouldPop) {
-            controller.exitGame();
+            if (!context.mounted) return;
+            controller.exitGame(popRoute: false);
+            await popAfterConfirmation(
+              context,
+              confirmExit: () async => true,
+            );
           }
         }
       },
@@ -56,7 +62,12 @@ class _BlockMergeGameScreenState extends State<BlockMergeGameScreen> {
             onPressed: () async {
               final shouldPop = await _showExitConfirmationDialog(context);
               if (shouldPop) {
-                controller.exitGame();
+                if (!context.mounted) return;
+                controller.exitGame(popRoute: false);
+                await popAfterConfirmation(
+                  context,
+                  confirmExit: () async => true,
+                );
               }
             },
           ).animate().fadeIn(delay: 100.ms),

@@ -7,6 +7,7 @@ import '../utils/constants.dart';
 import '../bindings/game_binding.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import 'package:gameverse/widgets/guarded_exit.dart';
 
 class FlappyBirdModeSelectionScreen extends StatefulWidget {
   const FlappyBirdModeSelectionScreen({super.key});
@@ -55,12 +56,9 @@ class _FlappyBirdModeSelectionScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Refresh stats when dependencies change (like returning to this screen)
-    _refreshStats();
   }
 
   void _refreshStats() {
-    // Force reload of stats from storage
     gameController.loadHighScore();
     developer.log('Refreshing stats on mode selection screen');
   }
@@ -68,11 +66,7 @@ class _FlappyBirdModeSelectionScreenState
   @override
   Widget build(BuildContext context) {
     final settingsController = Get.find<FlappyBirdSettingsController>();
-
-    // Force a refresh of stats whenever the UI is rebuilt
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshStats();
-    });
+    final isCompact = MediaQuery.of(context).size.width < 380;
 
     return PopScope(
       canPop: false,
@@ -80,8 +74,12 @@ class _FlappyBirdModeSelectionScreenState
         if (!didPop) {
           final shouldPop = await _showExitConfirmationDialog(context);
           if (shouldPop) {
+            if (!context.mounted) return;
             Get.delete<FlappyBirdGameController>();
-            Get.back();
+            await popAfterConfirmation(
+              context,
+              confirmExit: () async => true,
+            );
           }
         }
       },
@@ -100,30 +98,28 @@ class _FlappyBirdModeSelectionScreenState
           child: SafeArea(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding:
+                    EdgeInsets.symmetric(horizontal: isCompact ? 16 : 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Header
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(
+                        vertical: isCompact ? 10 : 16,
+                      ),
                       child: Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.arrow_back,
                                 color: Colors.white),
-                            onPressed: () => Get.back(),
+                            onPressed: () => popAfterConfirmation(
+                              context,
+                              confirmExit: () => _showExitConfirmationDialog(context),
+                            ),
                           ),
                           const Expanded(
-                            child: Text(
-                              'Flappy Bird',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                            child: _HeaderTitle(),
                           ),
                           IconButton(
                             icon:
@@ -135,7 +131,7 @@ class _FlappyBirdModeSelectionScreenState
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: isCompact ? 8 : 20),
 
                     // Game Stats
                     Obx(() {
@@ -144,8 +140,7 @@ class _FlappyBirdModeSelectionScreenState
                           'Displaying stats: Games played: ${stats.gamesPlayed}, Total pipes: ${stats.totalPipesPassed}, Play time: ${stats.totalPlayTime.inSeconds}s');
 
                       return Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: EdgeInsets.all(isCompact ? 14 : 16),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(
                             red: 0,
@@ -170,10 +165,10 @@ class _FlappyBirdModeSelectionScreenState
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
+                                Text(
                                   'Your Stats',
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: isCompact ? 18 : 20,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -216,41 +211,52 @@ class _FlappyBirdModeSelectionScreenState
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 15),
-                            // Use Wrap instead of Row for better small screen handling
-                            Wrap(
-                              spacing: 10, // horizontal spacing
-                              runSpacing: 10, // vertical spacing between rows
-                              alignment: WrapAlignment.center,
-                              children: [
-                                _StatItem(
-                                  icon: Icons.emoji_events,
-                                  value: stats.highScore.toString(),
-                                  label: 'High Score',
-                                  color: Colors.amber,
-                                  width: _getStatItemWidth(context),
-                                ),
-                                _StatItem(
-                                  icon: Icons.sports_esports,
-                                  value: stats.gamesPlayed.toString(),
-                                  label: 'Games',
-                                  color: Colors.green,
-                                  width: _getStatItemWidth(context),
-                                ),
-                                _StatItem(
-                                  icon: Icons.flight_takeoff,
-                                  value: stats.totalPipesPassed.toString(),
-                                  label: 'Pipes',
-                                  color: Colors.blue,
-                                  width: _getStatItemWidth(context),
-                                ),
-                              ],
+                            SizedBox(height: isCompact ? 10 : 15),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final spacing = isCompact ? 8.0 : 10.0;
+                                final itemWidth =
+                                    (constraints.maxWidth - spacing) / 2;
+
+                                return Wrap(
+                                  spacing: spacing,
+                                  runSpacing: spacing,
+                                  children: [
+                                    _StatItem(
+                                      icon: Icons.emoji_events,
+                                      value: stats.highScore.toString(),
+                                      label: 'High Score',
+                                      color: Colors.amber,
+                                      width: itemWidth,
+                                      compact: isCompact,
+                                    ),
+                                    _StatItem(
+                                      icon: Icons.sports_esports,
+                                      value: stats.gamesPlayed.toString(),
+                                      label: 'Games',
+                                      color: Colors.green,
+                                      width: itemWidth,
+                                      compact: isCompact,
+                                    ),
+                                    _StatItem(
+                                      icon: Icons.flight_takeoff,
+                                      value: stats.totalPipesPassed.toString(),
+                                      label: 'Pipes',
+                                      color: Colors.blue,
+                                      width: constraints.maxWidth,
+                                      compact: isCompact,
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
-                            const SizedBox(height: 15),
-                            // Make play time more visible
+                            SizedBox(height: isCompact ? 10 : 15),
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              padding: EdgeInsets.symmetric(
+                                vertical: isCompact ? 8 : 10,
+                                horizontal: isCompact ? 8 : 0,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(
                                   red: 255,
@@ -272,8 +278,8 @@ class _FlappyBirdModeSelectionScreenState
                                     const SizedBox(width: 8),
                                     Text(
                                       'Total Play Time: ${_formatDuration(stats.totalPlayTime)}',
-                                      style: const TextStyle(
-                                        fontSize: 15,
+                                      style: TextStyle(
+                                        fontSize: isCompact ? 13 : 15,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.white,
                                         shadows: [
@@ -294,19 +300,19 @@ class _FlappyBirdModeSelectionScreenState
                       );
                     }),
 
-                    const SizedBox(height: 30),
+                    SizedBox(height: isCompact ? 18 : 30),
 
                     // Difficulty Selection
-                    const Text(
+                    Text(
                       'Select Difficulty',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: isCompact ? 18 : 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isCompact ? 12 : 20),
                     Obx(() => Column(
                           children: [
                             _DifficultyButton(
@@ -317,8 +323,9 @@ class _FlappyBirdModeSelectionScreenState
                                   GameDifficulty.easy,
                               onTap: () => settingsController
                                   .setDifficulty(GameDifficulty.easy),
+                              compact: isCompact,
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: isCompact ? 10 : 12),
                             _DifficultyButton(
                               title: 'Normal',
                               subtitle: 'Classic challenge',
@@ -327,8 +334,9 @@ class _FlappyBirdModeSelectionScreenState
                                   GameDifficulty.normal,
                               onTap: () => settingsController
                                   .setDifficulty(GameDifficulty.normal),
+                              compact: isCompact,
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: isCompact ? 10 : 12),
                             _DifficultyButton(
                               title: 'Hard',
                               subtitle: 'For the brave ones',
@@ -337,11 +345,12 @@ class _FlappyBirdModeSelectionScreenState
                                   GameDifficulty.hard,
                               onTap: () => settingsController
                                   .setDifficulty(GameDifficulty.hard),
+                              compact: isCompact,
                             ),
                           ],
                         )),
 
-                    const SizedBox(height: 30),
+                    SizedBox(height: isCompact ? 20 : 30),
 
                     // Play Button
                     ElevatedButton.icon(
@@ -358,12 +367,12 @@ class _FlappyBirdModeSelectionScreenState
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 40,
-                          vertical: 16,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 28 : 40,
+                          vertical: isCompact ? 14 : 16,
                         ),
-                        textStyle: const TextStyle(
-                          fontSize: 20,
+                        textStyle: TextStyle(
+                          fontSize: isCompact ? 18 : 20,
                           fontWeight: FontWeight.bold,
                         ),
                         shape: RoundedRectangleBorder(
@@ -371,7 +380,7 @@ class _FlappyBirdModeSelectionScreenState
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: isCompact ? 16 : 20),
                   ],
                 ),
               ),
@@ -397,20 +406,23 @@ class _FlappyBirdModeSelectionScreenState
   }
 
   // Calculate adaptive width for stat items based on screen size
-  double _getStatItemWidth(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // On very small screens, make them full width minus padding
-    if (screenWidth < 300) {
-      return screenWidth - 80;
-    }
-    // On small screens, show 2 per row
-    else if (screenWidth < 400) {
-      return (screenWidth - 80) / 2;
-    }
-    // On larger screens, show 3 per row
-    else {
-      return (screenWidth - 100) / 3;
-    }
+}
+
+class _HeaderTitle extends StatelessWidget {
+  const _HeaderTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompact = MediaQuery.of(context).size.width < 380;
+    return Text(
+      'Flappy Bird',
+      style: TextStyle(
+        fontSize: isCompact ? 22 : 24,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      textAlign: TextAlign.center,
+    );
   }
 }
 
@@ -420,6 +432,7 @@ class _StatItem extends StatelessWidget {
   final String label;
   final Color color;
   final double? width;
+  final bool compact;
 
   const _StatItem({
     required this.icon,
@@ -427,13 +440,17 @@ class _StatItem extends StatelessWidget {
     required this.label,
     required this.color,
     this.width,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 8 : 10,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(
           red: color.r.toDouble(),
@@ -462,12 +479,12 @@ class _StatItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 6),
+          Icon(icon, color: color, size: compact ? 22 : 28),
+          SizedBox(height: compact ? 4 : 6),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 22,
+            style: TextStyle(
+              fontSize: compact ? 18 : 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
               shadows: [
@@ -481,8 +498,8 @@ class _StatItem extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: compact ? 11 : 13,
               fontWeight: FontWeight.w500,
               color: Colors.white,
               shadows: [
@@ -506,6 +523,7 @@ class _DifficultyButton extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool compact;
 
   const _DifficultyButton({
     required this.title,
@@ -513,6 +531,7 @@ class _DifficultyButton extends StatelessWidget {
     required this.icon,
     required this.isSelected,
     required this.onTap,
+    this.compact = false,
   });
 
   @override
@@ -536,23 +555,26 @@ class _DifficultyButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 16 : 20,
+            vertical: compact ? 14 : 16,
+          ),
           child: Row(
             children: [
               Icon(
                 icon,
                 color: Colors.white,
-                size: 32,
+                size: compact ? 28 : 32,
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: compact ? 12 : 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: compact ? 16 : 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -560,7 +582,7 @@ class _DifficultyButton extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: compact ? 13 : 14,
                         color: Colors.white.withValues(
                           red: Colors.white.r.toDouble(),
                           green: Colors.white.g.toDouble(),
