@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../bindings/quiz_binding.dart';
 import '../controllers/mode_selection_controller.dart';
 import '../services/quiz_service.dart';
 import 'quiz_screen.dart';
 import '../models/quiz_category.dart';
-import '../bindings/quiz_binding.dart';
 
 class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
   const QuizMasterModeSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Initialize dependencies if not already initialized
     if (!Get.isRegistered<QuizService>()) {
       QuizMasterBinding().dependencies();
     }
-
     final quizService = Get.find<QuizService>();
+    final isCompact = MediaQuery.of(context).size.width < 380;
 
     return Scaffold(
       body: Container(
@@ -37,7 +36,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
             children: [
               // App Bar
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, isCompact ? 8 : 16),
                 child: Row(
                   children: [
                     GestureDetector(
@@ -71,7 +70,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
 
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -82,10 +81,10 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                         color: Colors.black87,
                       ),
                     ).animate().fadeIn().slideX(),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isCompact ? 4 : 8),
                     Text(
                       'Test your knowledge in various topics',
-                      style: Get.textTheme.titleMedium?.copyWith(
+                      style: Get.textTheme.titleSmall?.copyWith(
                         color: Colors.black54,
                       ),
                     ).animate().fadeIn().slideX(delay: 200.ms),
@@ -95,15 +94,22 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
 
               // Stats Section
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.fromLTRB(
+                  isCompact ? 16 : 20,
+                  12,
+                  isCompact ? 16 : 20,
+                  isCompact ? 12 : 16,
+                ),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 14 : 18,
+                    vertical: isCompact ? 14 : 18,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(
                       alpha: 0.8,
                     ),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Obx(() => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -119,7 +125,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                           _buildDivider(),
                           _buildStatItem(
                             'Total Played',
-                            '${quizService.totalQuestionsAnswered}',
+                            '${quizService.totalQuizzesPlayed.value}',
                             Icons.quiz_rounded,
                             Colors.blue,
                           ),
@@ -130,23 +136,40 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
 
               // Categories Section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Categories',
-                  style: Get.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 20),
+                child: Row(
+                  children: [
+                    Text(
+                      'Categories',
+                      style: Get.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${quizService.categories.length}',
+                      style: Get.textTheme.bodySmall?.copyWith(
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? 16 : 20,
+                    12,
+                    isCompact ? 16 : 20,
+                    20,
+                  ),
                   itemCount: quizService.categories.length,
                   itemBuilder: (context, index) {
                     final category = quizService.categories[index];
-                    return _buildCategoryCard(category, index);
+                    return _buildCategoryCard(category, index, isCompact);
                   },
                 ),
               ),
@@ -164,22 +187,22 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color.withValues(
                 alpha: 0.1,
               ),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
@@ -193,7 +216,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                 color: Colors.black.withValues(
                   alpha: 0.6,
                 ),
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -214,9 +237,9 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
     );
   }
 
-  Widget _buildCategoryCard(QuizCategory category, int index) {
+  Widget _buildCategoryCard(QuizCategory category, int index, bool isCompact) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: isCompact ? 12 : 16),
       child: Container(
         decoration: BoxDecoration(
           color: category.color.withValues(
@@ -230,12 +253,12 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
             onTap: () => _showDifficultyDialog(category),
             borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isCompact ? 16 : 20),
               child: Row(
                 children: [
                   Container(
-                    width: 56,
-                    height: 56,
+                    width: isCompact ? 48 : 56,
+                    height: isCompact ? 48 : 56,
                     decoration: BoxDecoration(
                       color: category.color.withValues(
                         alpha: 0.15,
@@ -244,11 +267,11 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                     ),
                     child: Icon(
                       category.icon,
-                      size: 24,
+                      size: isCompact ? 22 : 24,
                       color: category.color,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: isCompact ? 12 : 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,16 +283,16 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                             color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           category.description,
                           style: Get.textTheme.bodyMedium?.copyWith(
                             color: Colors.black54,
                           ),
-                          maxLines: 2,
+                          maxLines: isCompact ? 1 : 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: isCompact ? 8 : 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,

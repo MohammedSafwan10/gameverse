@@ -3,13 +3,14 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/quiz_category.dart';
 import '../models/quiz_question.dart';
+import 'quiz_question_loader.dart';
 import '../data/science_questions.dart';
 import '../data/history_questions.dart';
 import '../data/geography_questions.dart';
 import '../data/mathematics_questions.dart';
 import '../data/technology_questions.dart';
 
-class QuizService extends GetxService {
+class QuizService extends GetxService implements QuizQuestionLoader {
   final _storage = GetStorage('quiz_stats');
 
   // Observable states
@@ -18,18 +19,17 @@ class QuizService extends GetxService {
   final isLoading = false.obs;
 
   // Observable states for stats with persistence
-  late final RxInt totalQuestionsAnswered;
+  late final RxInt totalQuizzesPlayed;
   late final RxMap<String, int> highScores;
-  late final RxDouble winRate;
+  late final RxDouble averageScoreRate;
 
   @override
   void onInit() {
     super.onInit();
     // Initialize stats from storage or default values
-    totalQuestionsAnswered =
-        RxInt(_storage.read('totalQuestionsAnswered') ?? 0);
+    totalQuizzesPlayed = RxInt(_storage.read('totalQuizzesPlayed') ?? 0);
     highScores = RxMap<String, int>(_storage.read('highScores') ?? {});
-    winRate = RxDouble(_storage.read('winRate') ?? 0.0);
+    averageScoreRate = RxDouble(_storage.read('averageScoreRate') ?? 0.0);
   }
 
   // Categories with real questions for offline use
@@ -91,6 +91,7 @@ class QuizService extends GetxService {
   };
 
   // Get questions for a category and difficulty
+  @override
   Future<List<QuizQuestion>> getQuestions({
     required String categoryId,
     required String difficulty,
@@ -142,23 +143,22 @@ class QuizService extends GetxService {
       _storage.write('highScores', highScores);
     }
 
-    // Update total questions and win rate
-    totalQuestionsAnswered.value++;
-    _storage.write('totalQuestionsAnswered', totalQuestionsAnswered.value);
+    totalQuizzesPlayed.value++;
+    _storage.write('totalQuizzesPlayed', totalQuizzesPlayed.value);
 
-    // Calculate and update win rate
+    // Calculate and update average score rate
     final totalHighScores =
         highScores.values.fold(0, (sum, score) => sum + score);
-    if (totalQuestionsAnswered.value > 0) {
-      winRate.value = totalHighScores /
-          (totalQuestionsAnswered.value * 30); // 30 is max points per question
-      _storage.write('winRate', winRate.value);
+    if (totalQuizzesPlayed.value > 0) {
+      averageScoreRate.value =
+          totalHighScores / (totalQuizzesPlayed.value * 100);
+      _storage.write('averageScoreRate', averageScoreRate.value);
     }
 
     // Force refresh of observables
     highScores.refresh();
-    totalQuestionsAnswered.refresh();
-    winRate.refresh();
+    totalQuizzesPlayed.refresh();
+    averageScoreRate.refresh();
   }
 
   // Get high score for a category and difficulty

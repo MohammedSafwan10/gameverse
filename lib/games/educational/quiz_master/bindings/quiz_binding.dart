@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import '../controllers/quiz_controller.dart';
 import '../controllers/mode_selection_controller.dart';
 import '../services/quiz_service.dart';
 import 'dart:developer' as dev;
@@ -13,8 +12,6 @@ class QuizMasterBinding extends Bindings {
     Get.lazyPut<QuizService>(() => QuizService(), fenix: true);
 
     // Controllers
-    Get.lazyPut<QuizMasterController>(() => QuizMasterController(),
-        fenix: true);
     Get.lazyPut<ModeSelectionController>(() => ModeSelectionController(),
         fenix: true);
 

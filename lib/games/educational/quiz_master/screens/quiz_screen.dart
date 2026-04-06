@@ -5,7 +5,8 @@ import '../controllers/quiz_controller.dart';
 import '../controllers/mode_selection_controller.dart';
 import '../models/quiz_category.dart';
 import '../models/quiz_question.dart';
-import '../services/quiz_service.dart';
+import '../models/quiz_session_result.dart';
+import '../../../../widgets/guarded_exit.dart';
 
 class QuizScreen extends StatelessWidget {
   final QuizCategory category;
@@ -36,11 +37,10 @@ class QuizScreen extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          final shouldPop =
-              await _showExitConfirmationDialog(context, controller);
-          if (shouldPop) {
-            Get.back();
-          }
+          await popAfterConfirmation(
+            context,
+            confirmExit: () => _showExitConfirmationDialog(context, controller),
+          );
         }
       },
       child: Scaffold(
@@ -63,6 +63,11 @@ class QuizScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
+              final result = controller.sessionResult.value;
+              if (controller.isCompleted.value && result != null) {
+                return _buildResultsView(controller, result);
+              }
+
               final currentQuestion = controller.currentQuestion.value;
               if (currentQuestion == null) {
                 return const Center(child: Text('No questions available'));
@@ -70,7 +75,7 @@ class QuizScreen extends StatelessWidget {
 
               return Column(
                 children: [
-                  _buildHeader(controller),
+                  _buildHeader(context, controller),
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20),
@@ -97,7 +102,7 @@ class QuizScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(QuizMasterController controller) {
+  Widget _buildHeader(BuildContext context, QuizMasterController controller) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -107,11 +112,11 @@ class QuizScreen extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () async {
-                  final shouldPop = await _showExitConfirmationDialog(
-                      Get.context!, controller);
-                  if (shouldPop) {
-                    Get.back();
-                  }
+                  await popAfterConfirmation(
+                    context,
+                    confirmExit: () =>
+                        _showExitConfirmationDialog(context, controller),
+                  );
                 },
                 child: Container(
                   padding: const EdgeInsets.all(8),
@@ -501,7 +506,10 @@ class QuizScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: ElevatedButton(
         onPressed: isLastQuestion
-            ? () => _showResults(controller)
+            ? () {
+                controller.completeQuiz();
+                controller.saveSessionStats();
+              }
             : controller.nextQuestion,
         style: ElevatedButton.styleFrom(
           backgroundColor: category.color,
@@ -531,150 +539,6 @@ class QuizScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showResults(QuizMasterController controller) {
-    // Update high score in QuizService
-    final quizService = Get.find<QuizService>();
-
-    // Update stats immediately
-    quizService.updateHighScore(
-      category: category,
-      difficulty: difficulty,
-      score: controller.score.value,
-    );
-
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: category.color.withValues(
-                    alpha: 0.1,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.emoji_events_rounded,
-                  color: category.color,
-                  size: 48,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Quiz Complete!',
-                style: Get.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Great job on completing the quiz!',
-                style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              _buildResultStat(
-                'Final Score',
-                '${controller.score.value}',
-                Icons.star_rounded,
-                Colors.amber,
-              ),
-              const SizedBox(height: 16),
-              _buildResultStat(
-                'Highest Streak',
-                '${controller.streak.value}x',
-                Icons.local_fire_department_rounded,
-                Colors.orange,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Get.back(); // Close dialog
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          Get.back(); // Return to previous screen
-                        });
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        side: BorderSide(
-                          color: category.color.withValues(
-                            red: category.color.r.toDouble(),
-                            green: category.color.g.toDouble(),
-                            blue: category.color.b.toDouble(),
-                            alpha: 0.5,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        'Exit Quiz',
-                        style: TextStyle(
-                          color: category.color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.back();
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          controller.startQuiz(
-                            category: category,
-                            difficulty: difficulty,
-                            mode: mode,
-                          );
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: category.color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'Play Again',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-      barrierDismissible: false,
     );
   }
 
@@ -720,6 +584,132 @@ class QuizScreen extends StatelessWidget {
                 style: Get.textTheme.titleLarge?.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultsView(
+    QuizMasterController controller,
+    QuizSessionResult result,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: category.color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.emoji_events_rounded,
+              color: category.color,
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Quiz Complete!',
+            style: Get.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Great job on completing the quiz!',
+            style: Get.textTheme.bodyMedium?.copyWith(
+              color: Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _buildResultStat(
+            'Final Score',
+            '${result.finalScore}',
+            Icons.star_rounded,
+            Colors.amber,
+          ),
+          const SizedBox(height: 16),
+          _buildResultStat(
+            'Highest Streak',
+            '${result.highestStreak}x',
+            Icons.local_fire_department_rounded,
+            Colors.orange,
+          ),
+          const SizedBox(height: 16),
+          _buildResultStat(
+            'Correct Answers',
+            '${result.correctAnswers}/${result.totalQuestions}',
+            Icons.check_circle_outline_rounded,
+            Colors.green,
+          ),
+          const SizedBox(height: 16),
+          _buildResultStat(
+            'Accuracy',
+            '${(result.accuracy * 100).round()}%',
+            Icons.track_changes_rounded,
+            category.color,
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Get.back(),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    side: BorderSide(
+                      color: category.color.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Text(
+                    'Exit Quiz',
+                    style: TextStyle(
+                      color: category.color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => controller.startQuiz(
+                    category: category,
+                    difficulty: difficulty,
+                    mode: mode,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: category.color,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'Play Again',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
