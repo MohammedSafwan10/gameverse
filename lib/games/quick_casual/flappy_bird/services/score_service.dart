@@ -4,11 +4,13 @@ import '../models/game_stats.dart';
 import '../utils/constants.dart';
 
 class ScoreService {
-  final _storage = GetStorage();
+  final GetStorage _storage;
   static const _statsKey = 'flappy_bird_stats';
 
   // In-memory cache to prevent data loss in case of errors
   GameStats? _lastSavedStats;
+
+  ScoreService({GetStorage? storage}) : _storage = storage ?? GetStorage();
 
   Future<int> getHighScore() async {
     try {

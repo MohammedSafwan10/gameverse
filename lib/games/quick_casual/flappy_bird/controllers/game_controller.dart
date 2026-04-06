@@ -34,6 +34,7 @@ class FlappyBirdGameController extends GetxController {
   Timer? gameTimer;
   DateTime? lastFrameTime;
   final fps = GameConstants.fps.obs;
+  bool _audioAssetsAvailable = false;
 
   FlappyBirdGameController({required this.scoreService}) {
     developer.log('Initializing FlappyBirdGameController');
@@ -58,19 +59,9 @@ class FlappyBirdGameController extends GetxController {
 
   Future<void> loadHighScore() async {
     developer.log('Loading high score');
-    final loadedHighScore = await scoreService.getHighScore();
-    highScore.value = loadedHighScore;
-
-    // Load game stats and ensure high score is in sync
     final loadedStats = await scoreService.getGameStats();
-
-    // Make sure the loaded stats have the correct high score
-    if (loadedStats.highScore != loadedHighScore) {
-      gameStats.value = loadedStats.copyWith(highScore: loadedHighScore);
-      await scoreService.saveGameStats(gameStats.value);
-    } else {
-      gameStats.value = loadedStats;
-    }
+    gameStats.value = loadedStats;
+    highScore.value = loadedStats.highScore;
 
     developer.log(
         'Loaded high score: ${highScore.value}, Games played: ${gameStats.value.gamesPlayed}, Total pipes: ${gameStats.value.totalPipesPassed}, Play time: ${gameStats.value.totalPlayTime.inSeconds}s');
@@ -95,6 +86,35 @@ class FlappyBirdGameController extends GetxController {
     developer.log('Game initialized');
   }
 
+  @override
+  Future<void> onReady() async {
+    super.onReady();
+    _audioAssetsAvailable = await _detectAudioAssets();
+  }
+
+  Future<bool> _detectAudioAssets() async {
+    try {
+      final manifest = await rootBundle.loadString('AssetManifest.json');
+      return manifest.contains('assets/audio/background_music.mp3') &&
+          manifest.contains('assets/audio/wing.mp3') &&
+          manifest.contains('assets/audio/score.mp3') &&
+          manifest.contains('assets/audio/hit.mp3') &&
+          manifest.contains('assets/audio/die.mp3');
+    } catch (e) {
+      developer.log('Audio manifest check failed: $e');
+      return false;
+    }
+  }
+
+  Future<void> _playSound(String assetPath, {double? volume}) async {
+    if (!_audioAssetsAvailable) return;
+    try {
+      await _audioPlayer.play(AssetSource(assetPath), volume: volume);
+    } catch (e) {
+      developer.log('Audio playback failed for $assetPath: $e');
+    }
+  }
+
   void startGame() {
     if (gameRunning.value) {
       developer.log('Game already running');
@@ -108,9 +128,9 @@ class FlappyBirdGameController extends GetxController {
     startTime.value = DateTime.now();
     lastFrameTime = DateTime.now();
 
-    if (settingsController.musicEnabled.value) {
+    if (settingsController.musicEnabled.value && _audioAssetsAvailable) {
       developer.log('Starting background music');
-      _audioPlayer.play(AssetSource('audio/background_music.mp3'), volume: 0.5);
+      _playSound('audio/background_music.mp3', volume: 0.5);
       _audioPlayer.setReleaseMode(ReleaseMode.loop);
     }
 
@@ -136,7 +156,7 @@ class FlappyBirdGameController extends GetxController {
       }
 
       if (settingsController.soundEnabled.value) {
-        _audioPlayer.play(AssetSource('audio/wing.mp3'), volume: 0.3);
+        _playSound('audio/wing.mp3', volume: 0.3);
       }
     }
   }
@@ -253,18 +273,13 @@ class FlappyBirdGameController extends GetxController {
           highScore.value = score.value;
         }
 
-        // Always update statistics - don't conditionally update it
         gameStats.value = gameStats.value.copyWith(
-          score: score.value,
           highScore: highScore.value,
           totalPipesPassed: gameStats.value.totalPipesPassed + 1,
         );
 
-        // Save stats immediately for better cross-screen synchronization
-        scoreService.saveGameStats(gameStats.value);
-
         if (settingsController.soundEnabled.value) {
-          _audioPlayer.play(AssetSource('audio/score.mp3'));
+          _playSound('audio/score.mp3');
         }
       }
     }
@@ -282,9 +297,9 @@ class FlappyBirdGameController extends GetxController {
     gameTimer?.cancel();
 
     if (settingsController.soundEnabled.value) {
-      await _audioPlayer.play(AssetSource('audio/hit.mp3'));
+      await _playSound('audio/hit.mp3');
       await Future.delayed(Duration(milliseconds: 300));
-      await _audioPlayer.play(AssetSource('audio/die.mp3'));
+      await _playSound('audio/die.mp3');
     }
     if (settingsController.vibrationEnabled.value) {
       HapticFeedback.heavyImpact();
@@ -300,48 +315,27 @@ class FlappyBirdGameController extends GetxController {
     developer.log(
         'Game played for ${playTime.inSeconds} seconds (excluding pauses)');
 
-    // Save high score if it's a new record
-    if (score.value > highScore.value) {
-      developer.log('New high score: ${score.value}');
-      highScore.value = score.value;
-      await scoreService.saveHighScore(score.value);
-    }
-
     try {
-      // Increment games played counter
-      final currentGamesPlayed = gameStats.value.gamesPlayed + 1;
-
-      // Add new play time to total
+      final finalHighScore =
+          score.value > gameStats.value.highScore ? score.value : gameStats.value.highScore;
       final newTotalPlayTime = Duration(
           milliseconds: gameStats.value.totalPlayTime.inMilliseconds +
               playTime.inMilliseconds);
 
-      developer.log('Updating stats - Games played: $currentGamesPlayed, '
+      developer.log('Updating stats - Games played: ${gameStats.value.gamesPlayed + 1}, '
           'Adding playtime: ${playTime.inSeconds}s, '
           'New total play time: ${newTotalPlayTime.inSeconds}s');
 
-      // Create updated stats object
       final updatedStats = GameStats(
         score: score.value,
-        highScore: highScore.value,
-        gamesPlayed: currentGamesPlayed,
+        highScore: finalHighScore,
+        gamesPlayed: gameStats.value.gamesPlayed + 1,
         totalPlayTime: newTotalPlayTime,
         totalPipesPassed: gameStats.value.totalPipesPassed,
       );
-
-      // Explicitly update the observable properties individually
-      gameStats.update((stats) {
-        if (stats != null) {
-          stats.score = updatedStats.score;
-          stats.highScore = updatedStats.highScore;
-          stats.gamesPlayed = updatedStats.gamesPlayed;
-          stats.totalPlayTime = updatedStats.totalPlayTime;
-          stats.totalPipesPassed = updatedStats.totalPipesPassed;
-        }
-      });
-
-      // Force immediate save of game stats
-      await scoreService.saveGameStats(gameStats.value);
+      gameStats.value = updatedStats;
+      highScore.value = finalHighScore;
+      await scoreService.saveGameStats(updatedStats);
 
       developer.log(
           'Game ended - Final score: ${score.value}, High score: ${highScore.value}, '
@@ -357,7 +351,6 @@ class FlappyBirdGameController extends GetxController {
     gameStats.value = GameStats.initial();
     highScore.value = 0;
     score.value = 0;
-    await scoreService.saveHighScore(0);
     await scoreService.saveGameStats(gameStats.value);
     developer.log('Stats reset complete');
   }
