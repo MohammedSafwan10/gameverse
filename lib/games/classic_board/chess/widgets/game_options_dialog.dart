@@ -97,19 +97,32 @@ class GameOptionsDialog extends StatelessWidget {
                                       horizontal: 16, vertical: 8),
                                   child: Row(
                                     children: [
-                                      const Text('Minutes per player'),
-                                      const Spacer(),
-                                      DropdownButton<int>(
-                                        value: selectedTime.value,
-                                        underline: const SizedBox(),
-                                        items: [5, 10, 15, 20, 30]
-                                            .map((minutes) => DropdownMenuItem(
-                                                  value: minutes,
-                                                  child: Text('$minutes min'),
-                                                ))
-                                            .toList(),
-                                        onChanged: (value) =>
-                                            selectedTime.value = value!,
+                                      const Expanded(
+                                        child: Text(
+                                          'Minutes per player',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Flexible(
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: DropdownButton<int>(
+                                            isExpanded: true,
+                                            value: selectedTime.value,
+                                            underline: const SizedBox(),
+                                            items: [5, 10, 15, 20, 30]
+                                                .map((minutes) =>
+                                                    DropdownMenuItem(
+                                                      value: minutes,
+                                                      child:
+                                                          Text('$minutes min'),
+                                                    ))
+                                                .toList(),
+                                            onChanged: (value) =>
+                                                selectedTime.value = value!,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
