@@ -14,8 +14,11 @@ class MemoryMatchBinding implements Bindings {
   static void initDependencies() {
     try {
       // Initialize services first
-      if (!Get.isRegistered<SoundService>()) {
-        Get.put<SoundService>(SoundService(), permanent: true);
+      if (!Get.isRegistered<MemoryMatchSoundService>()) {
+        Get.put<MemoryMatchSoundService>(
+          MemoryMatchSoundService(),
+          permanent: true,
+        );
       }
 
       // Then initialize controllers

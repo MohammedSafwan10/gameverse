@@ -14,7 +14,7 @@ class MemoryMatchGameController extends GetxController {
 
   Timer? _gameTimer;
   Timer? _flipBackTimer;
-  late final SoundService _soundService;
+  late final MemoryMatchSoundService _soundService;
 
   // Challenge mode tracking
   int _challengeLevel = 1;
@@ -23,7 +23,7 @@ class MemoryMatchGameController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _soundService = Get.find<SoundService>();
+    _soundService = Get.find<MemoryMatchSoundService>();
   }
 
   @override

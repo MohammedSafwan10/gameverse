@@ -2,7 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
-class SoundService extends GetxService {
+class MemoryMatchSoundService extends GetxService {
   late AudioPlayer _audioPlayer;
   final _isMuted = false.obs;
   final _logger = Logger();
