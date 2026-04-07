@@ -8,31 +8,48 @@ import '../models/quiz_question.dart';
 import '../models/quiz_session_result.dart';
 import '../../../../widgets/guarded_exit.dart';
 
-class QuizScreen extends StatelessWidget {
+class QuizScreen extends StatefulWidget {
   final QuizCategory category;
-  final String difficulty;
+  final int questionCount;
   final QuizMode mode;
 
   const QuizScreen({
     super.key,
     required this.category,
-    required this.difficulty,
+    required this.questionCount,
     required this.mode,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(QuizMasterController());
+  State<QuizScreen> createState() => _QuizScreenState();
+}
 
-    // Start quiz when screen is built
+class _QuizScreenState extends State<QuizScreen> {
+  late final QuizMasterController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(QuizMasterController());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.startQuiz(
-        category: category,
-        difficulty: difficulty,
-        mode: mode,
+        category: widget.category,
+        questionCount: widget.questionCount,
+        mode: widget.mode,
       );
     });
+  }
 
+  @override
+  void dispose() {
+    if (Get.isRegistered<QuizMasterController>()) {
+      Get.delete<QuizMasterController>();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -50,7 +67,7 @@ class QuizScreen extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                category.color.withValues(
+                widget.category.color.withValues(
                   alpha: 0.05,
                 ),
                 Colors.white,
@@ -70,7 +87,8 @@ class QuizScreen extends StatelessWidget {
 
               final currentQuestion = controller.currentQuestion.value;
               if (currentQuestion == null) {
-                return const Center(child: Text('No questions available'));
+                final message = controller.errorMessage.value ?? 'No questions available';
+                return Center(child: Text(message));
               }
 
               return Column(
@@ -207,28 +225,29 @@ class QuizScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: category.color.withValues(
+                  color: widget.category.color.withValues(
                     alpha: 0.1,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(category.icon, color: category.color, size: 24),
+                child: Icon(widget.category.icon,
+                    color: widget.category.color, size: 24),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    category.name,
+                    widget.category.name,
                     style: Get.textTheme.titleMedium?.copyWith(
-                      color: category.color,
+                      color: widget.category.color,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    difficulty,
+                    '${widget.questionCount} questions',
                     style: Get.textTheme.bodySmall?.copyWith(
-                      color: _getDifficultyColor(difficulty),
+                      color: Colors.black54,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -237,29 +256,35 @@ class QuizScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Stack(
-            children: [
-              Container(
-                height: 8,
-                decoration: BoxDecoration(
-                  color: category.color.withValues(
-                    alpha: 0.1,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final progress = controller.questions.isEmpty
+                  ? 0.0
+                  : (controller.currentQuestionIndex.value + 1) /
+                      controller.questions.length;
+              return Stack(
+                children: [
+                  Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: widget.category.color.withValues(
+                        alpha: 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 8,
-                width: Get.width *
-                    ((controller.currentQuestionIndex.value + 1) /
-                        controller.questions.length),
-                decoration: BoxDecoration(
-                  color: category.color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ],
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height: 8,
+                    width: constraints.maxWidth * progress,
+                    decoration: BoxDecoration(
+                      color: widget.category.color,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 8),
           Row(
@@ -427,7 +452,7 @@ class QuizScreen extends StatelessWidget {
         final isCorrect = index == question.correctOptionIndex;
 
         Color getOptionColor() {
-          if (!hasAnswered) return category.color;
+          if (!hasAnswered) return widget.category.color;
           if (isCorrect) return Colors.green;
           if (isSelected && !isCorrect) return Colors.red;
           return Colors.grey;
@@ -462,7 +487,7 @@ class QuizScreen extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          String.fromCharCode(65 + index), // A, B, C, D
+                          String.fromCharCode(65 + index),
                           style: TextStyle(
                             color: getOptionColor(),
                             fontWeight: FontWeight.bold,
@@ -505,14 +530,9 @@ class QuizScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       child: ElevatedButton(
-        onPressed: isLastQuestion
-            ? () {
-                controller.completeQuiz();
-                controller.saveSessionStats();
-              }
-            : controller.nextQuestion,
+        onPressed: isLastQuestion ? controller.completeQuiz : controller.nextQuestion,
         style: ElevatedButton.styleFrom(
-          backgroundColor: category.color,
+          backgroundColor: widget.category.color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: 32,
@@ -605,12 +625,12 @@ class QuizScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: category.color.withValues(alpha: 0.1),
+              color: widget.category.color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.emoji_events_rounded,
-              color: category.color,
+              color: widget.category.color,
               size: 48,
             ),
           ),
@@ -656,7 +676,7 @@ class QuizScreen extends StatelessWidget {
             'Accuracy',
             '${(result.accuracy * 100).round()}%',
             Icons.track_changes_rounded,
-            category.color,
+            widget.category.color,
           ),
           const SizedBox(height: 24),
           Row(
@@ -673,13 +693,13 @@ class QuizScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     side: BorderSide(
-                      color: category.color.withValues(alpha: 0.5),
+                      color: widget.category.color.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Text(
                     'Exit Quiz',
                     style: TextStyle(
-                      color: category.color,
+                      color: widget.category.color,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -689,12 +709,12 @@ class QuizScreen extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () => controller.startQuiz(
-                    category: category,
-                    difficulty: difficulty,
-                    mode: mode,
+                    category: widget.category,
+                    questionCount: widget.questionCount,
+                    mode: widget.mode,
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: category.color,
+                    backgroundColor: widget.category.color,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -824,18 +844,5 @@ class QuizScreen extends StatelessWidget {
       ),
     );
     return result ?? false;
-  }
-
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return Colors.green;
-      case 'medium':
-        return Colors.orange;
-      case 'hard':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }

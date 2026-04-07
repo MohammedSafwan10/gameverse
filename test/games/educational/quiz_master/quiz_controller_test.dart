@@ -15,12 +15,12 @@ class _FakeQuizService implements QuizQuestionLoader {
   @override
   Future<List<QuizQuestion>> getQuestions({
     required String categoryId,
-    required String difficulty,
     required int count,
   }) async {
-    return responses['$categoryId|$difficulty'] ?? <QuizQuestion>[];
+    return (responses[categoryId] ?? <QuizQuestion>[]).take(count).toList();
   }
 }
+
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +31,6 @@ void main() {
     description: 'desc',
     icon: Icons.science,
     color: Colors.blue,
-    difficulties: ['Easy'],
     questionCount: 1,
   );
 
@@ -64,7 +63,7 @@ void main() {
 
     await controller.startQuiz(
       category: science,
-      difficulty: 'Easy',
+      questionCount: 5,
       mode: QuizMode.practice,
     );
 
@@ -75,14 +74,15 @@ void main() {
   test('answerQuestion awards points once and preserves awarded score', () async {
     final controller = QuizMasterController(
       quizLoader: _FakeQuizService({
-        'science|Easy': [question(id: '1', correctOptionIndex: 1, points: 10)],
+        'science': [question(id: '1', correctOptionIndex: 1, points: 10)],
       }),
       feedbackPresenter: ({required bool isCorrect, required String message}) {},
+      statsSaver: ({required QuizCategory category, required int score}) {},
     );
 
     await controller.startQuiz(
       category: science,
-      difficulty: 'Easy',
+      questionCount: 1,
       mode: QuizMode.practice,
     );
 
@@ -95,17 +95,18 @@ void main() {
   test('completeQuiz stores session result with accuracy data', () async {
     final controller = QuizMasterController(
       quizLoader: _FakeQuizService({
-        'science|Easy': [
+        'science': [
           question(id: '1', correctOptionIndex: 1, points: 10),
           question(id: '2', correctOptionIndex: 0, points: 10),
         ],
       }),
       feedbackPresenter: ({required bool isCorrect, required String message}) {},
+      statsSaver: ({required QuizCategory category, required int score}) {},
     );
 
     await controller.startQuiz(
       category: science,
-      difficulty: 'Easy',
+      questionCount: 2,
       mode: QuizMode.practice,
     );
 
@@ -125,14 +126,15 @@ void main() {
   test('startQuiz resets completed state for play again flow', () async {
     final controller = QuizMasterController(
       quizLoader: _FakeQuizService({
-        'science|Easy': [question(id: '1', correctOptionIndex: 1, points: 10)],
+        'science': [question(id: '1', correctOptionIndex: 1, points: 10)],
       }),
       feedbackPresenter: ({required bool isCorrect, required String message}) {},
+      statsSaver: ({required QuizCategory category, required int score}) {},
     );
 
     await controller.startQuiz(
       category: science,
-      difficulty: 'Easy',
+      questionCount: 1,
       mode: QuizMode.practice,
     );
 
@@ -142,12 +144,46 @@ void main() {
 
     await controller.startQuiz(
       category: science,
-      difficulty: 'Easy',
+      questionCount: 1,
       mode: QuizMode.practice,
     );
 
     expect(controller.isCompleted.value, isFalse);
     expect(controller.sessionResult.value, isNull);
     expect(controller.currentQuestionIndex.value, 0);
+  });
+
+  test('completeQuiz saves stats once even if called repeatedly', () async {
+    int updateCalls = 0;
+    QuizCategory? savedCategory;
+    int? savedScore;
+
+    final controller = QuizMasterController(
+      quizLoader: _FakeQuizService({
+        'science': [question(id: '1', correctOptionIndex: 1, points: 10)],
+      }),
+      feedbackPresenter: ({required bool isCorrect, required String message}) {},
+      statsSaver: ({required QuizCategory category, required int score}) {
+        updateCalls++;
+        savedCategory = category;
+        savedScore = score;
+      },
+    );
+
+    await controller.startQuiz(
+      category: science,
+      questionCount: 1,
+      mode: QuizMode.practice,
+    );
+
+    controller.timeRemaining.value = 30;
+    controller.answerQuestion(1);
+    controller.completeQuiz();
+    controller.completeQuiz();
+    controller.saveSessionStats();
+
+    expect(updateCalls, 1);
+    expect(savedCategory, science);
+    expect(savedScore, controller.sessionResult.value!.finalScore);
   });
 }

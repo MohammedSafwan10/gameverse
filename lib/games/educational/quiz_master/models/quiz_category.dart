@@ -6,7 +6,6 @@ class QuizCategory {
   final String description;
   final IconData icon;
   final Color color;
-  final List<String> difficulties;
   final int questionCount;
 
   const QuizCategory({
@@ -15,7 +14,6 @@ class QuizCategory {
     required this.description,
     required this.icon,
     required this.color,
-    required this.difficulties,
     required this.questionCount,
   });
 }

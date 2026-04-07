@@ -40,7 +40,6 @@ class QuizService extends GetxService implements QuizQuestionLoader {
       description: 'Test your knowledge in physics, chemistry, and biology',
       icon: Icons.science_rounded,
       color: Colors.blue,
-      difficulties: ['Easy', 'Medium', 'Hard'],
       questionCount: scienceQuestions.length,
     ),
     QuizCategory(
@@ -49,7 +48,6 @@ class QuizService extends GetxService implements QuizQuestionLoader {
       description: 'Explore world history and historical events',
       icon: Icons.history_edu_rounded,
       color: Colors.red,
-      difficulties: ['Easy', 'Medium', 'Hard'],
       questionCount: historyQuestions.length,
     ),
     QuizCategory(
@@ -58,7 +56,6 @@ class QuizService extends GetxService implements QuizQuestionLoader {
       description: 'Learn about countries, capitals, and landmarks',
       icon: Icons.public_rounded,
       color: Colors.green,
-      difficulties: ['Easy', 'Medium', 'Hard'],
       questionCount: geographyQuestions.length,
     ),
     QuizCategory(
@@ -67,7 +64,6 @@ class QuizService extends GetxService implements QuizQuestionLoader {
       description: 'Challenge yourself with math problems',
       icon: Icons.calculate_rounded,
       color: Colors.indigo,
-      difficulties: ['Easy', 'Medium', 'Hard'],
       questionCount: mathematicsQuestions.length,
     ),
     QuizCategory(
@@ -76,7 +72,6 @@ class QuizService extends GetxService implements QuizQuestionLoader {
       description: 'Stay updated with tech knowledge',
       icon: Icons.computer_rounded,
       color: Colors.purple,
-      difficulties: ['Easy', 'Medium', 'Hard'],
       questionCount: technologyQuestions.length,
     ),
   ];
@@ -90,11 +85,10 @@ class QuizService extends GetxService implements QuizQuestionLoader {
     'technology': technologyQuestions,
   };
 
-  // Get questions for a category and difficulty
+  // Get random questions for a category
   @override
   Future<List<QuizQuestion>> getQuestions({
     required String categoryId,
-    required String difficulty,
     required int count,
   }) async {
     try {
@@ -103,11 +97,8 @@ class QuizService extends GetxService implements QuizQuestionLoader {
           const Duration(milliseconds: 500)); // Simulate loading
 
       final questions = _questionsBank[categoryId] ?? [];
-      final filteredQuestions =
-          questions.where((q) => q.difficulty == difficulty).toList();
-      filteredQuestions.shuffle(); // Randomize questions
-
-      return filteredQuestions.take(count).toList();
+      final mixedQuestions = List<QuizQuestion>.from(questions)..shuffle();
+      return mixedQuestions.take(count.clamp(1, mixedQuestions.length)).toList();
     } finally {
       isLoading.value = false;
     }
@@ -129,13 +120,12 @@ class QuizService extends GetxService implements QuizQuestionLoader {
     }
   }
 
-  // Update high score for a category and difficulty
+  // Update high score for a category
   void updateHighScore({
     required QuizCategory category,
-    required String difficulty,
     required int score,
   }) {
-    final key = '${category.id}_${difficulty.toLowerCase()}';
+    final key = category.id;
     final currentHighScore = highScores[key] ?? 0;
 
     if (score > currentHighScore) {
@@ -161,10 +151,9 @@ class QuizService extends GetxService implements QuizQuestionLoader {
     averageScoreRate.refresh();
   }
 
-  // Get high score for a category and difficulty
-  int getHighScore(String categoryId, String difficulty) {
-    final key = '${categoryId}_${difficulty.toLowerCase()}';
-    return highScores[key] ?? 0;
+  // Get high score for a category
+  int getHighScore(String categoryId) {
+    return highScores[categoryId] ?? 0;
   }
 
   // Get total questions for all categories

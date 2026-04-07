@@ -4,11 +4,11 @@ import '../controllers/mode_selection_controller.dart';
 class QuizSessionConfig {
   const QuizSessionConfig({
     required this.category,
-    required this.difficulty,
+    required this.questionCount,
     required this.mode,
   });
 
   final QuizCategory category;
-  final String difficulty;
+  final int questionCount;
   final QuizMode mode;
 }

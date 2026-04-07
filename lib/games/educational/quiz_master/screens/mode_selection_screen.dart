@@ -250,7 +250,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => _showDifficultyDialog(category),
+            onTap: () => _showQuizSetupDialog(category),
             borderRadius: BorderRadius.circular(24),
             child: Padding(
               padding: EdgeInsets.all(isCompact ? 16 : 20),
@@ -283,15 +283,6 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                             color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          category.description,
-                          style: Get.textTheme.bodyMedium?.copyWith(
-                            color: Colors.black54,
-                          ),
-                          maxLines: isCompact ? 1 : 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                         SizedBox(height: isCompact ? 8 : 12),
                         Wrap(
                           spacing: 8,
@@ -304,7 +295,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                             ),
                             _buildInfoChip(
                               icon: Icons.timer_rounded,
-                              label: '5 min',
+                              label: 'Random mix',
                               color: Colors.green,
                             ),
                           ],
@@ -364,7 +355,12 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
     );
   }
 
-  void _showDifficultyDialog(QuizCategory category) {
+  void _showQuizSetupDialog(QuizCategory category) {
+    final selectedQuestionCount = (category.questionCount >= 10
+            ? 10
+            : category.questionCount.clamp(1, category.questionCount))
+        .obs;
+
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
@@ -398,7 +394,7 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Select Difficulty',
+                          'Start Quiz',
                           style: Get.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
@@ -417,98 +413,85 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
                 ],
               ).animate().fadeIn().slideY(begin: 0.3),
               const SizedBox(height: 24),
-              ...category.difficulties.asMap().entries.map((entry) {
-                final index = entry.key;
-                final difficulty = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        Get.back();
-                        Get.to(() => QuizScreen(
-                              category: category,
-                              difficulty: difficulty,
-                              mode: QuizMode.practice,
-                            ));
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: category.color.withValues(
-                                alpha: 0.05,
-                              ),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _getDifficultyIcon(difficulty),
-                              color: _getDifficultyColor(difficulty),
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              difficulty,
-                              style: Get.textTheme.titleMedium?.copyWith(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const Spacer(),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              color: Colors.black26,
-                              size: 16,
-                            ),
-                          ],
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: category.color.withValues(alpha: 0.05),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Questions: ${selectedQuestionCount.value}',
+                        style: Get.textTheme.titleMedium?.copyWith(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Available in this category: ${category.questionCount}',
+                        style: Get.textTheme.bodyMedium?.copyWith(
+                          color: Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Slider(
+                        value: selectedQuestionCount.value.toDouble(),
+                        min: 1,
+                        max: category.questionCount.toDouble(),
+                        divisions: category.questionCount > 1
+                            ? category.questionCount - 1
+                            : null,
+                        activeColor: category.color,
+                        label: '${selectedQuestionCount.value}',
+                        onChanged: (value) {
+                          selectedQuestionCount.value = value.round();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Get.back();
+                            Get.to(() => QuizScreen(
+                                  category: category,
+                                  questionCount: selectedQuestionCount.value,
+                                  mode: QuizMode.practice,
+                                ));
+                          },
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text('Start Quiz'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: category.color,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ).animate().fadeIn(delay: (100 * index).ms).slideX();
-              }),
+                ),
+              ),
             ],
           ),
         ),
       ),
       barrierDismissible: true,
     );
-  }
-
-  IconData _getDifficultyIcon(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return Icons.sentiment_satisfied_rounded;
-      case 'medium':
-        return Icons.sentiment_neutral_rounded;
-      case 'hard':
-        return Icons.sentiment_very_dissatisfied_rounded;
-      default:
-        return Icons.help_outline_rounded;
-    }
-  }
-
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'easy':
-        return Colors.green;
-      case 'medium':
-        return Colors.orange;
-      case 'hard':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 
   void _showHowToPlay(BuildContext context) {
@@ -572,9 +555,9 @@ class QuizMasterModeSelectionScreen extends GetView<ModeSelectionController> {
               ),
               const SizedBox(height: 16),
               _buildHowToPlaySection(
-                'Select Difficulty',
-                'Pick your challenge level: Easy, Medium, or Hard',
-                Icons.trending_up_rounded,
+                'Choose Quiz Length',
+                'Set how many questions you want to answer for the selected category.',
+                Icons.tune_rounded,
                 Colors.orange,
               ),
               const SizedBox(height: 16),

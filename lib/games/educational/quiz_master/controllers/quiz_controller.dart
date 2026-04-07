@@ -14,15 +14,23 @@ typedef QuizFeedbackPresenter = void Function({
   required String message,
 });
 
+typedef QuizStatsSaver = void Function({
+  required QuizCategory category,
+  required int score,
+});
+
 class QuizMasterController extends GetxController {
   QuizMasterController({
     QuizQuestionLoader? quizLoader,
     QuizFeedbackPresenter? feedbackPresenter,
+    QuizStatsSaver? statsSaver,
   })  : _quizService = quizLoader ?? Get.find<QuizService>(),
-        _feedbackPresenter = feedbackPresenter ?? _defaultFeedbackPresenter;
+        _feedbackPresenter = feedbackPresenter ?? _defaultFeedbackPresenter,
+        _statsSaver = statsSaver ?? _defaultStatsSaver;
 
   final QuizQuestionLoader _quizService;
   final QuizFeedbackPresenter _feedbackPresenter;
+  final QuizStatsSaver _statsSaver;
 
   // Observable states
   final currentQuestion = Rx<QuizQuestion?>(null);
@@ -42,6 +50,7 @@ class QuizMasterController extends GetxController {
   final errorMessage = RxnString();
 
   Timer? _timer;
+  bool _hasSavedStats = false;
 
   @override
   void onClose() {
@@ -51,7 +60,7 @@ class QuizMasterController extends GetxController {
 
   Future<void> startQuiz({
     required QuizCategory category,
-    required String difficulty,
+    required int questionCount,
     required QuizMode mode,
   }) async {
     try {
@@ -59,17 +68,16 @@ class QuizMasterController extends GetxController {
       errorMessage.value = null;
       sessionResult.value = null;
       isCompleted.value = false;
+      _hasSavedStats = false;
       sessionConfig.value = QuizSessionConfig(
         category: category,
-        difficulty: difficulty,
+        questionCount: questionCount,
         mode: mode,
       );
 
-      // Get questions for practice mode
       questions.value = await _quizService.getQuestions(
         categoryId: category.id,
-        difficulty: difficulty,
-        count: 10,
+        count: questionCount,
       );
 
       // Initialize game state
@@ -179,6 +187,8 @@ class QuizMasterController extends GetxController {
   }
 
   void completeQuiz() {
+    if (isCompleted.value && sessionResult.value != null) return;
+
     _timer?.cancel();
     isCompleted.value = true;
     sessionResult.value = QuizSessionResult(
@@ -187,43 +197,31 @@ class QuizMasterController extends GetxController {
       totalQuestions: questions.length,
       correctAnswers: correctAnswers.value,
     );
+    saveSessionStats();
   }
 
   void saveSessionStats() {
+    if (_hasSavedStats) return;
+
     final config = sessionConfig.value;
     final result = sessionResult.value;
     if (config == null || result == null) return;
 
-    final quizService = Get.find<QuizService>();
-    quizService.updateHighScore(
+    _statsSaver(
       category: config.category,
-      difficulty: config.difficulty,
       score: result.finalScore,
     );
+    _hasSavedStats = true;
   }
 
-  void showResultsDialog() {
-    final result = sessionResult.value;
-    if (result == null) return;
-
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Quiz Complete!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Final Score: ${result.finalScore}'),
-            const SizedBox(height: 8),
-            Text('Highest Streak: ${result.highestStreak}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+  static void _defaultStatsSaver({
+    required QuizCategory category,
+    required int score,
+  }) {
+    final quizService = Get.find<QuizService>();
+    quizService.updateHighScore(
+      category: category,
+      score: score,
     );
   }
 
