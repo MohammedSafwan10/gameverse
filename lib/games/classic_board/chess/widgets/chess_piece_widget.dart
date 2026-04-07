@@ -21,6 +21,10 @@ class ChessPieceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isWhitePiece = piece.color == PieceColor.white;
+    final pieceColor = isWhitePiece ? const Color(0xFFF7F7FA) : const Color(0xFF111111);
+    final outlineColor = isWhitePiece ? const Color(0xCC2D3142) : const Color(0x66FFFFFF);
+
     Widget pieceWidget = GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -28,7 +32,21 @@ class ChessPieceWidget extends StatelessWidget {
         height: size,
         child: Stack(
           children: [
-            // piece SVG with standard contrast
+            Center(
+              child: Transform.translate(
+                offset: const Offset(0.8, 1.2),
+                child: SvgPicture.asset(
+                  piece.imagePath,
+                  width: size * 0.9,
+                  height: size * 0.9,
+                  fit: BoxFit.contain,
+                  colorFilter: ColorFilter.mode(
+                    outlineColor.withValues(alpha: isWhitePiece ? 0.55 : 0.35),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
             Center(
               child: SvgPicture.asset(
                 piece.imagePath,
@@ -36,14 +54,12 @@ class ChessPieceWidget extends StatelessWidget {
                 height: size * 0.9,
                 fit: BoxFit.contain,
                 colorFilter: ColorFilter.mode(
-                  piece.color == PieceColor.white ? Colors.white : Colors.black,
+                  pieceColor,
                   BlendMode.srcIn,
                 ),
               ),
             ),
-
-            // Subtle reflection for 3D feel
-            if (piece.color == PieceColor.white)
+            if (isWhitePiece)
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
@@ -54,7 +70,7 @@ class ChessPieceWidget extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withValues(alpha: 0.4),
+                          Colors.white.withValues(alpha: 0.22),
                           Colors.white.withValues(alpha: 0),
                         ],
                       ),

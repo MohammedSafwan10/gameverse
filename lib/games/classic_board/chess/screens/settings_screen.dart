@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'dart:developer' as dev;
 import '../controllers/game_controller.dart';
+import 'game_screen.dart';
 import '../widgets/chess_board_preview.dart';
 import 'package:gameverse/widgets/premium_background.dart';
 
@@ -83,6 +85,50 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                         context, 'Your Progress', Icons.analytics_outlined),
                     const SizedBox(height: 12),
                     _buildStatisticsGrid(context),
+
+                    const SizedBox(height: 32),
+
+                    // Position Tools Section
+                    _buildSectionTitle(
+                        context, 'Position Tools', Icons.code_rounded),
+                    _buildSettingsCard(
+                      context,
+                      children: [
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.copy_all_rounded,
+                                color: theme.colorScheme.primary),
+                          ),
+                          title: const Text('Copy FEN'),
+                          subtitle: const Text('Copy the current position as FEN'),
+                          onTap: () => _copyFen(context),
+                        ),
+                        _buildDivider(),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.input_rounded,
+                                color: theme.colorScheme.primary),
+                          ),
+                          title: const Text('Import FEN'),
+                          subtitle: const Text('Load a position from FEN'),
+                          onTap: () => _showImportFenDialog(context),
+                        ),
+                      ],
+                    ),
 
                     const SizedBox(height: 32),
 
@@ -424,6 +470,67 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                 color: color,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _copyFen(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: controller.exportFen()));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('FEN copied')),
+    );
+  }
+
+  Future<void> _showImportFenDialog(BuildContext context) async {
+    final textController = TextEditingController();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Import FEN'),
+        content: TextField(
+          controller: textController,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Paste a FEN string',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final fen = textController.text.trim();
+              if (fen.isEmpty) return;
+              try {
+                controller.importFen(fen);
+                Navigator.of(dialogContext).pop();
+                Get.until((route) => route.isFirst);
+                Get.to(() => const ChessGameScreen(),
+                    transition: Transition.rightToLeft);
+                Get.snackbar(
+                  'Position Loaded',
+                  'FEN position imported successfully.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              } catch (e) {
+                Get.snackbar(
+                  'Invalid FEN',
+                  e.toString(),
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white,
+                );
+              }
+            },
+            child: const Text('LOAD'),
           ),
         ],
       ),

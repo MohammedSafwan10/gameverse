@@ -91,6 +91,11 @@ class ChessStorageService extends GetxService {
     dev.log('Game state saved', name: 'Chess');
   }
 
+  Future<void> saveSerializedGameState(String serializedState) async {
+    await _storage.write(_storageKey, serializedState);
+    dev.log('Serialized game state saved', name: 'Chess');
+  }
+
   // Load game state
   Map<String, dynamic>? loadGameState() {
     final data = _storage.read(_storageKey);
@@ -98,6 +103,11 @@ class ChessStorageService extends GetxService {
       return json.decode(data);
     }
     return null;
+  }
+
+  String? loadSerializedGameState() {
+    final data = _storage.read(_storageKey);
+    return data is String ? data : null;
   }
 
   // Update game statistics

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:developer' as dev;
 import 'package:get/get.dart';
 import '../models/chess_board.dart';
+import '../models/chess_move.dart';
 import '../models/chess_piece.dart';
 
 /// Production-grade Chess AI with proper difficulty separation.
@@ -177,8 +178,8 @@ class ChessAIService extends GetxService {
     _difficulty = difficulty.clamp(easy, hard);
   }
 
-  /// Returns the best move as `"from-to"` (e.g. `"e2-e4"`), or `null` if none.
-  String? getBestMove(ChessBoard chessBoard, PieceColor aiColor) {
+  /// Returns the best legal engine move for the given color, or `null` if none.
+  ChessMove? getBestEngineMove(ChessBoard chessBoard, PieceColor aiColor) {
     hasError.value = false;
     errorMessage.value = '';
     isThinking.value = true;
@@ -206,7 +207,7 @@ class ChessAIService extends GetxService {
       );
 
       // ── Score every root move ──
-      final scoredMoves = <(_Move, int)>[];
+      final scoredMoves = <(ChessMove, int)>[];
 
       // Order root moves for better pruning (if enabled)
       final orderedMoves =
@@ -247,7 +248,7 @@ class ChessAIService extends GetxService {
       }
 
       // ── Pick move (with difficulty-appropriate randomness) ──
-      _Move chosen;
+      ChessMove chosen;
       if (config.blunderChance > 0 &&
           _random.nextDouble() < config.blunderChance &&
           scoredMoves.length > 1) {
@@ -265,7 +266,7 @@ class ChessAIService extends GetxService {
         '(best score: ${scoredMoves.first.$2})',
         name: 'ChessAIService',
       );
-      return '${chosen.from}-${chosen.to}';
+      return chosen;
     } catch (e, st) {
       dev.log('AI error: $e', name: 'ChessAIService', error: e, stackTrace: st);
       hasError.value = true;
@@ -274,7 +275,7 @@ class ChessAIService extends GetxService {
 
       // Fallback: any legal move
       try {
-        return _getRandomMove(chessBoard, aiColor);
+        return _getRandomEngineMove(chessBoard, aiColor);
       } catch (_) {
         return null;
       }
@@ -284,6 +285,12 @@ class ChessAIService extends GetxService {
   // ═══════════════════════════════════════════════════════════════════════════
   // MINIMAX + ALPHA-BETA PRUNING
   // ═══════════════════════════════════════════════════════════════════════════
+
+  String? getBestMove(ChessBoard chessBoard, PieceColor aiColor) {
+    final move = getBestEngineMove(chessBoard, aiColor);
+    if (move == null) return null;
+    return '${move.from}-${move.to}';
+  }
 
   int _minimax(
     ChessBoard board,
@@ -303,7 +310,7 @@ class ChessAIService extends GetxService {
     }
 
     final currentColor = isMaximizing ? PieceColor.white : PieceColor.black;
-    List<_Move> moves = _getAllValidMoves(board, currentColor);
+    List<ChessMove> moves = _getAllValidMoves(board, currentColor);
 
     // Terminal node detection
     if (moves.isEmpty) {
@@ -364,7 +371,7 @@ class ChessAIService extends GetxService {
     if (depth <= 0) return standPat;
 
     final currentColor = isMaximizing ? PieceColor.white : PieceColor.black;
-    List<_Move> captures = _getCaptureMovesOnly(board, currentColor);
+    List<ChessMove> captures = _getCaptureMovesOnly(board, currentColor);
 
     // Order captures by MVV-LVA for better pruning
     if (config.useMoveOrdering && captures.length > 1) {
@@ -410,7 +417,7 @@ class ChessAIService extends GetxService {
   // effectively doubling the search depth for the same computation time.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  List<_Move> _orderMoves(ChessBoard board, List<_Move> moves) {
+  List<ChessMove> _orderMoves(ChessBoard board, List<ChessMove> moves) {
     final scored = moves.map((move) {
       int score = 0;
 
@@ -718,22 +725,16 @@ class ChessAIService extends GetxService {
   // CAPTURE-ONLY MOVE GENERATION (for quiescence search)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  List<_Move> _getCaptureMovesOnly(ChessBoard board, PieceColor color) {
-    final captures = <_Move>[];
+  List<ChessMove> _getCaptureMovesOnly(ChessBoard board, PieceColor color) {
+    final captures = <ChessMove>[];
     for (int row = 0; row < 8; row++) {
       for (int col = 0; col < 8; col++) {
         final piece = board.board[row][col];
         if (piece == null || piece.color != color) continue;
 
-        final from = piece.position;
-        for (final to in piece.getPossibleMoves(board.board)) {
-          final (toRow, toCol) = ChessPiece.notationToCoordinates(to);
-          final target = board.board[toRow][toCol];
-          if (target != null && target.color != color) {
-            // Verify legality (doesn't leave own king in check)
-            if (!board.wouldBeInCheck(color, from, to)) {
-              captures.add(_Move(from, to));
-            }
+        for (final move in board.getLegalMoves(piece.position)) {
+          if (move.isCapture) {
+            captures.add(move);
           }
         }
       }
@@ -755,11 +756,10 @@ class ChessAIService extends GetxService {
     return board.board[row][col];
   }
 
-  String? _getRandomMove(ChessBoard board, PieceColor color) {
+  ChessMove? _getRandomEngineMove(ChessBoard board, PieceColor color) {
     final moves = _getAllValidMoves(board, color);
     if (moves.isEmpty) return null;
-    final move = moves[_random.nextInt(moves.length)];
-    return '${move.from}-${move.to}';
+    return moves[_random.nextInt(moves.length)];
   }
 
   bool _isKingInCheck(ChessBoard board, PieceColor kingColor) {
@@ -793,39 +793,22 @@ class ChessAIService extends GetxService {
     return false;
   }
 
-  void _makeMove(ChessBoard board, _Move move) {
-    final (fromRow, fromCol) = ChessPiece.notationToCoordinates(move.from);
-    final (toRow, toCol) = ChessPiece.notationToCoordinates(move.to);
-
-    final movingPiece = board.board[fromRow][fromCol];
-    if (movingPiece == null) return;
-
-    final capturedPiece = board.board[toRow][toCol];
-    if (capturedPiece != null) {
-      board.capturedPieces.add(capturedPiece);
-    }
-
-    movingPiece.position = move.to;
-    movingPiece.hasMoved = true;
-    board.board[toRow][toCol] = movingPiece;
-    board.board[fromRow][fromCol] = null;
-    board.moveHistory.add('${move.from}-${move.to}');
+  void _makeMove(ChessBoard board, ChessMove move) {
+    board.movePiece(
+      move.from,
+      move.to,
+      promotionPiece: move.promotionPiece,
+    );
   }
 
-  /// Uses the efficient [ChessBoard.getValidMoves] which does in-place
-  /// check-testing via [wouldBeInCheck] instead of deep-copying the board
-  /// for every single legality check.
-  List<_Move> _getAllValidMoves(ChessBoard board, PieceColor color) {
-    final moves = <_Move>[];
+  /// Uses the board engine's typed legal moves.
+  List<ChessMove> _getAllValidMoves(ChessBoard board, PieceColor color) {
+    final moves = <ChessMove>[];
     for (int row = 0; row < 8; row++) {
       for (int col = 0; col < 8; col++) {
         final piece = board.board[row][col];
         if (piece != null && piece.color == color) {
-          final from = piece.position;
-          final validMoves = board.getValidMoves(from);
-          for (final to in validMoves) {
-            moves.add(_Move(from, to));
-          }
+          moves.addAll(board.getLegalMoves(piece.position));
         }
       }
     }
@@ -858,8 +841,3 @@ class _SearchConfig {
   });
 }
 
-class _Move {
-  final String from;
-  final String to;
-  _Move(this.from, this.to);
-}

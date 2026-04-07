@@ -44,11 +44,7 @@ class ChessBoardWidget extends GetView<ChessGameController> {
                     final isSelected =
                         controller.selectedPiece.value?.position == position;
                     final isValidMove =
-                        controller.selectedPiece.value != null &&
-                            controller.board
-                                .getValidMoves(
-                                    controller.selectedPiece.value!.position)
-                                .contains(position);
+                        controller.legalMovesForSelection.contains(position);
                     final isLastMove = controller.lastMove.value != null &&
                         (controller.lastMove.value!.$1 == position ||
                             controller.lastMove.value!.$2 == position);
@@ -148,24 +144,23 @@ class ChessBoardWidget extends GetView<ChessGameController> {
               (controller.isWhiteTurn.value
                   ? PieceColor.white
                   : PieceColor.black)) {
-        controller.selectedPiece.value = tappedPiece;
+        controller.selectPiece(tappedPiece);
         controller.soundService.playSelectSound();
       }
       return;
     }
 
     if (position == selectedPiece.position) {
-      controller.selectedPiece.value = null;
+      controller.clearSelection();
       controller.soundService.playDeselectSound();
     } else if (tappedPiece != null &&
         tappedPiece.color == selectedPiece.color) {
-      controller.selectedPiece.value = tappedPiece;
+      controller.selectPiece(tappedPiece);
       controller.soundService.playSelectSound();
     } else {
-      final validMoves = controller.board.getValidMoves(selectedPiece.position);
-      if (validMoves.contains(position)) {
+      if (controller.legalMovesForSelection.contains(position)) {
         controller.makeMove(selectedPiece.position, position);
-        controller.selectedPiece.value = null;
+        controller.clearSelection();
       } else {
         controller.soundService.playErrorSound();
       }

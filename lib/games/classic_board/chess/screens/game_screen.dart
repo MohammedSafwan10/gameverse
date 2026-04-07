@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -51,6 +52,11 @@ class ChessGameScreen extends StatelessWidget {
               onPressed: () =>
                   _showRestartConfirmationDialog(context, controller),
               tooltip: 'Restart Game',
+            ),
+            IconButton(
+              icon: const Icon(Icons.history_rounded),
+              onPressed: () => _showMoveHistoryDialog(context, controller),
+              tooltip: 'Move History',
             ),
             Obx(() => IconButton(
                   icon: Icon(
@@ -322,20 +328,43 @@ class ChessGameScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 itemCount: pieces.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: SvgPicture.asset(
-                    'assets/chess/images/${pieces[index]}.svg',
-                    width: 24,
-                    height: 24,
-                    colorFilter: ColorFilter.mode(
-                      pieces[index].contains('white')
-                          ? Colors.white
-                          : Colors.black87,
-                      BlendMode.srcIn,
+                itemBuilder: (context, index) {
+                  final isWhitePiece = pieces[index].contains('white');
+                  final pieceColor =
+                      isWhitePiece ? const Color(0xFFF7F7FA) : const Color(0xFF111111);
+                  final outlineColor =
+                      isWhitePiece ? const Color(0xCC2D3142) : const Color(0x66FFFFFF);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Transform.translate(
+                          offset: const Offset(0.8, 1.0),
+                          child: SvgPicture.asset(
+                            'assets/chess/images/${pieces[index]}.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              outlineColor.withValues(alpha: isWhitePiece ? 0.55 : 0.35),
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                        SvgPicture.asset(
+                          'assets/chess/images/${pieces[index]}.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            pieceColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ).animate().scale(delay: (index * 50).ms, duration: 300.ms),
+                  ).animate().scale(delay: (index * 50).ms, duration: 300.ms);
+                },
               ),
             ),
           ],
@@ -550,6 +579,51 @@ class ChessGameScreen extends StatelessWidget {
           ),
         ) ??
         false;
+  }
+
+  Future<void> _showMoveHistoryDialog(
+      BuildContext context, ChessGameController controller) async {
+    final moves = controller.formattedMovePairs();
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Move History'),
+        content: SizedBox(
+          width: 320,
+          child: moves.isEmpty
+              ? const Text('No moves yet.')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: moves.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: SelectableText(moves[index]),
+                  ),
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(
+                ClipboardData(text: moves.join('\n')),
+              );
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Move history copied')),
+                );
+              }
+            },
+            child: const Text('COPY'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('CLOSE'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showRestartConfirmationDialog(

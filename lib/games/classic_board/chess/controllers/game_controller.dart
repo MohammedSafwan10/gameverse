@@ -6,11 +6,8 @@ import '../services/storage_service.dart';
 import '../services/sound_service.dart';
 import '../services/ai_service.dart';
 import '../models/chess_board.dart';
+import '../models/chess_move.dart';
 import '../models/chess_piece.dart';
-import '../models/piece_types/queen.dart';
-import '../models/piece_types/rook.dart';
-import '../models/piece_types/bishop.dart';
-import '../models/piece_types/knight.dart';
 import '../widgets/promotion_dialog.dart';
 
 enum ChessGameMode { local, ai, training }
@@ -34,6 +31,7 @@ class ChessGameController extends GetxController {
 
   // Board state
   final Rxn<ChessPiece> selectedPiece = Rxn<ChessPiece>();
+  final RxSet<String> legalMovesForSelection = <String>{}.obs;
   final Rxn<(String, String)> lastMove = Rxn<(String, String)>();
 
   // Settings
@@ -64,10 +62,31 @@ class ChessGameController extends GetxController {
   }
 
   void _initializeGame() {
+    final savedState = storageService.loadSerializedGameState();
+    if (savedState != null) {
+      try {
+        board.loadJson(savedState);
+        isWhiteTurn.value = board.positionState.isWhiteToMove;
+        moveHistory.assignAll(board.moveHistory);
+        capturedPieces.assignAll(
+          board.capturedPieces
+              .map((piece) => piece.imagePath.split('/').last.split('.').first)
+              .toList(),
+        );
+        gameState.value = ChessGameState.inProgress;
+        clearSelection();
+        lastMove.value = null;
+        isGamePaused.value = false;
+        return;
+      } catch (e) {
+        dev.log('Failed to load saved chess state: $e', name: 'Chess');
+      }
+    }
+
     board.initializeBoard();
-    isWhiteTurn.value = true;
+    isWhiteTurn.value = board.positionState.isWhiteToMove;
     gameState.value = ChessGameState.initial;
-    selectedPiece.value = null;
+    clearSelection();
     lastMove.value = null;
     moveHistory.clear();
     capturedPieces.clear();
@@ -105,11 +124,12 @@ class ChessGameController extends GetxController {
 
   void startNewGame(ChessGameMode mode) {
     gameMode.value = mode;
+    storageService.clearAllData();
     board.initializeBoard();
-    isWhiteTurn.value = true;
+    isWhiteTurn.value = board.positionState.isWhiteToMove;
     moveHistory.clear();
     capturedPieces.clear();
-    selectedPiece.value = null;
+    clearSelection();
     lastMove.value = null;
     gameState.value = ChessGameState.initial;
     isGamePaused.value = false;
@@ -153,76 +173,8 @@ class ChessGameController extends GetxController {
   void _handleTimeUp() {
     _timer?.cancel();
     soundService.playTimeUpSound();
-
-    // Update game state to checkmate (time loss)
     gameState.value = ChessGameState.checkmate;
-
-    final currentPlayerLost = isWhiteTurn.value;
-
-    // Determine if the time loss is a fair outcome by evaluating board position
-    // If human player has a significant material advantage against AI, give them another chance
-    final isFairOutcome = _evaluateTimeUpFairness();
-
-    // Only consider mercy rule against AI if the player was making progress
-    if (gameMode.value == ChessGameMode.ai) {
-      // If player is losing by a lot against AI, consider it a fair time loss
-      // If player is winning against AI, give them a chance to recover
-      if (currentPlayerLost && !isFairOutcome) {
-        // Human timed out but was winning - just resume with less time
-        whiteTimeRemaining.value = 30; // Give 30 seconds grace period
-        soundService.playClockTickSound();
-        _startTimer();
-        return;
-      }
-    }
-
-    // Update stats for normal time loss
     _updateGameStats(isWhiteTurn.value ? 'loss' : 'win');
-  }
-
-  // Determines if a time loss is fair based on material advantage
-  bool _evaluateTimeUpFairness() {
-    // In a two player game, time loss is always fair
-    if (gameMode.value == ChessGameMode.local) {
-      return true;
-    }
-
-    // For AI game, check if human player has significant material advantage
-    if (gameMode.value == ChessGameMode.ai && isWhiteTurn.value) {
-      // Calculate material difference
-      int whiteMaterial = 0;
-      int blackMaterial = 0;
-
-      for (var row = 0; row < 8; row++) {
-        for (var col = 0; col < 8; col++) {
-          final piece = board.board[row][col];
-          if (piece == null) continue;
-
-          int value = switch (piece.type) {
-            PieceType.pawn => 1,
-            PieceType.knight => 3,
-            PieceType.bishop => 3,
-            PieceType.rook => 5,
-            PieceType.queen => 9,
-            PieceType.king => 0, // Don't count king for material advantage
-          };
-
-          if (piece.color == PieceColor.white) {
-            whiteMaterial += value;
-          } else {
-            blackMaterial += value;
-          }
-        }
-      }
-
-      // If human player has significant material advantage, time loss is unfair
-      // and they deserve a second chance
-      final materialDifference = whiteMaterial - blackMaterial;
-      return materialDifference <=
-          5; // If white has 5+ point advantage, give a chance
-    }
-
-    return true;
   }
 
   void makeMove(String from, String to) {
@@ -240,58 +192,63 @@ class ChessGameController extends GetxController {
       return;
     }
 
-    // Validate turn
     if ((piece.color == PieceColor.white) != isWhiteTurn.value) {
       dev.log('Wrong turn', name: 'Chess');
       soundService.playErrorSound();
       return;
     }
 
-    // Validate move
-    final validMoves = board.getValidMoves(from);
-    if (!validMoves.contains(to)) {
+    final legalMoves = board.getLegalMoves(from).where((move) => move.to == to).toList();
+    if (legalMoves.isEmpty) {
       dev.log('Invalid move $from-$to', name: 'Chess');
       soundService.playErrorSound();
       return;
     }
 
-    // Check for pawn promotion
-    final (toRow, _) = ChessPiece.notationToCoordinates(to);
-    final isPawnPromotion =
-        piece.type == PieceType.pawn && (toRow == 0 || toRow == 7);
+    final promotionMove = legalMoves.cast<ChessMove?>().firstWhere(
+          (move) => move?.isPromotion ?? false,
+          orElse: () => null,
+        );
 
-    // Make move
-    if (board.movePiece(from, to)) {
+    if (promotionMove != null) {
+      _handlePromotionMove(promotionMove, piece.color);
+      return;
+    }
+
+    _applyResolvedMove(from, to);
+  }
+
+  void _handlePromotionMove(ChessMove move, PieceColor color) {
+    Get.dialog(
+      PromotionDialog(
+        color: color,
+        position: move.to,
+        onSelect: (type) {
+          Get.back();
+          _applyResolvedMove(move.from, move.to, promotionPiece: type);
+          soundService.playPromotionSound();
+        },
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  void _applyResolvedMove(String from, String to, {PieceType? promotionPiece}) {
+    final piece = board.getPieceAt(from);
+    if (piece == null) return;
+
+    if (board.movePiece(from, to, promotionPiece: promotionPiece)) {
       dev.log('Move made $from-$to', name: 'Chess');
       soundService.playMoveSound();
       lastMove.value = (from, to);
-      moveHistory.add('${piece.type.name} $from-$to');
-
-      // Handle pawn promotion
-      if (isPawnPromotion) {
-        _handlePawnPromotion(to);
-        return;
-      }
-
-      // Update captured pieces (only if a piece was actually captured)
-      final capturedPiece = board.capturedPieces.lastOrNull;
-      if (capturedPiece != null &&
-          !capturedPieces.contains(
-              capturedPiece.imagePath.split('/').last.split('.').first)) {
-        capturedPieces
-            .add(capturedPiece.imagePath.split('/').last.split('.').first);
-        dev.log('Piece captured: ${capturedPiece.type}', name: 'Chess');
-        soundService.playCaptureSound();
-      }
-
-      // Switch turns
-      isWhiteTurn.value = !isWhiteTurn.value;
+      moveHistory.assignAll(board.moveHistory);
+      _syncCapturedPieces();
+      isWhiteTurn.value = board.positionState.isWhiteToMove;
+      storageService.saveSerializedGameState(board.toJson());
       gameState.value = ChessGameState.inProgress;
-
-      // Check game state
+      clearSelection();
       _checkGameState();
 
-      // Make AI move if it's AI's turn
       if (gameMode.value == ChessGameMode.ai &&
           !isWhiteTurn.value &&
           gameState.value != ChessGameState.checkmate &&
@@ -303,49 +260,6 @@ class ChessGameController extends GetxController {
       dev.log('Move failed $from-$to', name: 'Chess');
       soundService.playErrorSound();
     }
-  }
-
-  void _handlePawnPromotion(String position) {
-    final color = isWhiteTurn.value ? PieceColor.white : PieceColor.black;
-
-    Get.dialog(
-      PromotionDialog(
-        color: color,
-        position: position,
-        onSelect: (type) {
-          // Create and place the promoted piece
-          final promotedPiece = switch (type) {
-            PieceType.queen => Queen(color: color, position: position),
-            PieceType.rook => Rook(color: color, position: position),
-            PieceType.bishop => Bishop(color: color, position: position),
-            PieceType.knight => Knight(color: color, position: position),
-            _ => Queen(color: color, position: position), // Default to queen
-          };
-
-          // Replace the pawn with the promoted piece
-          final (row, col) = ChessPiece.notationToCoordinates(position);
-          board.board[row][col] = promotedPiece;
-
-          soundService.playPromotionSound();
-          Get.back();
-
-          // Continue with turn switch and game state check
-          isWhiteTurn.value = !isWhiteTurn.value;
-          gameState.value = ChessGameState.inProgress;
-          _checkGameState();
-
-          // Make AI move if needed
-          if (gameMode.value == ChessGameMode.ai &&
-              !isWhiteTurn.value &&
-              gameState.value != ChessGameState.checkmate &&
-              gameState.value != ChessGameState.stalemate &&
-              gameState.value != ChessGameState.draw) {
-            _makeAiMove();
-          }
-        },
-      ),
-      barrierDismissible: false,
-    );
   }
 
   Future<void> _makeAiMove() async {
@@ -388,31 +302,37 @@ class ChessGameController extends GetxController {
     aiService.setDifficulty(aiDifficulty.value);
 
     try {
-      final moveNotation = aiService.getBestMove(board, PieceColor.black);
+      final move = aiService.getBestEngineMove(board, PieceColor.black);
 
-      if (moveNotation == null) {
+      if (move == null) {
         dev.log('AI could not find a valid move', name: 'Chess');
         _checkGameState();
         return;
       }
 
-      // Parse move notation (format: "from-to")
-      final parts = moveNotation.split('-');
-      if (parts.length != 2) {
-        dev.log('Invalid move format: $moveNotation', name: 'Chess');
-        return;
-      }
-
-      final from = parts[0];
-      final to = parts[1];
-
-      dev.log('AI move: $from-$to', name: 'Chess');
-      makeMove(from, to);
+      dev.log('AI move: ${move.from}-${move.to}', name: 'Chess');
+      _applyResolvedMove(
+        move.from,
+        move.to,
+        promotionPiece: move.promotionPiece,
+      );
     } catch (e) {
       dev.log('AI move error: $e', name: 'Chess');
       // If AI can't make a move, check if it's in checkmate or stalemate
       _checkGameState();
     }
+  }
+
+  void _syncCapturedPieces() {
+    final newPieces = board.capturedPieces.skip(capturedPieces.length).toList();
+    if (newPieces.isEmpty) return;
+
+    for (final piece in newPieces) {
+      capturedPieces.add(piece.imagePath.split('/').last.split('.').first);
+      dev.log('Piece captured: ${piece.type}', name: 'Chess');
+    }
+
+    soundService.playCaptureSound();
   }
 
   void _checkGameState() {
@@ -442,6 +362,18 @@ class ChessGameController extends GetxController {
       _updateGameStats('draw');
       _timer?.cancel();
       dev.log('Draw by insufficient material!', name: 'Chess');
+    } else if (board.isThreefoldRepetition()) {
+      gameState.value = ChessGameState.draw;
+      soundService.playGameEndSound();
+      _updateGameStats('draw');
+      _timer?.cancel();
+      dev.log('Draw by threefold repetition!', name: 'Chess');
+    } else if (board.isFiftyMoveRuleDraw()) {
+      gameState.value = ChessGameState.draw;
+      soundService.playGameEndSound();
+      _updateGameStats('draw');
+      _timer?.cancel();
+      dev.log('Draw by 50-move rule!', name: 'Chess');
     }
   }
 
@@ -465,9 +397,45 @@ class ChessGameController extends GetxController {
     _updateGameStats('loss');
   }
 
+  void selectPiece(ChessPiece piece) {
+    selectedPiece.value = piece;
+    legalMovesForSelection
+      ..clear()
+      ..addAll(board.getValidMoves(piece.position));
+  }
+
+  void clearSelection() {
+    selectedPiece.value = null;
+    legalMovesForSelection.clear();
+  }
+
   // Statistics
   void _updateGameStats(String result) {
     storageService.updateGameStats(result: result);
+  }
+
+  void importFen(String fen) {
+    board.loadFen(fen);
+    isWhiteTurn.value = board.positionState.isWhiteToMove;
+    moveHistory.clear();
+    capturedPieces.clear();
+    clearSelection();
+    lastMove.value = null;
+    gameState.value = ChessGameState.inProgress;
+    storageService.saveSerializedGameState(board.toJson());
+  }
+
+  String exportFen() => board.toFen();
+
+  List<String> formattedMovePairs() {
+    final pairs = <String>[];
+    for (var i = 0; i < board.moveHistory.length; i += 2) {
+      final moveNumber = (i ~/ 2) + 1;
+      final whiteMove = board.moveHistory[i];
+      final blackMove = i + 1 < board.moveHistory.length ? board.moveHistory[i + 1] : '';
+      pairs.add('$moveNumber. $whiteMove${blackMove.isEmpty ? '' : '  $blackMove'}');
+    }
+    return pairs;
   }
 
   // Settings

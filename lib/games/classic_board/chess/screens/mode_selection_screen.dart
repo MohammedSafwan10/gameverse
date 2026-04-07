@@ -281,8 +281,13 @@ class ChessModeSelectionScreen extends StatelessWidget {
     if (result != null) {
       controller.timerEnabled.value = result['timerEnabled'] ?? false;
       controller.timePerPlayer.value = result['timePerPlayer'] ?? 10;
+      controller.storageService.updateTimerEnabled(controller.timerEnabled.value);
+      controller.storageService.updateTimePerPlayer(controller.timePerPlayer.value);
       if (mode == ChessGameMode.ai) {
-        controller.aiService.setDifficulty(result['difficulty'] ?? 2);
+        final difficulty = result['difficulty'] ?? 2;
+        controller.aiDifficulty.value = difficulty;
+        controller.aiService.setDifficulty(difficulty);
+        controller.storageService.updateAiDifficulty(difficulty);
       }
 
       controller.startNewGame(mode);
