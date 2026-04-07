@@ -142,7 +142,9 @@ class ScoreService {
     try {
       developer.log('Clearing score service cache');
       _lastSavedStats = null;
-      await _storage.erase();
+      await _storage.remove(_statsKey);
+      await _storage.remove(GameConstants.highScoreKey);
+      await _storage.save();
     } catch (e) {
       developer.log('Error clearing cache: $e');
     }
