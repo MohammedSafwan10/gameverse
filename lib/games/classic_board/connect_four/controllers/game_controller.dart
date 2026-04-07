@@ -390,54 +390,76 @@ class ConnectFourController extends GetxController {
     CellState player,
     List<List<CellState>> cells,
   ) {
-    final directions = [
-      [0, 1], // horizontal
-      [1, 0], // vertical
-      [1, 1], // diagonal right
-      [1, -1], // diagonal left
+    const directions = [
+      (0, 1),
+      (1, 0),
+      (1, 1),
+      (1, -1),
     ];
 
-    for (final direction in directions) {
-      final dRow = direction[0];
-      final dCol = direction[1];
+    for (final (dRow, dCol) in directions) {
+      final negative = _collectDirection(
+        row: row,
+        col: col,
+        dRow: -dRow,
+        dCol: -dCol,
+        player: player,
+        cells: cells,
+      ).reversed;
+      final positive = _collectDirection(
+        row: row,
+        col: col,
+        dRow: dRow,
+        dCol: dCol,
+        player: player,
+        cells: cells,
+      );
 
-      final line = <Point<int>>[];
-
-      // Check in both directions
-      for (int i = -3; i <= 3; i++) {
-        final newRow = row + (dRow * i);
-        final newCol = col + (dCol * i);
-
-        if (newRow >= 0 &&
-            newRow < Board.rows &&
-            newCol >= 0 &&
-            newCol < Board.cols &&
-            cells[newRow][newCol] == player) {
-          line.add(Point(newRow, newCol));
-        } else {
-          // Break if we hit a different piece or board edge
-          if (line.length >= winLength) break;
-          if (i < 0) {
-            // Reset if we're still checking negative direction
-            line.clear();
-          } else {
-            // Break if we're in positive direction
-            break;
-          }
-        }
-      }
+      final line = <Point<int>>[
+        ...negative,
+        Point(row, col),
+        ...positive,
+      ];
 
       if (line.length >= winLength) {
-        // Sort points to ensure consistent order
-        line.sort(
-            (a, b) => a.x == b.x ? a.y.compareTo(b.y) : a.x.compareTo(b.x));
-        // Return only exactly 4 consecutive points
-        _logger.i('Win detected for player $player: $line');
-        return line.sublist(0, winLength);
+        final centerIndex = line.indexOf(Point(row, col));
+        final start = centerIndex >= winLength - 1
+            ? centerIndex - (winLength - 1)
+            : 0;
+        final end = line.length - winLength;
+        final safeStart = start > end ? end : start;
+        final winningLine = line.sublist(safeStart, safeStart + winLength);
+        _logger.i('Win detected for player $player: $winningLine');
+        return winningLine;
       }
     }
 
     return [];
+  }
+
+  List<Point<int>> _collectDirection({
+    required int row,
+    required int col,
+    required int dRow,
+    required int dCol,
+    required CellState player,
+    required List<List<CellState>> cells,
+  }) {
+    final points = <Point<int>>[];
+    var currentRow = row + dRow;
+    var currentCol = col + dCol;
+
+    while (currentRow >= 0 &&
+        currentRow < Board.rows &&
+        currentCol >= 0 &&
+        currentCol < Board.cols &&
+        cells[currentRow][currentCol] == player) {
+      points.add(Point(currentRow, currentCol));
+      currentRow += dRow;
+      currentCol += dCol;
+    }
+
+    return points;
   }
 
   bool _isBoardFull(List<List<CellState>> cells) {

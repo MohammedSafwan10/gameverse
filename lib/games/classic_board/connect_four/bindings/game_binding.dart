@@ -35,6 +35,11 @@ class ConnectFourBinding implements Bindings {
     settingsController.setGameMode(gameMode);
 
     // Initialize controller with game mode from settings
-    Get.put(ConnectFourController());
+    if (Get.isRegistered<ConnectFourController>()) {
+      final controller = Get.find<ConnectFourController>();
+      controller.resetGame();
+    } else {
+      Get.put(ConnectFourController());
+    }
   }
 }

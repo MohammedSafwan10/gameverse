@@ -289,16 +289,6 @@ class BlockMergeModeSelectionScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: isCompact ? 13 : 14,
-                            color: Colors.grey.shade600,
-                          ),
-                          maxLines: isCompact ? 2 : 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                       ],
                     ),
                   ),

@@ -14,7 +14,9 @@ class MemoryMatchGameController extends GetxController {
 
   Timer? _gameTimer;
   Timer? _flipBackTimer;
+  Timer? _completionTimer;
   late final MemoryMatchSoundService _soundService;
+  bool _isDisposed = false;
 
   // Challenge mode tracking
   int _challengeLevel = 1;
@@ -28,14 +30,17 @@ class MemoryMatchGameController extends GetxController {
 
   @override
   void onClose() {
+    _isDisposed = true;
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _completionTimer?.cancel();
     super.onClose();
   }
 
   void initGame(MemoryMatchMode mode, GameDifficulty difficulty) {
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _completionTimer?.cancel();
     if (mode == MemoryMatchMode.challenge) _challengeLevel = 1;
 
     final cards = _generateCards(difficulty);
@@ -203,7 +208,9 @@ class MemoryMatchGameController extends GetxController {
         );
 
         if (isComplete) {
-          Future.delayed(const Duration(milliseconds: 800), _onGameComplete);
+          _completionTimer?.cancel();
+          _completionTimer =
+              Timer(const Duration(milliseconds: 800), _onGameComplete);
         }
       } else {
         // ---- NO MATCH ----
@@ -281,7 +288,9 @@ class MemoryMatchGameController extends GetxController {
       _challengeLevel++;
     }
 
-    Timer(const Duration(milliseconds: 400), () {
+    _completionTimer?.cancel();
+    _completionTimer = Timer(const Duration(milliseconds: 400), () {
+      if (_isDisposed || state == null) return;
       Get.to(
         () => GameCompletionScreen(
           mode: s.mode,
@@ -305,7 +314,9 @@ class MemoryMatchGameController extends GetxController {
     final s = state;
     if (s == null) return;
 
-    Timer(const Duration(milliseconds: 600), () {
+    _completionTimer?.cancel();
+    _completionTimer = Timer(const Duration(milliseconds: 600), () {
+      if (_isDisposed || state == null) return;
       Get.to(
         () => GameCompletionScreen(
           mode: s.mode,
@@ -345,6 +356,7 @@ class MemoryMatchGameController extends GetxController {
 
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _completionTimer?.cancel();
 
     final cards = _generateCards(s.difficulty);
     _state.value = MemoryMatchState(
@@ -375,6 +387,7 @@ class MemoryMatchGameController extends GetxController {
   void cleanupGame() {
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _completionTimer?.cancel();
     state = null;
   }
 

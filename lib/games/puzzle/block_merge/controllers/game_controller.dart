@@ -162,38 +162,33 @@ class BlockMergeController extends GetxController {
     );
   }
 
-  void _saveState() {
+  List<List<Block?>> _cloneGrid(List<List<Block?>> source) {
+    return List.generate(
+      4,
+      (i) => List.generate(4, (j) {
+        final block = source[i][j];
+        return block != null
+            ? Block(
+                value: block.value,
+                position: Position(block.position.x, block.position.y),
+                isNew: block.isNew,
+                isMerged: block.isMerged,
+              )
+            : null;
+      }),
+    );
+  }
+
+  void _saveState({
+    required List<List<Block?>> previousGridSnapshot,
+    required int previousScoreSnapshot,
+  }) {
     try {
-      previousGrid.value = List.generate(
-          4,
-          (i) => List.generate(4, (j) {
-                final block = grid.value[i][j];
-                return block != null
-                    ? Block(
-                        value: block.value,
-                        position: Position(block.position.x, block.position.y),
-                        isNew: block.isNew,
-                        isMerged: block.isMerged,
-                      )
-                    : null;
-              }));
-      previousScore.value = score.value;
+      previousGrid.value = _cloneGrid(previousGridSnapshot);
+      previousScore.value = previousScoreSnapshot;
       gameState.value = gameState.value.copyWith(
-        previousGrid: List.generate(
-            4,
-            (i) => List.generate(4, (j) {
-                  final block = grid.value[i][j];
-                  return block != null
-                      ? Block(
-                          value: block.value,
-                          position:
-                              Position(block.position.x, block.position.y),
-                          isNew: block.isNew,
-                          isMerged: block.isMerged,
-                        )
-                      : null;
-                })),
-        previousScore: score.value,
+        previousGrid: _cloneGrid(previousGridSnapshot),
+        previousScore: previousScoreSnapshot,
         canUndo: true,
         moves: gameState.value.moves + 1,
         currentScore: score.value,
@@ -290,9 +285,12 @@ class BlockMergeController extends GetxController {
       if (!isPaused.value && timeRemaining.value > 0) {
         timeRemaining.value--;
         if (timeRemaining.value == 0) {
-          isGameOver.value = true;
           timer.cancel();
-          _settingsController.updateBestScore(score.value);
+          isGameOver.value = true;
+          gameState.value = gameState.value.copyWith(
+            status: GameStatus.gameOver,
+            currentScore: score.value,
+          );
         }
       }
     });
@@ -364,21 +362,10 @@ class BlockMergeController extends GetxController {
     if (isGameOver.value || isPaused.value) return;
 
     try {
-      _saveState();
+      final previousGridSnapshot = _cloneGrid(grid.value);
+      final previousScoreSnapshot = score.value;
       bool moved = false;
-      List<List<Block?>> newGrid = List.generate(
-          4,
-          (i) => List.generate(4, (j) {
-                final block = grid.value[i][j];
-                return block != null
-                    ? Block(
-                        value: block.value,
-                        position: Position(block.position.x, block.position.y),
-                        isNew: block.isNew,
-                        isMerged: block.isMerged,
-                      )
-                    : null;
-              }));
+      List<List<Block?>> newGrid = _cloneGrid(grid.value);
 
       switch (direction) {
         case Direction.left:
@@ -396,6 +383,10 @@ class BlockMergeController extends GetxController {
       }
 
       if (moved) {
+        _saveState(
+          previousGridSnapshot: previousGridSnapshot,
+          previousScoreSnapshot: previousScoreSnapshot,
+        );
         grid.value = newGrid;
         _addNewBlock();
         _checkGameState();

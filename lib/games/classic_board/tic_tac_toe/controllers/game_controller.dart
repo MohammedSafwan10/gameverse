@@ -18,6 +18,7 @@ class TicTacToeGameController extends GetxController {
   final Rx<TicTacToeState> _gameState = TicTacToeState.initial().obs;
   final RxBool _isThinking = false.obs;
   final Stopwatch _gameStopwatch = Stopwatch();
+  bool _isDisposed = false;
 
   TicTacToeGameController(this._navigationService, this._aiService) {
     _gameStopwatch.start();
@@ -81,7 +82,7 @@ class TicTacToeGameController extends GetxController {
     final aiMove = await _aiService.getNextMove(gameState);
     _isThinking.value = false;
 
-    if (aiMove != null) {
+    if (aiMove != null && aiMove >= 0 && aiMove < gameState.board.length) {
       await makeMove(aiMove);
     }
   }
@@ -124,7 +125,7 @@ class TicTacToeGameController extends GetxController {
 
     if (_settingsController.settings.autoRestart) {
       Future.delayed(const Duration(seconds: 3), () {
-        if (_gameState.value.status != GameStatus.playing) {
+        if (!_isDisposed && _gameState.value.status != GameStatus.playing) {
           resetGame();
         }
       });
@@ -211,6 +212,7 @@ class TicTacToeGameController extends GetxController {
 
   @override
   void onClose() {
+    _isDisposed = true;
     _gameStopwatch.stop();
     super.onClose();
   }
