@@ -73,6 +73,8 @@ flutter:
     - assets/sounds/drop.mp3
     - assets/sounds/win.mp3
     - assets/images/
+    - assets/images/categories/
+    - assets/images/games/
     - assets/images/google_logo.png
 
 flutter_icons:

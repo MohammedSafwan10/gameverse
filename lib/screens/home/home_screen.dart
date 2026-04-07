@@ -28,6 +28,31 @@ class HomeScreen extends GetView<HomeController> {
         body: Stack(
           children: [
             const PremiumBackground(),
+            Positioned.fill(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/home_bg.png',
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.4),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.2),
+                        ],
+                        stops: const [0.0, 0.3, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(duration: 800.ms),
+            ),
             SafeArea(
               bottom: false,
               child: CustomScrollView(
@@ -54,17 +79,6 @@ class HomeScreen extends GetView<HomeController> {
                     child: _buildFeaturedSection(context),
                   ),
 
-                  // Quick Play Sections
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                    sliver: SliverToBoxAdapter(
-                      child: _buildSectionTitle(context, 'Quick Play'),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: _buildQuickPlayList(context),
-                  ),
-
                   // Discover All Section
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -79,9 +93,9 @@ class HomeScreen extends GetView<HomeController> {
                         crossAxisCount: MediaQuery.of(context).size.width > 900
                             ? 4
                             : (MediaQuery.of(context).size.width > 600 ? 3 : 2),
-                        childAspectRatio: MediaQuery.of(context).size.width > 600 ? 0.85 : 0.9,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.82,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -93,11 +107,26 @@ class HomeScreen extends GetView<HomeController> {
                               AppTheme.categoryColors[category.title] ??
                                   category.color;
 
+                          String? bgImage;
+                          switch (category.title) {
+                            case 'Arcade': bgImage = 'assets/images/categories/arcade.png'; break;
+                            case 'Classic Board': bgImage = 'assets/images/categories/classic_board.png'; break;
+                            case 'Word Games': bgImage = 'assets/images/categories/word_games.png'; break;
+                            case 'Brain Training': bgImage = 'assets/images/categories/brain_training.png'; break;
+                            case 'Puzzle': bgImage = 'assets/images/categories/puzzle.png'; break;
+                            case 'Quick Casual': bgImage = 'assets/images/categories/quick_casual.png'; break;
+                            case 'Strategy': bgImage = 'assets/images/categories/strategy.png'; break;
+                            case 'Simulation': bgImage = 'assets/images/categories/simulation.png'; break;
+                            case 'Sports': bgImage = 'assets/images/categories/sports.png'; break;
+                            case 'Reaction': bgImage = 'assets/images/categories/reaction.png'; break;
+                            case 'Educational': bgImage = 'assets/images/categories/educational.png'; break;
+                          }
+
                           return AnimatedGameCard(
                             title: category.title,
-                            icon: category.icon,
                             color: color,
                             gamesCount: actualGamesCount,
+                            backgroundImage: bgImage,
                             isNew: category.title == 'Brain Training',
                             isComingSoon: actualGamesCount == 0,
                             onTap: actualGamesCount == 0
@@ -131,15 +160,22 @@ class HomeScreen extends GetView<HomeController> {
             Text(
               'GameVerse',
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+                    color: const Color(0xFFFFF4DE),
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.8,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.14),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
             ).animate().fadeIn().slideX(begin: -0.2),
             Text(
               'Your Ultimate Arcade',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: const Color(0xFFF6E7C8).withValues(alpha: 0.88),
                     fontWeight: FontWeight.w500,
                   ),
             ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2),
@@ -158,14 +194,17 @@ class HomeScreen extends GetView<HomeController> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.2)),
+            color: const Color(0xFFFFE0A6).withValues(alpha: 0.4),
+          ),
         ),
         child: CircleAvatar(
           radius: 22,
-          backgroundColor:
-              Theme.of(context).primaryColor.withValues(alpha: 0.1),
-          child: Icon(Icons.person_rounded,
-              color: Theme.of(context).primaryColor, size: 28),
+          backgroundColor: const Color(0xFFFFF4DE).withValues(alpha: 0.88),
+          child: const Icon(
+            Icons.person_rounded,
+            color: Color(0xFF6A5C48),
+            size: 28,
+          ),
         ),
       ).animate().scale(delay: 400.ms, curve: Curves.easeOutBack),
     );
@@ -173,28 +212,38 @@ class HomeScreen extends GetView<HomeController> {
 
   Widget _buildSearchBar(BuildContext context) {
     return Container(
-      height: 55,
+      height: 52,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search your favorite game...',
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-          prefixIcon: Icon(Icons.search_rounded, color: Colors.grey[400]),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2);
+      child: TextField(
+        style: const TextStyle(
+          color: Colors.white,
+          fontFamily: 'Inter',
+          fontSize: 14,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search your favorite game...',
+          hintStyle: TextStyle(
+            color: Colors.white.withValues(alpha: 0.4),
+            fontSize: 14,
+            fontFamily: 'Inter',
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: Colors.white.withValues(alpha: 0.4),
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOutCubic);
   }
 
   Widget _buildFeaturedSection(BuildContext context) {
@@ -219,7 +268,7 @@ class HomeScreen extends GetView<HomeController> {
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Colors.white,
               ),
         ),
         TextButton(
@@ -230,68 +279,12 @@ class HomeScreen extends GetView<HomeController> {
     );
   }
 
-  Widget _buildQuickPlayList(BuildContext context) {
-    return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: controller.quickPlayCategories.length,
-        itemBuilder: (context, index) {
-          final category = controller.quickPlayCategories[index];
-          final color =
-              AppTheme.categoryColors[category.title] ?? category.color;
-
-          return GestureDetector(
-            onTap: () => controller
-                .onCategoryTap(controller.allCategories.indexOf(category)),
-            child: Container(
-              margin: const EdgeInsets.only(right: 20),
-              child: Column(
-                children: [
-                  Container(
-                    width: 65,
-                    height: 65,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(category.icon, color: color, size: 30),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    category.title.split(' ')[0],
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ).animate(delay: (400 + index * 100).ms).fadeIn().slideX(begin: 0.2);
-        },
-      ),
-    );
-  }
-
   Future<bool> _showExitConfirmationDialog(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: const Color(0xFF1a1f3a),
               surfaceTintColor: Colors.transparent,
               title: Text(
                 'Exit GameVerse',

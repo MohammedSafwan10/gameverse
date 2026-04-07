@@ -2,85 +2,64 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/soft_utility_background.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Background Header Gradient
-          Container(
-            height: 280,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  primaryColor,
-                  primaryColor.withValues(alpha: 0.8),
-                  primaryColor.withValues(alpha: 0.6),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
-              ),
-            ),
-          ),
-
+          const SoftUtilityBackground(),
           SafeArea(
-            child: SingleChildScrollView(
+            child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  // App Bar override
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'My Profile',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ).animate().fadeIn().slideX(begin: -0.2),
-                        IconButton(
-                          onPressed: () => Get.toNamed('/settings'),
-                          icon: const Icon(Icons.settings_outlined,
-                              color: Colors.white),
-                        ).animate().fadeIn().scale(),
-                      ],
+              slivers: [
+                SliverAppBar(
+                  floating: true,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  automaticallyImplyLeading: false,
+                  title: Text(
+                    'Profile',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ).animate().fadeIn().slideX(begin: -0.2),
+                  leading: IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.black87,
                     ),
+                    tooltip: 'Back',
+                  ).animate().fadeIn().scale(),
+                  actions: [
+                    IconButton(
+                      onPressed: () => Get.toNamed('/settings'),
+                      icon: const Icon(Icons.settings_rounded, color: Colors.black54),
+                    ).animate().fadeIn().scale(),
+                    const SizedBox(width: 16),
+                  ],
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(24),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildProfileCard(context),
+                      const SizedBox(height: 32),
+                      _buildStatsGrid(context),
+                      const SizedBox(height: 32),
+                      _buildMenuSection(context),
+                      const SizedBox(height: 120),
+                    ]),
                   ),
-
-                  const SizedBox(height: 30),
-
-                  // Profile Section
-                  _buildProfileCard(context),
-
-                  const SizedBox(height: 24),
-
-                  // Stats Grid
-                  _buildStatsGrid(context),
-
-                  const SizedBox(height: 24),
-
-                  // Features list
-                  _buildMenuSection(context),
-
-                  const SizedBox(height: 100), // Bottom padding for nav bar
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -90,15 +69,14 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildProfileCard(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
+            blurRadius: 18,
             offset: const Offset(0, 10),
           ),
         ],
@@ -112,56 +90,51 @@ class ProfileScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color:
-                        Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                    color: Colors.white.withValues(alpha: 0.1),
                     width: 2,
                   ),
                 ),
                 child: CircleAvatar(
-                  radius: 45,
-                  backgroundColor:
-                      Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  child: Icon(
+                  radius: 50,
+                  backgroundColor: const Color(0xFFFFF4DE),
+                  child: const Icon(
                     Icons.person_rounded,
-                    size: 50,
-                    color: Theme.of(context).primaryColor,
+                    size: 55,
+                    color: Color(0xFF6A5C48),
                   ),
                 ),
               ),
               Positioned(
-                bottom: 0,
-                right: 0,
+                bottom: 4,
+                right: 4,
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.green,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: Colors.white, width: 3),
                   ),
                   child: const Icon(Icons.check, size: 12, color: Colors.white),
                 ),
               ),
             ],
-          )
-              .animate()
-              .fadeIn()
-              .scale(curve: Curves.elasticOut, duration: 800.ms),
-          const SizedBox(height: 16),
-          const Text(
+          ).animate().fadeIn().scale(curve: Curves.easeOutBack, duration: 800.ms),
+          const SizedBox(height: 20),
+          Text(
             'Guest Player',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black87,
+                ),
           ).animate().fadeIn().slideY(begin: 0.2),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             'Member since Feb 2026',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Inter',
+                ),
           ).animate().fadeIn(delay: 200.ms),
         ],
       ),
@@ -169,51 +142,30 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStatsGrid(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          _buildStatCard(
-            context,
-            'Wins',
-            '12',
-            Icons.emoji_events_outlined,
-            Colors.orange,
-          ),
-          const SizedBox(width: 16),
-          _buildStatCard(
-            context,
-            'Rank',
-            '#42',
-            Icons.leaderboard_outlined,
-            primaryColor,
-          ),
-          const SizedBox(width: 16),
-          _buildStatCard(
-            context,
-            'Level',
-            '05',
-            Icons.bolt_outlined,
-            Colors.purple,
-          ),
-        ],
-      ),
+    return Row(
+      children: [
+        _buildStatItem(context, 'Wins', '12', Icons.emoji_events_rounded,
+            const Color(0xFFF4B860)),
+        const SizedBox(width: 16),
+        _buildStatItem(context, 'Rank', '#42', Icons.leaderboard_rounded,
+            const Color(0xFF7CC6D9)),
+        const SizedBox(width: 16),
+        _buildStatItem(context, 'Level', '05', Icons.bolt_rounded,
+            const Color(0xFFE58F7A)),
+      ],
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String label, String value,
-      IconData icon, Color color) {
+  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withValues(alpha: 0.92),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -221,29 +173,23 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: color.withValues(alpha: 0.8), size: 26),
             const SizedBox(height: 12),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
             ),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
             ),
           ],
         ),
@@ -253,14 +199,13 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildMenuSection(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 18,
             offset: const Offset(0, 10),
           ),
         ],
@@ -271,7 +216,7 @@ class ProfileScreen extends StatelessWidget {
             context,
             'My Achievements',
             Icons.workspace_premium_outlined,
-            Colors.blue,
+            const Color(0xFF7CC6D9),
             onTap: () {},
           ),
           _buildDivider(),
@@ -279,7 +224,7 @@ class ProfileScreen extends StatelessWidget {
             context,
             'Game History',
             Icons.history_rounded,
-            Colors.indigo,
+            const Color(0xFF5E7CB6),
             onTap: () {},
           ),
           _buildDivider(),
@@ -287,7 +232,7 @@ class ProfileScreen extends StatelessWidget {
             context,
             'Support Center',
             Icons.help_outline_rounded,
-            Colors.teal,
+            const Color(0xFFE58F7A),
             onTap: () => _showHelpSupportDialog(context),
           ),
         ],
@@ -302,38 +247,44 @@ class ProfileScreen extends StatelessWidget {
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Icon(icon, color: color, size: 22),
+        child: Icon(icon, color: color.withValues(alpha: 0.8), size: 22),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded,
-          size: 16, color: Colors.grey),
+      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black26),
     );
   }
 
   Widget _buildDivider() {
     return Divider(
-        height: 1, indent: 70, endIndent: 20, color: Colors.grey[100]);
+      height: 1,
+      indent: 72,
+      endIndent: 24,
+      color: Colors.black.withValues(alpha: 0.06),
+    );
   }
 
   Future<void> _showHelpSupportDialog(BuildContext context) async {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Help & Support',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: Text(
+          'Support',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -341,48 +292,53 @@ class ProfileScreen extends StatelessWidget {
               context,
               icon: Icons.email_rounded,
               title: 'itzmesafwan1@gmail.com',
-              color: Colors.blue,
-              onTap: () =>
-                  launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
+              color: const Color(0xFF7CC6D9),
+              onTap: () => launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
             ),
             const SizedBox(height: 12),
             _buildSupportOption(
               context,
-              icon: Icons.code,
+              icon: Icons.code_rounded,
               title: 'Developer: NEXDARK',
-              color: Colors.indigo,
+              color: const Color(0xFF5E7CB6),
               onTap: () {},
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSupportOption(BuildContext context,
-      {required IconData icon,
-      required String title,
-      required Color color,
-      required VoidCallback onTap}) {
+      {required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[200]!),
-          borderRadius: BorderRadius.circular(16),
+          color: color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.12)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color),
-            const SizedBox(width: 12),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 16),
             Expanded(
-                child: Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w500))),
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.black87,
+                    ),
+              ),
+            ),
           ],
         ),
       ),

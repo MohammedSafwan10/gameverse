@@ -32,15 +32,82 @@ class CategoryScreen extends StatelessWidget {
     required this.games,
   });
 
+  String _getBackgroundImage(String categoryTitle) {
+    switch (categoryTitle) {
+      case 'Arcade': return 'assets/images/categories/arcade.png';
+      case 'Classic Board': return 'assets/images/categories/classic_board.png';
+      case 'Word Games': return 'assets/images/categories/word_games.png';
+      case 'Brain Training': return 'assets/images/categories/brain_training.png';
+      case 'Puzzle': return 'assets/images/categories/puzzle.png';
+      case 'Quick Casual': return 'assets/images/categories/quick_casual.png';
+      case 'Strategy': return 'assets/images/categories/strategy.png';
+      case 'Simulation': return 'assets/images/categories/simulation.png';
+      case 'Sports': return 'assets/images/categories/sports.png';
+      case 'Reaction': return 'assets/images/categories/reaction.png';
+      case 'Educational': return 'assets/images/categories/educational.png';
+      default: return '';
+    }
+  }
+
+  String? _getGameImage(String gameName) {
+    switch (gameName) {
+      case 'Tic Tac Toe':
+        return 'assets/images/games/tic_tac_toe.png';
+      case 'Connect Four':
+        return 'assets/images/games/connect_four.png';
+      case 'Chess':
+        return 'assets/images/games/chess.png';
+      case 'Hangman':
+        return 'assets/images/games/hangman.png';
+      case 'Memory Match':
+        return 'assets/images/games/memory_match.png';
+      case 'Block Merge':
+        return 'assets/images/games/block_merge.png';
+      case 'Flappy Bird':
+        return 'assets/images/games/flappy_bird.png';
+      case 'Quiz Master':
+        return 'assets/images/games/quiz_master.png';
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeColor = AppTheme.categoryColors[title] ?? color;
+    final bgImage = _getBackgroundImage(title);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           const PremiumBackground(),
+          if (bgImage.isNotEmpty)
+            Positioned.fill(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    bgImage,
+                    fit: BoxFit.cover,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.4),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.2),
+                        ],
+                        stops: const [0.0, 0.3, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(duration: 800.ms),
+            ),
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -65,8 +132,9 @@ class CategoryScreen extends StatelessWidget {
         child: Center(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.1),
@@ -75,7 +143,7 @@ class CategoryScreen extends StatelessWidget {
               ],
             ),
             child: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new, size: 18, color: themeColor),
+              icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
               onPressed: () => Get.back(),
             ),
           ),
@@ -86,9 +154,10 @@ class CategoryScreen extends StatelessWidget {
         title: Text(
           title,
           style: const TextStyle(
-            color: Colors.black87,
+            color: Colors.white,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
+            letterSpacing: 0.5,
+            shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
           ),
         ),
         background: Stack(
@@ -155,10 +224,10 @@ class CategoryScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16, left: 4),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w900,
-          color: Colors.black54,
+          color: Colors.white70,
           letterSpacing: 1.5,
         ),
       ),
@@ -171,12 +240,12 @@ class CategoryScreen extends StatelessWidget {
         padding: const EdgeInsets.only(top: 80),
         child: Column(
           children: [
-            Icon(Icons.games_outlined, size: 80, color: Colors.grey[300]),
+            Icon(Icons.games_outlined, size: 80, color: Colors.white30),
             const SizedBox(height: 16),
             const Text(
               'No games found',
               style:
-                  TextStyle(color: Colors.black45, fontWeight: FontWeight.w600),
+                  TextStyle(color: Colors.white54, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -187,15 +256,15 @@ class CategoryScreen extends StatelessWidget {
   Widget _buildGameCard(
       BuildContext context, GameInfo game, Color themeColor, int index) {
     final isAvailable = game.isAvailable;
+    final gameImage = _getGameImage(game.name);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -207,59 +276,102 @@ class CategoryScreen extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: isAvailable ? () => Get.to(game.screen) : null,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: themeColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(game.icon, size: 28, color: themeColor),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            splashColor: themeColor.withValues(alpha: 0.2),
+            highlightColor: themeColor.withValues(alpha: 0.1),
+            child: Stack(
+              children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Text(
-                          game.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                        Positioned.fill(
+                          child: gameImage != null
+                              ? Image.asset(gameImage, fit: BoxFit.cover)
+                              : Container(color: themeColor.withValues(alpha: 0.25)),
+                        ),
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.08),
+                                  Colors.black.withValues(alpha: 0.58),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          game.description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                            height: 1.3,
+                        Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Spacer(),
+                                  if (!isAvailable)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.28),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: const Text(
+                                        'SOON',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                game.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const Spacer(),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.18),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      isAvailable
+                                          ? Icons.play_arrow_rounded
+                                          : Icons.lock_outline_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  if (isAvailable)
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: themeColor,
-                      child: const Icon(Icons.play_arrow_rounded,
-                          color: Colors.white),
-                    )
-                  else
-                    const Icon(Icons.lock_outline_rounded,
-                        color: Colors.black26),
-                ],
-              ),
+              ],
             ),
           ),
         ),

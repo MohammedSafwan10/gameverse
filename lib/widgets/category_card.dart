@@ -118,7 +118,7 @@ class _CategoryCardState extends State<CategoryCard>
                         child: Icon(
                           widget.icon,
                           size: 26,
-                          color: Colors.white,
+                          color: Color(0xFF1a1f3a).withValues(alpha: 0.7),
                         ),
                       ),
                       Spacer(),
@@ -128,8 +128,8 @@ class _CategoryCardState extends State<CategoryCard>
                           Flexible(
                             child: Text(
                               widget.title,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: const Color(0xFF1a1f3a).withValues(alpha: 0.7),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                               ),
@@ -145,7 +145,7 @@ class _CategoryCardState extends State<CategoryCard>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Color(0xFF1a1f3a).withValues(alpha: 0.7),
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
@@ -176,7 +176,7 @@ class _CategoryCardState extends State<CategoryCard>
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(
+                            color: Color(0xFF1a1f3a).withValues(alpha: 0.7).withValues(
                               alpha: 0.2,
                             ),
                             borderRadius: BorderRadius.circular(10),
@@ -184,7 +184,7 @@ class _CategoryCardState extends State<CategoryCard>
                           child: Text(
                             'Coming Soon',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFF1a1f3a).withValues(alpha: 0.7),
                               fontWeight: FontWeight.w500,
                               fontSize: 12,
                             ),
@@ -194,7 +194,7 @@ class _CategoryCardState extends State<CategoryCard>
                         Text(
                           '${widget.gamesCount} Games',
                           style: TextStyle(
-                            color: Colors.white.withValues(
+                            color: Color(0xFF1a1f3a).withValues(alpha: 0.7).withValues(
                               alpha: 0.85,
                             ),
                             fontSize: 14,

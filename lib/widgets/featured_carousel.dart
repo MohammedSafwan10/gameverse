@@ -96,34 +96,91 @@ class _FeaturedCarouselState extends State<FeaturedCarousel> {
   }
 
   Widget _buildCarouselItem(GameCategory category, Color color, int index) {
+    String? backgroundImage;
+    switch (category.title) {
+      case 'Arcade':
+        backgroundImage = 'assets/images/categories/arcade.png';
+        break;
+      case 'Classic Board':
+        backgroundImage = 'assets/images/categories/classic_board.png';
+        break;
+      case 'Word Games':
+        backgroundImage = 'assets/images/categories/word_games.png';
+        break;
+      case 'Brain Training':
+        backgroundImage = 'assets/images/categories/brain_training.png';
+        break;
+      case 'Puzzle':
+        backgroundImage = 'assets/images/categories/puzzle.png';
+        break;
+      case 'Quick Casual':
+        backgroundImage = 'assets/images/categories/quick_casual.png';
+        break;
+      case 'Strategy':
+        backgroundImage = 'assets/images/categories/strategy.png';
+        break;
+      case 'Simulation':
+        backgroundImage = 'assets/images/categories/simulation.png';
+        break;
+      case 'Sports':
+        backgroundImage = 'assets/images/categories/sports.png';
+        break;
+      case 'Reaction':
+        backgroundImage = 'assets/images/categories/reaction.png';
+        break;
+      case 'Educational':
+        backgroundImage = 'assets/images/categories/educational.png';
+        break;
+    }
+
     return GestureDetector(
       onTap: () => widget.onCategoryTap(index),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color, color.withValues(alpha: 0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(40),
+          boxShadow: const [],
         ),
         child: Stack(
           children: [
-            Positioned(
-              right: -10,
-              bottom: -10,
-              child: Icon(
-                category.icon,
-                size: 150,
-                color: Colors.white.withValues(alpha: 0.15),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(40),
+              child: Stack(
+                children: [
+                  if (backgroundImage != null) ...[
+                    Positioned.fill(
+                      child: Image.asset(
+                        backgroundImage,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.15),
+                              Colors.black.withValues(alpha: 0.55),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [color, color.withValues(alpha: 0.8)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             Padding(
@@ -176,9 +233,13 @@ class _FeaturedCarouselState extends State<FeaturedCarousel> {
               child: FloatingActionButton.small(
                 heroTag: 'featured_fab_$index',
                 onPressed: () => widget.onCategoryTap(index),
-                backgroundColor: Colors.white,
-                elevation: 4,
-                child: Icon(Icons.play_arrow_rounded, color: color, size: 28),
+                  backgroundColor: const Color(0xFFFFF4DE),
+                  elevation: 0,
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Color(0xFF6A5C48),
+                    size: 28,
+                  ),
               ),
             ),
           ],
@@ -199,8 +260,8 @@ class _FeaturedCarouselState extends State<FeaturedCarousel> {
           width: _currentPage == index ? 20 : 6,
           decoration: BoxDecoration(
             color: _currentPage == index
-                ? AppTheme.primaryColor
-                : AppTheme.primaryColor.withValues(alpha: 0.2),
+                ? const Color(0xFFF4B860)
+                : const Color(0xFFF4B860).withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(3),
           ),
         ),

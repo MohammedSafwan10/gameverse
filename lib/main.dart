@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'screens/main_navigation_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/profile/profile_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'theme/app_theme.dart';
 import 'controllers/theme_controller.dart';
+import 'controllers/home_controller.dart';
 import 'games/classic_board/tic_tac_toe/screens/game_screen.dart';
 import 'games/classic_board/tic_tac_toe/screens/mode_selection_screen.dart';
 import 'games/classic_board/tic_tac_toe/screens/stats_screen.dart';
@@ -17,6 +19,7 @@ void main() async {
 
   // Initialize core controllers
   Get.put(ThemeController());
+  Get.put(HomeController());
 
   runApp(const MyApp());
 }
@@ -39,7 +42,11 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(
           name: '/',
-          page: () => MainNavigationScreen(),
+          page: () => const HomeScreen(),
+        ),
+        GetPage(
+          name: '/profile',
+          page: () => const ProfileScreen(),
         ),
         GetPage(
           name: '/settings',
