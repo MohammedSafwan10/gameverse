@@ -1,6 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/game_state.dart';
+import '../services/storage_service.dart';
 import '../services/word_service.dart';
+import '../../../../widgets/premium_background.dart';
 import 'category_selection_screen.dart';
 import 'game_screen.dart';
 import 'word_input_screen.dart';
@@ -11,153 +15,185 @@ class HangmanModeSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F0C29),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Hangman'),
-        centerTitle: true,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withValues(
-                    red: Theme.of(context).primaryColor.r.toDouble(),
-                    green: Theme.of(context).primaryColor.g.toDouble(),
-                    blue: Theme.of(context).primaryColor.b.toDouble(),
-                    alpha: 0.8,
-                  ),
-              Theme.of(context).primaryColor.withValues(
-                    red: Theme.of(context).primaryColor.r.toDouble(),
-                    green: Theme.of(context).primaryColor.g.toDouble(),
-                    blue: Theme.of(context).primaryColor.b.toDouble(),
-                    alpha: 0.2,
-                  ),
+        title: const Text(
+          'HANGMAN',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 4,
+            shadows: [
+              Shadow(
+                color: Colors.cyanAccent,
+                blurRadius: 10,
+              ),
             ],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Select Game Mode',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          const PremiumBackground(),
+          // Content
+          SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'SELECT MODE',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2),
+                    const SizedBox(height: 50),
+                    _buildModeCard(
+                      context: context,
+                      title: 'SINGLE PLAYER',
+                      icon: Icons.person_outline,
+                      mode: HangmanGameMode.singlePlayer,
+                      glowColor: Colors.cyanAccent,
+                      delay: 100,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildModeCard(
+                      context: context,
+                      title: 'TWO PLAYERS',
+                      icon: Icons.people_outline,
+                      mode: HangmanGameMode.twoPlayers,
+                      glowColor: Colors.pinkAccent,
+                      delay: 300,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildModeCard(
+                      context: context,
+                      title: 'DAILY CHALLENGE',
+                      icon: Icons.calendar_today_outlined,
+                      mode: HangmanGameMode.dailyChallenge,
+                      glowColor: Colors.amberAccent,
+                      delay: 500,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 40),
-              _buildModeButton(
-                context,
-                'Single Player',
-                Icons.person,
-                HangmanGameMode.singlePlayer,
-                'Play against the computer with various word categories',
-              ),
-              const SizedBox(height: 20),
-              _buildModeButton(
-                context,
-                'Two Players',
-                Icons.people,
-                HangmanGameMode.twoPlayers,
-                'Challenge a friend to guess your word',
-              ),
-              const SizedBox(height: 20),
-              _buildModeButton(
-                context,
-                'Daily Challenge',
-                Icons.calendar_today,
-                HangmanGameMode.dailyChallenge,
-                'New word every day - compete globally!',
-                Colors.amber,
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildModeButton(
-    BuildContext context,
-    String title,
-    IconData icon,
-    HangmanGameMode mode,
-    String description, [
-    Color? specialColor,
-  ]) {
+  Widget _buildModeCard({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required HangmanGameMode mode,
+    required Color glowColor,
+    required int delay,
+  }) {
     return Container(
       width: double.infinity,
       height: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: specialColor ??
-              Colors.white.withValues(
-                red: Colors.white.r.toDouble(),
-                green: Colors.white.g.toDouble(),
-                blue: Colors.white.b.toDouble(),
-                alpha: 0.9,
-              ),
-          foregroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: glowColor.withValues(alpha: 0.5),
+          width: 2,
         ),
-        onPressed: () => _onModeSelected(context, mode),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+        boxShadow: [
+          BoxShadow(
+            color: glowColor.withValues(alpha: 0.15),
+            blurRadius: 15,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Material(
+            color: Colors.black.withValues(alpha: 0.3),
+            child: InkWell(
+              onTap: () => _onModeSelected(context, mode),
+              splashColor: glowColor.withValues(alpha: 0.3),
+              highlightColor: glowColor.withValues(alpha: 0.1),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: glowColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: glowColor.withValues(alpha: 0.3), width: 1),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 32,
+                        color: glowColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: glowColor.withValues(alpha: 0.7),
+                      size: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Theme.of(context).primaryColor,
-            ),
-          ],
+          ),
         ),
       ),
-    );
+    ).animate()
+        .fadeIn(delay: delay.ms, duration: 600.ms)
+        .slideX(begin: 0.2, curve: Curves.easeOutQuad);
   }
 
-  void _onModeSelected(BuildContext context, HangmanGameMode mode) {
+  Future<void> _onModeSelected(
+      BuildContext context, HangmanGameMode mode) async {
     switch (mode) {
       case HangmanGameMode.singlePlayer:
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const CategorySelectionScreen(),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const CategorySelectionScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              const begin = Offset(1.0, 0.0);
+              const end = Offset.zero;
+              const curve = Curves.easeInOutBack;
+              var tween =
+                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+              var offsetAnimation = animation.drive(tween);
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
           ),
         );
         break;
@@ -171,15 +207,36 @@ class HangmanModeSelectionScreen extends StatelessWidget {
         break;
 
       case HangmanGameMode.dailyChallenge:
+        final storageService = HangmanStorageService();
+        await storageService.init();
+        if (!storageService.canPlayDailyChallenge()) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.8),
+              content: const Text(
+                'You already played today\'s daily challenge. Come back tomorrow.',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          return;
+        }
+
+        final category = WordService.getDailyCategory();
         final word = WordService.getDailyWord();
+        if (!context.mounted) return;
+
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => HangmanGameScreen(
               initialState: HangmanGameState(
                 word: word,
                 mode: HangmanGameMode.dailyChallenge,
-                category: WordCategory
-                    .custom, // Daily challenge uses mixed categories
+                category: category,
                 startTime: DateTime.now(),
               ),
             ),

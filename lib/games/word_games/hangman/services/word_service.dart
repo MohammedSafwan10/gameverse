@@ -99,17 +99,31 @@ class WordService {
     return words[Random().nextInt(words.length)];
   }
 
-  static String getDailyWord() {
-    // Get a random category
+  static DateTime _normalizeDate([DateTime? date]) {
+    final value = date ?? DateTime.now();
+    return DateTime(value.year, value.month, value.day);
+  }
+
+  static int _dayOfYear(DateTime date) {
+    return date.difference(DateTime(date.year)).inDays;
+  }
+
+  static WordCategory getDailyCategory({DateTime? date}) {
+    final normalizedDate = _normalizeDate(date);
     final categories =
         WordCategory.values.where((c) => c != WordCategory.custom).toList();
-    final category = categories[Random().nextInt(categories.length)];
+    final categoryIndex =
+        (_dayOfYear(normalizedDate) + normalizedDate.year) % categories.length;
+    return categories[categoryIndex];
+  }
 
-    // Use the day of year as seed for consistent daily word
-    final dayOfYear =
-        DateTime.now().difference(DateTime(DateTime.now().year)).inDays;
+  static String getDailyWord({DateTime? date}) {
+    final normalizedDate = _normalizeDate(date);
+    final category = getDailyCategory(date: normalizedDate);
     final words = _wordDatabase[category]!;
-    return words[dayOfYear % words.length];
+    final wordIndex =
+        (_dayOfYear(normalizedDate) + normalizedDate.year) % words.length;
+    return words[wordIndex];
   }
 
   static bool isValidWord(String word) {

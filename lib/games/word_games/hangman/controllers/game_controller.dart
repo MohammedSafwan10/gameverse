@@ -45,7 +45,7 @@ class HangmanGameController extends GetxController {
         return;
       }
       word = WordService.getDailyWord();
-      finalCategory = WordCategory.custom;
+      finalCategory = WordService.getDailyCategory();
     } else if (mode == HangmanGameMode.twoPlayers) {
       if (customWord == null || customWord.isEmpty) {
         throw ArgumentError('Custom word required for two players mode');
@@ -143,19 +143,22 @@ class HangmanGameController extends GetxController {
   }
 
   Future<void> _handleGameOver(HangmanGameStatus status) async {
+    final score = status == HangmanGameStatus.won
+        ? WordService.calculateScore(gameState.value)
+        : 0;
+
     if (status == HangmanGameStatus.won) {
       await _soundService.playGameWon();
-      final score = WordService.calculateScore(gameState.value);
       await _storageService.addHighScore(score);
-
-      if (gameState.value.mode == HangmanGameMode.dailyChallenge) {
-        await _storageService.saveDailyChallengeProgress(
-          DateTime.now(),
-          score,
-        );
-      }
     } else {
       await _soundService.playGameOver();
+    }
+
+    if (gameState.value.mode == HangmanGameMode.dailyChallenge) {
+      await _storageService.saveDailyChallengeProgress(
+        DateTime.now(),
+        score,
+      );
     }
 
     await _storageService.updateStats(gameState.value);
