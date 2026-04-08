@@ -3,12 +3,16 @@ import '../models/bird.dart';
 
 class BirdWidget extends StatelessWidget {
   final Bird bird;
-  final Color color;
+  final bool isCyber;
+  final Color bodyColor;
+  final Color glowColor;
 
   const BirdWidget({
     super.key,
     required this.bird,
-    this.color = const Color(0xFFFFEB3B), // More vibrant yellow
+    this.isCyber = true,
+    this.bodyColor = const Color(0xFFFF007A), // Hot Pink
+    this.glowColor = const Color(0xFF00E5FF), // Cyan glow
   });
 
   @override
@@ -21,8 +25,16 @@ class BirdWidget extends StatelessWidget {
           width: bird.size.width,
           height: bird.size.height,
           child: CustomPaint(
-            painter: _FlappyBirdPainter(
-                color: color, flapValue: bird.flapAnimationValue),
+            painter: isCyber
+                ? _CyberBirdPainter(
+                    bodyColor: bodyColor,
+                    glowColor: glowColor,
+                    flapValue: bird.flapAnimationValue,
+                  )
+                : _ClassicBirdPainter(
+                    color: const Color(0xFFFFEB3B), // Yellow classic
+                    flapValue: bird.flapAnimationValue,
+                  ),
             size: bird.size,
           ),
         ),
@@ -31,11 +43,11 @@ class BirdWidget extends StatelessWidget {
   }
 }
 
-class _FlappyBirdPainter extends CustomPainter {
+class _ClassicBirdPainter extends CustomPainter {
   final Color color;
   final double flapValue;
 
-  _FlappyBirdPainter({
+  _ClassicBirdPainter({
     required this.color,
     this.flapValue = 0.0,
   });
@@ -93,33 +105,25 @@ class _FlappyBirdPainter extends CustomPainter {
       ..color = color.darken()
       ..style = PaintingStyle.fill;
 
-    // Apply wing position based on flap animation
-    final wingOffset =
-        flapValue * size.height * 0.1; // Move wing up when flapping
+    // Very subtle displacement
+    final wingOffset = flapValue * size.height * 0.03;
 
     final wingPath = Path()
-      ..moveTo(size.width * 0.3,
-          size.height * (0.4 - flapValue * 0.1)) // Move up based on flap
+      ..moveTo(size.width * 0.4, size.height * (0.5 - wingOffset))
       ..quadraticBezierTo(
-        size.width *
-            (0.15 - flapValue * 0.05), // Wing moves out a bit when flapping
+        size.width * 0.25,
+        size.height * (0.55 - wingOffset),
+        size.width * 0.4,
         size.height * (0.6 - wingOffset),
-        size.width * 0.3,
-        size.height * (0.7 - wingOffset),
       )
-      ..lineTo(size.width * 0.4, size.height * (0.6 - wingOffset))
+      ..lineTo(size.width * 0.5, size.height * (0.55 - wingOffset))
       ..close();
 
     canvas.drawPath(wingPath, wingPaint);
 
     // White belly/chest
     final bellyPaint = Paint()
-      ..color = Colors.white.withValues(
-        red: Colors.white.r.toDouble(),
-        green: Colors.white.g.toDouble(),
-        blue: Colors.white.b.toDouble(),
-        alpha: 0.9,
-      )
+      ..color = Colors.white.withValues(alpha: 0.9)
       ..style = PaintingStyle.fill;
 
     final bellyPath = Path()
@@ -133,12 +137,7 @@ class _FlappyBirdPainter extends CustomPainter {
 
     // Add shadow for depth
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.1,
-      )
+      ..color = Colors.black.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
 
     final shadowPath = Path()
@@ -152,8 +151,88 @@ class _FlappyBirdPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_FlappyBirdPainter oldDelegate) =>
+  bool shouldRepaint(_ClassicBirdPainter oldDelegate) =>
       oldDelegate.flapValue != flapValue;
+}
+
+class _CyberBirdPainter extends CustomPainter {
+  final Color bodyColor;
+  final Color glowColor;
+  final double flapValue;
+
+  _CyberBirdPainter({
+    required this.bodyColor,
+    required this.glowColor,
+    this.flapValue = 0.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Outer Glow
+    final glowPaint = Paint()
+      ..color = bodyColor.withValues(alpha: 0.5)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12)
+      ..style = PaintingStyle.fill;
+
+    // Body Path
+    final bodyPath = Path()
+      ..moveTo(size.width * 0.2, size.height * 0.5)
+      ..lineTo(size.width * 0.8, size.height * 0.3)
+      ..lineTo(size.width * 0.9, size.height * 0.5)
+      ..lineTo(size.width * 0.8, size.height * 0.7)
+      ..close();
+
+    // Draw Glow
+    canvas.drawPath(bodyPath, glowPaint);
+
+    // Inner Core (Body)
+    final corePaint = Paint()
+      ..color = bodyColor
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(bodyPath, corePaint);
+
+    // Thruster Wing (flapping part)
+    final wingPaint = Paint()
+      ..color = glowColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeJoin = StrokeJoin.round;
+
+    // Reduce the wing displacement size drastically and position it nicely
+    final wingOffset = flapValue * size.height * 0.03;
+
+    final wingPath = Path()
+      ..moveTo(size.width * 0.45, size.height * 0.5) // Closer to body center
+      ..lineTo(size.width * 0.35, size.height * (0.55 - wingOffset))
+      ..lineTo(size.width * 0.5, size.height * (0.5 - wingOffset));
+
+    canvas.drawPath(wingPath, wingPaint);
+
+    // Wing Glow
+    final wingGlowPaint = Paint()
+      ..color = glowColor.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2);
+    canvas.drawPath(wingPath, wingGlowPaint);
+
+    // Cyber Eye
+    final eyePaint = Paint()
+      ..color = glowColor
+      ..style = PaintingStyle.fill;
+
+    final eyeCenter = Offset(size.width * 0.75, size.height * 0.45);
+    canvas.drawCircle(eyeCenter, size.width * 0.08, eyePaint);
+
+    final eyeGlow = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(eyeCenter, size.width * 0.04, eyeGlow);
+  }
+
+  @override
+  bool shouldRepaint(_CyberBirdPainter oldDelegate) =>
+      oldDelegate.flapValue != flapValue || oldDelegate.bodyColor != bodyColor;
 }
 
 extension on Color {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:get/get.dart';
-import '../controllers/game_controller.dart';
 import '../controllers/settings_controller.dart';
 
 class FlappyBirdSettingsScreen extends StatelessWidget {
@@ -9,196 +9,253 @@ class FlappyBirdSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsController = Get.find<FlappyBirdSettingsController>();
+    final isCompact = MediaQuery.of(context).size.width < 380;
 
-    return PopScope(
-      child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF64B5F6),
-                Color(0xFF1976D2),
-              ],
-            ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0F172A),
+              Color(0xFF1E293B),
+              Color(0xFF334155),
+            ],
           ),
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Bar
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white, size: 20),
                         onPressed: () => Get.back(),
                       ),
-                      const Expanded(
-                        child: Text(
-                          'Settings',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'SETTINGS',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 4,
                         ),
                       ),
-                      const SizedBox(width: 48), // Balance the header
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 48), // Balance for back button
+                  ],
                 ),
+              ),
 
-                // Settings List
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _SectionHeader(title: 'Audio'),
-                        const SizedBox(height: 8),
-                        Obx(() => _SettingsSwitch(
-                              icon: Icons.volume_up,
-                              title: 'Sound Effects',
-                              value: settingsController.soundEnabled.value,
-                              onChanged: (value) =>
-                                  settingsController.toggleSound(),
-                            )),
-                        const SizedBox(height: 8),
-                        Obx(() => _SettingsSwitch(
-                              icon: Icons.music_note,
-                              title: 'Background Music',
-                              value: settingsController.musicEnabled.value,
-                              onChanged: (value) =>
-                                  settingsController.toggleMusic(),
-                            )),
-                        const SizedBox(height: 24),
-                        const _SectionHeader(title: 'Feedback'),
-                        const SizedBox(height: 8),
-                        Obx(() => _SettingsSwitch(
-                              icon: Icons.vibration,
-                              title: 'Vibration',
-                              value: settingsController.vibrationEnabled.value,
-                              onChanged: (value) =>
-                                  settingsController.toggleVibration(),
-                            )),
-                        const SizedBox(height: 32),
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () async {
-                              final result = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Reset High Score'),
-                                  content: const Text(
-                                      'Are you sure you want to reset your high score? This cannot be undone.'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text('Reset'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (result == true) {
-                                final gameController =
-                                    Get.find<FlappyBirdGameController>();
-                                await gameController.resetStats();
-                                Get.snackbar(
-                                  'Success',
-                                  'High score has been reset',
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                );
-                              }
-                            },
-                            icon:
-                                const Icon(Icons.refresh, color: Colors.white),
-                            label: const Text(
-                              'Reset High Score',
-                              style: TextStyle(color: Colors.white),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isCompact ? 16 : 24, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader('AUDIO PREFERENCES',
+                          Icons.graphic_eq_rounded, Colors.white70),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  width: 1.5),
+                            ),
+                            child: Column(
+                              children: [
+                                Obx(() => _buildSettingsSwitch(
+                                      icon: Icons.volume_up_rounded,
+                                      title: 'Sound Effects',
+                                      subtitle: 'Jump, score, and crash sounds',
+                                      value:
+                                          settingsController.soundEnabled.value,
+                                      onChanged: (_) =>
+                                          settingsController.toggleSound(),
+                                      activeColor: Colors.blueAccent,
+                                    )),
+                                Divider(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                    height: 1),
+                                Obx(() => _buildSettingsSwitch(
+                                      icon: Icons.vibration_rounded,
+                                      title: 'Haptic Feedback',
+                                      subtitle: 'Vibrate on impact',
+                                      value: settingsController
+                                          .vibrationEnabled.value,
+                                      onChanged: (_) =>
+                                          settingsController.toggleVibration(),
+                                      activeColor: Colors.blueAccent,
+                                    )),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 40),
+                      _buildSectionHeader(
+                          'ABOUT', Icons.info_outline_rounded, Colors.white70),
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  width: 1.5),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(Icons.flight_takeoff_rounded,
+                                    size: 64, color: Colors.blueAccent),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'FLAPPY BIRD',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 4,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'v2.0.0',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 14,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  'Tap the screen to fly and avoid the pipes. Try to get the highest score possible!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            color: color,
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsSwitch({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required Function(bool) onChanged,
+    required Color activeColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: value
+                  ? activeColor.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon,
+                color: value ? activeColor : Colors.white54, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-    );
-  }
-}
-
-class _SettingsSwitch extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SettingsSwitch({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(
-        red: Colors.white.r.toDouble(),
-        green: Colors.white.g.toDouble(),
-        blue: Colors.white.b.toDouble(),
-        alpha: 0.1,
-      ),
-      borderRadius: BorderRadius.circular(12),
-      child: SwitchListTile(
-        value: value,
-        onChanged: onChanged,
-        secondary: Icon(icon, color: Colors.white),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: activeColor,
+            activeTrackColor: activeColor.withValues(alpha: 0.3),
+            inactiveThumbColor: Colors.white54,
+            inactiveTrackColor: Colors.white12,
           ),
-        ),
-        activeThumbColor: Colors.white,
-        activeTrackColor: Colors.green,
-        inactiveThumbColor: Colors.white60,
-        inactiveTrackColor: Colors.white24,
+        ],
       ),
     );
   }

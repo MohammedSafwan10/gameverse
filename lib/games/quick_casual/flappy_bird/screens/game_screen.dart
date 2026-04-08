@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:developer' as developer;
 import 'package:gameverse/widgets/guarded_exit.dart';
 import '../controllers/game_controller.dart';
+import '../controllers/settings_controller.dart';
 import '../widgets/bird_widget.dart';
 import '../widgets/pipe_widget.dart';
 
@@ -15,69 +16,36 @@ class FlappyBirdGameScreen extends StatefulWidget {
   State<FlappyBirdGameScreen> createState() => _FlappyBirdGameScreenState();
 }
 
-class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
-  late final List<_Cloud> clouds;
-  late Timer _cloudsTimer;
-  final Random _random = Random();
+class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen>
+    with SingleTickerProviderStateMixin {
+  late final List<_NeonLine> gridLines;
+  late Timer _gridTimer;
+  double _gridOffset = 0;
 
   @override
   void initState() {
     super.initState();
-    // Initialize some clouds
-    clouds = List.generate(6, (_) => _createRandomCloud());
+    gridLines = List.generate(10, (i) => _NeonLine(x: i * (Get.width / 8)));
 
-    // Start cloud animation
-    _cloudsTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
-      setState(() {
-        _updateClouds();
-      });
+    _gridTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      final controller = Get.find<FlappyBirdGameController>();
+      if (controller.gameRunning.value &&
+          !controller.gameOver.value &&
+          !controller.isPaused.value) {
+        setState(() {
+          _gridOffset -= 4; // Move grid backward
+          if (_gridOffset <= -(Get.width / 8)) {
+            _gridOffset += (Get.width / 8);
+          }
+        });
+      }
     });
   }
 
   @override
   void dispose() {
-    _cloudsTimer.cancel();
+    _gridTimer.cancel();
     super.dispose();
-  }
-
-  _Cloud _createRandomCloud() {
-    final screenWidth = Get.width;
-    final screenHeight = Get.height;
-
-    return _Cloud(
-      position: Offset(
-        _random.nextDouble() * screenWidth,
-        _random.nextDouble() * (screenHeight * 0.6),
-      ),
-      size: 80.0 + _random.nextDouble() * 120,
-      speed: 0.5 + _random.nextDouble() * 1.5,
-      opacity: 0.5 + _random.nextDouble() * 0.3,
-    );
-  }
-
-  void _updateClouds() {
-    final screenWidth = Get.width;
-
-    for (int i = 0; i < clouds.length; i++) {
-      final cloud = clouds[i];
-      cloud.position = Offset(
-        cloud.position.dx - cloud.speed,
-        cloud.position.dy,
-      );
-
-      // If cloud goes off screen, recycle it
-      if (cloud.position.dx < -cloud.size) {
-        clouds[i] = _Cloud(
-          position: Offset(
-            screenWidth + _random.nextDouble() * 100,
-            _random.nextDouble() * (Get.height * 0.6),
-          ),
-          size: 80.0 + _random.nextDouble() * 120,
-          speed: 0.5 + _random.nextDouble() * 1.5,
-          opacity: 0.5 + _random.nextDouble() * 0.3,
-        );
-      }
-    }
   }
 
   Future<bool> _showExitConfirmationDialog(
@@ -88,24 +56,99 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
 
     final result = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Pause Game'),
-        content: const Text(
-            'Do you want to exit the game? Your progress will be lost.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(false);
-              controller.resumeGame();
-            },
-            child: const Text('Resume'),
+      barrierColor: Colors.black.withValues(alpha: 0.8),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B).withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.logout_rounded,
+                      color: Colors.white70, size: 32),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'EXIT GAME',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Return to main menu? Your current progress will be lost.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 14,
+                      height: 1.5),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(false);
+                          controller.resumeGame();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text('Resume',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0F172A),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Exit',
+                            style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Exit'),
-          ),
-        ],
+        ),
       ),
     );
 
@@ -118,6 +161,10 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsController = Get.find<FlappyBirdSettingsController>();
+    final isCyber =
+        settingsController.currentTheme.value == FlappyBirdTheme.cyberpunk;
+
     return GetBuilder<FlappyBirdGameController>(
       builder: (controller) => PopScope(
         canPop: false,
@@ -143,23 +190,35 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () async {
-                controller.pauseGame();
-                final shouldPop =
-                    await _showExitConfirmationDialog(context, controller);
-                if (!shouldPop) {
-                  controller.resumeGame();
-                  return;
-                }
-                if (!context.mounted) return;
-                controller.endGame();
-                await popAfterConfirmation(
-                  context,
-                  confirmExit: () async => true,
-                );
-              },
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white, size: 18),
+                  onPressed: () async {
+                    controller.pauseGame();
+                    final shouldPop =
+                        await _showExitConfirmationDialog(context, controller);
+                    if (!shouldPop) {
+                      controller.resumeGame();
+                      return;
+                    }
+                    if (!context.mounted) return;
+                    controller.endGame();
+                    await popAfterConfirmation(
+                      context,
+                      confirmExit: () async => true,
+                    );
+                  },
+                ),
+              ),
             ),
           ),
           body: GestureDetector(
@@ -168,53 +227,109 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Sky background
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF4FC3F7), // Light blue
-                        Color(0xFF2196F3), // Medium blue
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Clouds - in background
-                ...clouds.map((cloud) => Positioned(
-                      left: cloud.position.dx,
-                      top: cloud.position.dy,
-                      child: Opacity(
-                        opacity: cloud.opacity,
-                        child: _CloudPainter(size: cloud.size),
-                      ),
-                    )),
-
-                // Ground
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 80,
-                  child: Container(
+                if (isCyber) ...[
+                  // Deep Cyberpunk background
+                  Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xFF8D6E63), // Light brown
-                          Color(0xFF5D4037), // Dark brown
+                          Color(0xFF020014), // Super dark purple/black
+                          Color(0xFF1A0B2E), // Deep purple
+                          Color(0xFF3B0B4E), // Transition
+                          Color(0xFF0F0B29), // Horizon line
+                        ],
+                        stops: [0.0, 0.4, 0.7, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // Background Sun/Neon Planet
+                  Positioned(
+                    bottom: 100,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFFFF007A),
+                              Color(0xFFFF8A00),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF007A)
+                                  .withValues(alpha: 0.5),
+                              blurRadius: 100,
+                              spreadRadius: 20,
+                            ),
+                          ],
+                        ),
+                        // Grid cutout effect for synthwave sun
+                        child: CustomPaint(
+                          painter: _SynthwaveSunPainter(),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Moving Ground Grid
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 120,
+                    child: CustomPaint(
+                      painter: _NeonGridPainter(offset: _gridOffset),
+                    ),
+                  ),
+                ] else ...[
+                  // Classic Background
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFF4FC3F7), // Light blue
+                          Color(0xFF2196F3), // Medium blue
                         ],
                       ),
                     ),
-                    child: CustomPaint(
-                      painter: _GroundPainter(),
-                      size: Size(Get.width, 80),
+                  ),
+
+                  // Ground
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 80,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF8D6E63), // Light brown
+                            Color(0xFF5D4037), // Dark brown
+                          ],
+                        ),
+                      ),
+                      child: CustomPaint(
+                        painter: _GroundPainter(),
+                        size: Size(Get.width, 80),
+                      ),
                     ),
                   ),
-                ),
+                ],
 
                 // Game elements
                 Obx(() {
@@ -222,105 +337,89 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
                   return Stack(
                     children: [
                       // Pipes
-                      ...gameController.pipes
-                          .map((pipe) => PipeWidget(pipe: pipe)),
+                      ...gameController.pipes.map(
+                          (pipe) => PipeWidget(pipe: pipe, isCyber: isCyber)),
 
                       // Bird
-                      BirdWidget(bird: gameController.bird),
+                      BirdWidget(bird: gameController.bird, isCyber: isCyber),
 
-                      // Score display
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 50,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(
-                                red: 0,
-                                green: 0,
-                                blue: 0,
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              gameController.score.value.toString(),
-                              style: const TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    blurRadius: 10,
-                                    color: Colors.black38,
-                                    offset: Offset(2, 2),
+                      // Score Display (Top Pill)
+                      if (!gameController.gameOver.value)
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 20,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(30),
+                              child: BackdropFilter(
+                                filter:
+                                    ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 32, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                        color: const Color(0xFF00E5FF)
+                                            .withValues(alpha: 0.3)),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: const Color(0xFF00E5FF)
+                                              .withValues(alpha: 0.1),
+                                          blurRadius: 20),
+                                    ],
                                   ),
-                                ],
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.stars_rounded,
+                                          color: Color(0xFFFF007A), size: 24),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        gameController.score.value.toString(),
+                                        style: const TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-
-                      // High score display
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 120,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: Text(
-                            'Best: ${gameController.highScore.value}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 5,
-                                  color: Colors.black38,
-                                  offset: Offset(1, 1),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
 
                       // Pause button
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 10,
-                        right: 20,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(
-                              red: 0,
-                              green: 0,
-                              blue: 0,
-                              alpha: 0.2,
+                      if (gameController.gameRunning.value &&
+                          !gameController.gameOver.value)
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 20,
+                          right: 20,
+                          child: GestureDetector(
+                            onTap: () => gameController.togglePause(),
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.1)),
+                              ),
+                              child: Icon(
+                                gameController.isPaused.value
+                                    ? Icons.play_arrow_rounded
+                                    : Icons.pause_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              gameController.isPaused.value
-                                  ? Icons.play_arrow
-                                  : Icons.pause,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                            onPressed: () {
-                              if (gameController.gameRunning.value &&
-                                  !gameController.gameOver.value) {
-                                developer.log('Pause button pressed');
-                                gameController.togglePause();
-                              }
-                            },
                           ),
                         ),
-                      ),
 
                       // Game over overlay
                       if (gameController.gameOver.value)
@@ -348,161 +447,154 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
 
   Widget _buildGameOverOverlay(FlappyBirdGameController controller) {
     return Container(
-      color: Colors.black.withValues(
-        red: 0,
-        green: 0,
-        blue: 0,
-        alpha: 0.54,
-      ),
+      color: Colors.black.withValues(alpha: 0.7),
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Game Over',
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              width: Get.width * 0.85,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B).withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 40,
+                    spreadRadius: 5,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Score: ${controller.score.value}',
-              style: const TextStyle(
-                fontSize: 32,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              'Best: ${controller.highScore.value}',
-              style: const TextStyle(
-                fontSize: 24,
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Add statistics
-            Text(
-              'Games Played: ${controller.gameStats.value.gamesPlayed}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
-            ),
-            Text(
-              'Total Pipes: ${controller.gameStats.value.totalPipesPassed}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => controller.restartGame(),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Try Again'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'GAME OVER',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 3,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () => Get.back(),
-                  icon: const Icon(Icons.exit_to_app),
-                  label: const Text('Exit'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade400,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
+                  const SizedBox(height: 32),
+                  _buildScoreRow('SCORE', controller.score.value.toString(),
+                      Colors.blueAccent),
+                  const SizedBox(height: 16),
+                  _buildScoreRow('BEST', controller.highScore.value.toString(),
+                      Colors.amber),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Get.back(),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.2)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: const Text('MENU',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: () => controller.restartGame(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
+                          ),
+                          child: const Text('PLAY AGAIN',
+                              style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1)),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildScoreRow(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 28, fontWeight: FontWeight.w900)),
+        ],
       ),
     );
   }
 
   Widget _buildPauseOverlay(FlappyBirdGameController controller) {
     return Container(
-      color: Colors.black54,
+      color: Colors.black.withValues(alpha: 0.6),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Icon(Icons.pause_circle_filled_rounded,
+                size: 80, color: Colors.white),
+            const SizedBox(height: 16),
             const Text(
-              'Paused',
+              'PAUSED',
               style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
                 color: Colors.white,
+                letterSpacing: 4,
               ),
             ),
-            const SizedBox(height: 20),
-            // Add current game stats
-            Text(
-              'Score: ${controller.score.value}',
-              style: const TextStyle(
-                fontSize: 24,
-                color: Colors.white,
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () => controller.resumeGame(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
               ),
-            ),
-            Text(
-              'Best: ${controller.highScore.value}',
-              style: const TextStyle(
-                fontSize: 20,
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => controller.resumeGame(),
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Resume'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Ensure we properly end the game before exiting
-                    controller.endGame();
-                    Get.back();
-                  },
-                  icon: const Icon(Icons.exit_to_app),
-                  label: const Text('Exit'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade400,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ],
+              child: const Text('RESUME',
+                  style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2)),
             ),
           ],
         ),
@@ -512,27 +604,31 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
 
   Widget _buildGetReadyOverlay() {
     return Container(
-      color: Colors.black38,
-      child: const Center(
+      color: Colors.black.withValues(alpha: 0.4),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Tap to Start',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                border: Border.all(color: Colors.white),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: const Text(
+                'TAP TO FLAP',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
               ),
             ),
-            SizedBox(height: 20),
-            Text(
-              'Tap anywhere to flap',
-              style: TextStyle(
-                fontSize: 24,
-                color: Colors.white70,
-              ),
-            ),
+            const SizedBox(height: 40),
+            const Icon(Icons.touch_app_rounded,
+                color: Colors.white54, size: 64),
           ],
         ),
       ),
@@ -540,41 +636,83 @@ class _FlappyBirdGameScreenState extends State<FlappyBirdGameScreen> {
   }
 }
 
-// Cloud model
-class _Cloud {
-  Offset position;
-  final double size;
-  final double speed;
-  final double opacity;
-
-  _Cloud({
-    required this.position,
-    required this.size,
-    required this.speed,
-    this.opacity = 0.7,
-  });
+class _NeonLine {
+  double x;
+  _NeonLine({required this.x});
 }
 
-// Cloud painter widget
-class _CloudPainter extends StatelessWidget {
-  final double size;
+class _NeonGridPainter extends CustomPainter {
+  final double offset;
 
-  const _CloudPainter({required this.size});
+  _NeonGridPainter({required this.offset});
 
   @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _CloudCustomPainter(),
-      size: Size(size, size * 0.6),
-    );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFFF007A).withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Horizontal lines (perspective)
+    for (int i = 0; i < 5; i++) {
+      double y =
+          size.height * (i / 4) * (i / 4); // exponential spacing for 3D feel
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    // Vertical lines moving
+    double spacing = size.width / 8;
+    for (double x = offset; x < size.width + spacing; x += spacing) {
+      if (x > 0) {
+        // Draw from vanishing point to bottom
+        canvas.drawLine(
+            Offset(size.width / 2, 0), Offset(x, size.height), paint);
+      }
+    }
+
+    // Add a glowing horizon line
+    final horizonPaint = Paint()
+      ..color = const Color(0xFF00E5FF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+
+    canvas.drawLine(const Offset(0, 0), Offset(size.width, 0), horizonPaint);
+    canvas.drawLine(
+        const Offset(0, 0),
+        Offset(size.width, 0),
+        Paint()
+          ..color = Colors.white
+          ..strokeWidth = 1);
   }
+
+  @override
+  bool shouldRepaint(_NeonGridPainter oldDelegate) =>
+      oldDelegate.offset != offset;
 }
 
-// Ground painter
+class _SynthwaveSunPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF0F0B29)
+      ..style = PaintingStyle.fill;
+
+    // Cut horizontal lines into the sun
+    for (int i = 0; i < 8; i++) {
+      double y = size.height * 0.6 + (i * 12);
+      double height = 2.0 + (i * 0.5);
+      canvas.drawRect(Rect.fromLTWH(0, y, size.width, height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 class _GroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw some grass tufts
     final paint = Paint()
       ..color = const Color(0xFF4CAF50)
       ..style = PaintingStyle.fill;
@@ -601,42 +739,4 @@ class _GroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GroundPainter oldDelegate) => false;
-}
-
-// Cloud custom painter
-class _CloudCustomPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-
-    // Draw a cloud using multiple circles
-    path.addOval(Rect.fromCircle(
-      center: Offset(size.width * 0.3, size.height * 0.5),
-      radius: size.width * 0.3,
-    ));
-
-    path.addOval(Rect.fromCircle(
-      center: Offset(size.width * 0.5, size.height * 0.3),
-      radius: size.width * 0.25,
-    ));
-
-    path.addOval(Rect.fromCircle(
-      center: Offset(size.width * 0.7, size.height * 0.4),
-      radius: size.width * 0.28,
-    ));
-
-    path.addOval(Rect.fromCircle(
-      center: Offset(size.width * 0.9, size.height * 0.6),
-      radius: size.width * 0.2,
-    ));
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_CloudCustomPainter oldDelegate) => false;
 }
