@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/settings_controller.dart';
 import '../controllers/stats_controller.dart';
-import 'package:gameverse/widgets/premium_background.dart';
+import 'package:gameverse/theme/app_theme.dart';
 
 class ConnectFourSettingsScreen extends StatelessWidget {
   late final settingsController = Get.find<ConnectFourSettingsController>();
@@ -19,18 +19,85 @@ class ConnectFourSettingsScreen extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Connect Four Settings'),
+        title: Text(
+          'Settings',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+            color: Colors.white,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(20),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withAlpha(40)),
+            ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18, color: Colors.white),
+          ),
           onPressed: () => Get.back(),
         ),
       ),
       body: Stack(
         children: [
-          const PremiumBackground(),
+          // Connect Four specific animated/gradient background
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  Color(0xFF0F172A),
+                  Color(0xFF1E3A8A), // Deep blue
+                  Color(0xFF0F172A),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.blue.withAlpha(38),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withAlpha(50),
+                    blurRadius: 100,
+                    spreadRadius: 50,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.red.withAlpha(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withAlpha(38),
+                    blurRadius: 100,
+                    spreadRadius: 50,
+                  ),
+                ],
+              ),
+            ),
+          ),
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -76,26 +143,31 @@ class ConnectFourSettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
                     _buildSectionTitle(
-                        context, 'Danger Zone', Icons.dangerous_outlined),
+                        context, 'Danger Zone', Icons.dangerous_outlined,
+                        isDanger: true),
                     _buildSettingsCard(
                       context,
                       children: [
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
+                              horizontal: 16, vertical: 8),
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.redAccent.withAlpha(38),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: Colors.redAccent.withAlpha(60)),
                             ),
                             child: const Icon(Icons.refresh_rounded,
-                                color: Colors.red),
+                                color: Colors.redAccent, size: 20),
                           ),
-                          title: Text(
+                          title: const Text(
                             'Reset All Settings',
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16),
                           ),
                           onTap: () => _showResetConfirmation(
                               context,
@@ -105,20 +177,24 @@ class ConnectFourSettingsScreen extends StatelessWidget {
                         _buildDivider(),
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
+                              horizontal: 16, vertical: 8),
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.redAccent.withAlpha(38),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: Colors.redAccent.withAlpha(60)),
                             ),
                             child: const Icon(Icons.analytics_outlined,
-                                color: Colors.red),
+                                color: Colors.redAccent, size: 20),
                           ),
-                          title: Text(
+                          title: const Text(
                             'Clear Statistics',
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16),
                           ),
                           onTap: () => _showResetConfirmation(
                               context,
@@ -138,20 +214,22 @@ class ConnectFourSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
-    final theme = Theme.of(context);
+  Widget _buildSectionTitle(BuildContext context, String title, IconData icon,
+      {bool isDanger = false}) {
+    final color = isDanger ? Colors.redAccent : Colors.blueAccent;
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      padding: const EdgeInsets.only(left: 8, bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 12),
           Text(
             title.toUpperCase(),
-            style: theme.textTheme.labelLarge?.copyWith(
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            style: TextStyle(
+              fontSize: 13,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w900,
+              color: color.withAlpha(200),
             ),
           ),
         ],
@@ -161,15 +239,13 @@ class ConnectFourSettingsScreen extends StatelessWidget {
 
   Widget _buildSettingsCard(BuildContext context,
       {required List<Widget> children}) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-        ),
+    return Container(
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white.withAlpha(10),
+        borderColor: Colors.white.withAlpha(20),
+        borderRadius: 24,
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(children: children),
     );
   }
@@ -182,37 +258,44 @@ class ConnectFourSettingsScreen extends StatelessWidget {
     required RxBool value,
     required Function(bool) onChanged,
   }) {
-    final theme = Theme.of(context);
     return Obx(() => SwitchListTile(
           value: value.value,
           onChanged: (val) {
             onChanged(val);
           },
           secondary: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.blueAccent.withAlpha(38),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blueAccent.withAlpha(60)),
             ),
-            child: Icon(icon, color: theme.colorScheme.primary, size: 22),
+            child: Icon(icon, color: Colors.blueAccent, size: 20),
           ),
           title: Text(
             title,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
           ),
           subtitle: Text(
             subtitle,
-            style: theme.textTheme.bodySmall,
+            style: TextStyle(color: Colors.white.withAlpha(100), fontSize: 12),
           ),
-          activeThumbColor: theme.colorScheme.primary,
+          activeThumbColor: Colors.blueAccent,
+          activeTrackColor: Colors.blueAccent.withAlpha(60),
+          inactiveThumbColor: Colors.white.withAlpha(60),
+          inactiveTrackColor: Colors.white.withAlpha(20),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ));
   }
 
   Widget _buildDivider() {
-    return const Divider(indent: 64, endIndent: 16);
+    return Divider(
+        indent: 64,
+        endIndent: 16,
+        color: Colors.white.withAlpha(20),
+        height: 1);
   }
 
   void _showResetConfirmation(
@@ -220,22 +303,42 @@ class ConnectFourSettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Reset $target?'),
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: Colors.white.withAlpha(20)),
+        ),
+        title: Text('Reset $target?',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-            'Are you sure you want to reset all game $target? This action cannot be undone.'),
+          'Are you sure you want to reset all game $target? This action cannot be undone.',
+          style: const TextStyle(color: Colors.white70),
+        ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('CANCEL')),
+          TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('CANCEL',
+                  style: TextStyle(color: Colors.white60))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, foregroundColor: Colors.white),
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white),
             onPressed: () {
               onConfirm();
               Get.back();
-              Get.snackbar('Reset Complete', '$target have been cleared.',
-                  snackPosition: SnackPosition.BOTTOM);
+              Get.snackbar(
+                'Reset Complete',
+                '$target have been cleared.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.green.shade800,
+                colorText: Colors.white,
+                borderRadius: 16,
+                margin: const EdgeInsets.all(16),
+              );
             },
-            child: const Text('RESET'),
+            child: const Text('RESET',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

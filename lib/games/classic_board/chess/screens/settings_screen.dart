@@ -5,7 +5,7 @@ import 'dart:developer' as dev;
 import '../controllers/game_controller.dart';
 import 'game_screen.dart';
 import '../widgets/chess_board_preview.dart';
-import 'package:gameverse/widgets/premium_background.dart';
+import 'package:gameverse/theme/app_theme.dart';
 
 class ChessSettingsScreen extends GetView<ChessGameController> {
   const ChessSettingsScreen({super.key});
@@ -18,14 +18,84 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Chess Settings'),
+        title: Text(
+          'Settings',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+            color: Colors.white,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18, color: Colors.white),
+          ),
+          onPressed: () => Get.back(),
+        ),
       ),
       body: Stack(
         children: [
-          const PremiumBackground(),
+          // Chess specific animated/gradient background
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  Color(0xFF0F172A),
+                  Color(0xFF1E293B), // Deep slate
+                  Color(0xFF0F172A),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFF4B860).withValues(alpha: 0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF4B860).withValues(alpha: 0.15),
+                    blurRadius: 100,
+                    spreadRadius: 50,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    blurRadius: 100,
+                    spreadRadius: 50,
+                  ),
+                ],
+              ),
+            ),
+          ),
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -75,7 +145,7 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                     // Board Theme Section
                     _buildSectionTitle(
                         context, 'Board Style', Icons.palette_outlined),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     _buildBoardThemeSelector(context),
 
                     const SizedBox(height: 32),
@@ -83,7 +153,7 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                     // Statistics Section
                     _buildSectionTitle(
                         context, 'Your Progress', Icons.analytics_outlined),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     _buildStatisticsGrid(context),
 
                     const SizedBox(height: 32),
@@ -96,35 +166,49 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                       children: [
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
+                              horizontal: 16, vertical: 8),
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: const Color(0xFFF4B860)
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.copy_all_rounded,
-                                color: theme.colorScheme.primary),
+                            child: const Icon(Icons.copy_all_rounded,
+                                color: Color(0xFFF4B860), size: 20),
                           ),
-                          title: const Text('Copy FEN'),
-                          subtitle: const Text('Copy the current position as FEN'),
+                          title: const Text('Copy FEN',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
+                          subtitle: Text('Copy current position as FEN',
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 12)),
                           onTap: () => _copyFen(context),
                         ),
                         _buildDivider(),
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
+                              horizontal: 16, vertical: 8),
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: const Color(0xFFF4B860)
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.input_rounded,
-                                color: theme.colorScheme.primary),
+                            child: const Icon(Icons.input_rounded,
+                                color: Color(0xFFF4B860), size: 20),
                           ),
-                          title: const Text('Import FEN'),
-                          subtitle: const Text('Load a position from FEN'),
+                          title: const Text('Import FEN',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700)),
+                          subtitle: Text('Load a position from FEN',
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 12)),
                           onTap: () => _showImportFenDialog(context),
                         ),
                       ],
@@ -134,31 +218,35 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
 
                     // Data Management Section
                     _buildSectionTitle(
-                        context, 'Danger Zone', Icons.dangerous_outlined),
+                        context, 'Danger Zone', Icons.dangerous_outlined,
+                        isDanger: true),
                     _buildSettingsCard(
                       context,
                       children: [
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
+                              horizontal: 16, vertical: 8),
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.redAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.delete_forever_outlined,
-                                color: Colors.red),
+                                color: Colors.redAccent, size: 20),
                           ),
-                          title: Text(
+                          title: const Text(
                             'Reset All Data',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
                             ),
                           ),
-                          subtitle:
-                              const Text('Clear all statistics and settings'),
+                          subtitle: Text('Clear all statistics and settings',
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 12)),
                           onTap: () => _showResetConfirmation(context),
                         ),
                       ],
@@ -174,20 +262,22 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
-    final theme = Theme.of(context);
+  Widget _buildSectionTitle(BuildContext context, String title, IconData icon,
+      {bool isDanger = false}) {
+    final color = isDanger ? Colors.redAccent : const Color(0xFFF4B860);
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      padding: const EdgeInsets.only(left: 8, bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 12),
           Text(
             title.toUpperCase(),
-            style: theme.textTheme.labelLarge?.copyWith(
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            style: TextStyle(
+              fontSize: 13,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w900,
+              color: color.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -197,15 +287,13 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
 
   Widget _buildSettingsCard(BuildContext context,
       {required List<Widget> children}) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-        ),
+    return Container(
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        borderColor: Colors.white.withValues(alpha: 0.1),
+        borderRadius: 24,
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(children: children),
     );
   }
@@ -218,7 +306,7 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     required RxBool value,
     required Function(bool) onChanged,
   }) {
-    final theme = Theme.of(context);
+    final accentColor = const Color(0xFFF4B860);
     return Obx(() => SwitchListTile(
           value: value.value,
           onChanged: (val) {
@@ -226,31 +314,38 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
             onChanged(val);
           },
           secondary: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: accentColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: theme.colorScheme.primary, size: 22),
+            child: Icon(icon, color: accentColor, size: 20),
           ),
           title: Text(
             title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
           ),
           subtitle: Text(
             subtitle,
-            style: theme.textTheme.bodySmall,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
           ),
-          activeThumbColor: theme.colorScheme.primary,
+          activeThumbColor: accentColor,
+          activeTrackColor: accentColor.withValues(alpha: 0.3),
+          inactiveThumbColor: Colors.white.withValues(alpha: 0.4),
+          inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ));
   }
 
   Widget _buildDivider() {
-    return const Divider(indent: 64, endIndent: 16);
+    return Divider(
+        indent: 64,
+        endIndent: 16,
+        color: Colors.white.withValues(alpha: 0.1),
+        height: 1);
   }
 
   Widget _buildBoardThemeSelector(BuildContext context) {
@@ -259,37 +354,42 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
         'Classic',
         'classic',
         'Wood',
-        [Colors.brown.shade800, Colors.brown.shade200]
+        [const Color(0xFFB58863), const Color(0xFFF0D9B5)]
       ),
       (
         'Modern',
         'modern',
         'Blue',
-        [Colors.blue.shade800, Colors.blue.shade200]
+        [const Color(0xFF4B7399), const Color(0xFFE8EDF9)]
       ),
       (
         'Forest',
         'forest',
         'Green',
-        [Colors.green.shade800, Colors.green.shade200]
+        [const Color(0xFF779556), const Color(0xFFE2E2BD)]
       ),
       (
         'Royal',
         'royal',
         'Purple',
-        [Colors.purple.shade800, Colors.amber.shade200]
+        [const Color(0xFF7B1FA2), const Color(0xFFFFE0B2)]
       ),
-      ('Ocean', 'ocean', 'Teal', [Colors.teal.shade800, Colors.cyan.shade200]),
+      (
+        'Ocean',
+        'ocean',
+        'Teal',
+        [const Color(0xFF006064), const Color(0xFFE0F7FA)]
+      ),
       (
         'Sunset',
         'sunset',
         'Warm',
-        [Colors.deepOrange.shade800, Colors.pink.shade200]
+        [const Color(0xFFE64A19), const Color(0xFFFCE4EC)]
       ),
     ];
 
     return SizedBox(
-      height: 160,
+      height: 170,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -316,7 +416,7 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     required String description,
     required List<Color> colors,
   }) {
-    final theme = Theme.of(context);
+    final accentColor = const Color(0xFFF4B860);
     return Obx(() {
       final isSelected = controller.boardTheme.value == value;
       return GestureDetector(
@@ -326,47 +426,48 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: 120,
+          width: 130,
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
+                ? accentColor.withValues(alpha: 0.2)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isSelected
+                  ? accentColor
+                  : Colors.white.withValues(alpha: 0.1),
+              width: 2,
+            ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: accentColor.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
                     )
                   ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ],
-            border: Border.all(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline.withValues(alpha: 0.1),
-              width: 2,
-            ),
+                : null,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                height: 60,
-                width: 60,
+                height: 64,
+                width: 64,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                   child: ChessBoardPreview(
                     colors: colors,
                     isSelected: isSelected,
@@ -376,20 +477,18 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
               const SizedBox(height: 12),
               Text(
                 name,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isSelected
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.onSurface,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
                 ),
               ),
               Text(
                 description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  color: isSelected
-                      ? theme.colorScheme.onPrimary.withValues(alpha: 0.7)
-                      : theme.colorScheme.onSurfaceVariant,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -406,18 +505,18 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
         crossAxisCount: 2,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
         childAspectRatio: 1.1,
         children: [
           _buildStatCard(context, 'Played', stats.gamesPlayed.toString(),
-              Icons.sports_esports, Colors.blue),
+              Icons.sports_esports, Colors.blueAccent),
           _buildStatCard(context, 'Won', stats.gamesWon.toString(),
-              Icons.emoji_events, Colors.green),
+              Icons.emoji_events, Colors.greenAccent),
           _buildStatCard(context, 'Lost', stats.gamesLost.toString(),
-              Icons.close, Colors.red),
+              Icons.close, Colors.redAccent),
           _buildStatCard(context, 'Draw', stats.gamesDraw.toString(),
-              Icons.balance, Colors.orange),
+              Icons.balance, Colors.orangeAccent),
         ],
       );
     });
@@ -425,50 +524,43 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
 
   Widget _buildStatCard(BuildContext context, String label, String value,
       IconData icon, Color color) {
-    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      padding: const EdgeInsets.all(16),
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        borderColor: color.withValues(alpha: 0.3),
+        borderRadius: 24,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              color: color,
+              height: 1,
             ),
           ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+              color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -480,7 +572,13 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     await Clipboard.setData(ClipboardData(text: controller.exportFen()));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('FEN copied')),
+      SnackBar(
+        content: const Text('FEN copied to clipboard'),
+        backgroundColor: const Color(0xFFF4B860),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
     );
   }
 
@@ -489,23 +587,55 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Import FEN'),
-        content: TextField(
-          controller: textController,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(
-            hintText: 'Paste a FEN string',
-            border: OutlineInputBorder(),
-          ),
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        title: const Text('Import FEN',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Paste a FEN string to load a specific chess position.',
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: textController,
+              minLines: 2,
+              maxLines: 4,
+              style: const TextStyle(
+                  color: Colors.white, fontFamily: 'monospace', fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'FEN string here...',
+                hintStyle:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                filled: true,
+                fillColor: Colors.black.withValues(alpha: 0.2),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('CANCEL'),
+            child:
+                const Text('CANCEL', style: TextStyle(color: Colors.white60)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF4B860),
+              foregroundColor: const Color(0xFF0F172A),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () {
               final fen = textController.text.trim();
               if (fen.isEmpty) return;
@@ -519,18 +649,25 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                   'Position Loaded',
                   'FEN position imported successfully.',
                   snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.green.shade800,
+                  colorText: Colors.white,
+                  borderRadius: 16,
+                  margin: const EdgeInsets.all(16),
                 );
               } catch (e) {
                 Get.snackbar(
                   'Invalid FEN',
                   e.toString(),
                   snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red,
+                  backgroundColor: Colors.redAccent,
                   colorText: Colors.white,
+                  borderRadius: 16,
+                  margin: const EdgeInsets.all(16),
                 );
               }
             },
-            child: const Text('LOAD'),
+            child: const Text('LOAD POSITION',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -541,21 +678,27 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Reset All Data'),
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        title: const Text('Reset All Data',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: const Text(
           'Are you sure you want to reset all game statistics and settings? This cannot be undone.',
+          style: TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('CANCEL'),
+            child:
+                const Text('CANCEL', style: TextStyle(color: Colors.white60)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white),
             onPressed: () {
               controller.storageService.clearAllData();
               Get.back();
@@ -563,11 +706,14 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
                 'Reset Complete',
                 'All game data has been cleared.',
                 snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.redAccent,
                 colorText: Colors.white,
+                borderRadius: 16,
+                margin: const EdgeInsets.all(16),
               );
             },
-            child: const Text('RESET'),
+            child: const Text('RESET EVERYTHING',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

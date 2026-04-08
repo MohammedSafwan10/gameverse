@@ -22,8 +22,12 @@ class ChessPieceWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWhitePiece = piece.color == PieceColor.white;
-    final pieceColor = isWhitePiece ? const Color(0xFFF7F7FA) : const Color(0xFF111111);
-    final outlineColor = isWhitePiece ? const Color(0xCC2D3142) : const Color(0x66FFFFFF);
+    // Stronger, more visible colors
+    final pieceColor =
+        isWhitePiece ? const Color(0xFFFFFFFF) : const Color(0xFF2C2C2E);
+    // Gold accent for black pieces to make them pop, dark blue/grey for white pieces
+    final accentColor =
+        isWhitePiece ? const Color(0xFF4A4A4A) : const Color(0xFFF4B860);
 
     Widget pieceWidget = GestureDetector(
       onTap: onTap,
@@ -31,27 +35,43 @@ class ChessPieceWidget extends StatelessWidget {
         width: size,
         height: size,
         child: Stack(
+          clipBehavior: Clip.none,
           children: [
+            // Stronger Drop shadow for depth
             Center(
               child: Transform.translate(
-                offset: const Offset(0.8, 1.2),
+                offset: const Offset(2.0, 2.5),
                 child: SvgPicture.asset(
                   piece.imagePath,
-                  width: size * 0.9,
-                  height: size * 0.9,
+                  width: size * 0.92,
+                  height: size * 0.92,
                   fit: BoxFit.contain,
                   colorFilter: ColorFilter.mode(
-                    outlineColor.withValues(alpha: isWhitePiece ? 0.55 : 0.35),
+                    Colors.black.withValues(alpha: 0.6),
                     BlendMode.srcIn,
                   ),
                 ),
               ),
             ),
+            // High-contrast outline - slightly larger to act as a proper border
             Center(
               child: SvgPicture.asset(
                 piece.imagePath,
-                width: size * 0.9,
-                height: size * 0.9,
+                width: size * 0.98,
+                height: size * 0.98,
+                fit: BoxFit.contain,
+                colorFilter: ColorFilter.mode(
+                  isWhitePiece ? Colors.black : Colors.white,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            // Main piece color - slightly smaller to show the outline
+            Center(
+              child: SvgPicture.asset(
+                piece.imagePath,
+                width: size * 0.88,
+                height: size * 0.88,
                 fit: BoxFit.contain,
                 colorFilter: ColorFilter.mode(
                   pieceColor,
@@ -59,25 +79,19 @@ class ChessPieceWidget extends StatelessWidget {
                 ),
               ),
             ),
-            if (isWhitePiece)
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.22),
-                          Colors.white.withValues(alpha: 0),
-                        ],
-                      ),
-                    ),
-                  ),
+            // Detail highlight/accent
+            Center(
+              child: SvgPicture.asset(
+                piece.imagePath,
+                width: size * 0.9,
+                height: size * 0.9,
+                fit: BoxFit.contain,
+                colorFilter: ColorFilter.mode(
+                  accentColor.withValues(alpha: 0.4),
+                  BlendMode.srcIn,
                 ),
               ),
+            ),
           ],
         ),
       ),

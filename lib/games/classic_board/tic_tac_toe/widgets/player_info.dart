@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gameverse/theme/app_theme.dart';
 import '../models/player.dart';
 import '../theme/game_theme.dart';
+import 'symbol_painters.dart';
 
 class PlayerInfo extends StatelessWidget {
   final Player player;
@@ -21,27 +23,27 @@ class PlayerInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       decoration: BoxDecoration(
         color: isCurrentPlayer
-            ? TicTacToeTheme.primaryColor.withValues(alpha: 0.1)
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+            ? TicTacToeTheme.primaryColor.withValues(alpha: 0.14)
+            : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: isCurrentPlayer
               ? TicTacToeTheme.primaryColor
-              : onSurface.withValues(alpha: 0.1),
+              : Colors.white.withValues(alpha: 0.08),
           width: isCurrentPlayer ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: onSurface.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 16,
+            spreadRadius: -4,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -59,7 +61,7 @@ class PlayerInfo extends StatelessWidget {
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: isCurrentPlayer
                         ? TicTacToeTheme.primaryColor
-                        : onSurface,
+                        : Colors.white,
                     fontWeight:
                         isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -72,7 +74,7 @@ class PlayerInfo extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
             decoration: BoxDecoration(
-              color: onSurface.withValues(alpha: 0.06),
+              color: Colors.white.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(12),
             ),
             child: FittedBox(
@@ -80,7 +82,7 @@ class PlayerInfo extends StatelessWidget {
               child: Text(
                 'Wins: $wins',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: onSurface,
+                  color: Colors.white.withValues(alpha: 0.82),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -92,7 +94,7 @@ class PlayerInfo extends StatelessWidget {
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               decoration: BoxDecoration(
-                color: TicTacToeTheme.primaryColor.withValues(alpha: 0.2),
+                color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -143,18 +145,21 @@ class PlayerInfo extends StatelessWidget {
   Widget _buildPlayerIcon() {
     final color =
         player == Player.x ? TicTacToeTheme.xColor : TicTacToeTheme.oColor;
-    final icon = player == Player.x ? Icons.close : Icons.circle_outlined;
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(
-        icon,
-        color: color,
-        size: 24,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CustomPaint(
+          painter: player == Player.x
+              ? XSymbolPainter(color: color, isWinning: false)
+              : OSymbolPainter(color: color, isWinning: false),
+        ),
       ),
     );
   }

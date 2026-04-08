@@ -34,8 +34,22 @@ class BoardWidget extends StatelessWidget {
   Widget _buildBackground(double cellSize) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.blue.shade900,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.shade700,
+            Colors.blue.shade900,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.3),
+            blurRadius: 20,
+            spreadRadius: 2,
+          )
+        ],
       ),
     );
   }
@@ -95,7 +109,11 @@ class BoardWidget extends StatelessWidget {
 
   Widget _buildDisc(CellState state, double cellSize, bool isWinning) {
     final color =
-        state == CellState.player1 ? Colors.red : Colors.yellow.shade600;
+        state == CellState.player1 ? Colors.redAccent : Colors.amber.shade400;
+
+    final darkColor = state == CellState.player1
+        ? Colors.red.shade900
+        : Colors.orange.shade800;
 
     return Container(
       width: cellSize * 0.82,
@@ -104,25 +122,42 @@ class BoardWidget extends StatelessWidget {
         color: color,
         shape: BoxShape.circle,
         boxShadow: [
+          // Deep drop shadow
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 6,
+            offset: const Offset(0, 4),
           ),
+          // Inner glow
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.2),
-            blurRadius: 1,
-            offset: const Offset(-1, -1),
+            color: Colors.white.withValues(alpha: 0.3),
+            blurRadius: 2,
+            offset: const Offset(-2, -2),
           ),
         ],
         gradient: RadialGradient(
           colors: [
-            Colors.white.withValues(alpha: 0.3),
+            Colors.white.withValues(alpha: 0.8),
             color,
-            color.withValues(alpha: 0.8),
+            darkColor,
           ],
+          stops: const [0.0, 0.5, 1.0],
           center: const Alignment(-0.3, -0.3),
           radius: 0.8,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.4),
+              Colors.transparent,
+              darkColor.withValues(alpha: 0.4),
+            ],
+          ),
         ),
       ),
     )
@@ -202,12 +237,20 @@ class CabinetPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Semi-transparent blue for the cabinet
     final paint = Paint()
-      ..color = Colors.blue.shade800
+      ..color = Colors.blue.shade800.withValues(alpha: 0.85)
       ..style = PaintingStyle.fill;
 
+    // Inner shadow for depth
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.3)
+      ..color = Colors.black.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Highlight for 3D effect
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -216,7 +259,6 @@ class CabinetPainter extends CustomPainter {
         final center = Offset((col + 0.5) * cellSize, (row + 0.5) * cellSize);
         final radius = cellSize * 0.42;
 
-        // Draw the square part of the cabinet with a hole
         final rect =
             Rect.fromCenter(center: center, width: cellSize, height: cellSize);
 
@@ -227,8 +269,20 @@ class CabinetPainter extends CustomPainter {
           ..fillType = PathFillType.evenOdd;
 
         canvas.drawPath(path, paint);
+
+        // Draw inner dark shadow ring
         canvas.drawOval(
             Rect.fromCircle(center: center, radius: radius), shadowPaint);
+
+        // Draw light highlight slightly offset
+        canvas.drawArc(
+            Rect.fromCircle(
+                center: Offset(center.dx - 1, center.dy - 1),
+                radius: radius + 1),
+            3.14,
+            3.14,
+            false,
+            highlightPaint);
       }
     }
   }

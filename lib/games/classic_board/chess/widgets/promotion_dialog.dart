@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/chess_piece.dart';
@@ -6,6 +7,7 @@ import '../models/piece_types/rook.dart';
 import '../models/piece_types/bishop.dart';
 import '../models/piece_types/knight.dart';
 import 'chess_piece_widget.dart';
+import 'package:gameverse/theme/app_theme.dart';
 
 class PromotionDialog extends StatelessWidget {
   final PieceColor color;
@@ -21,66 +23,71 @@ class PromotionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final accentColor = const Color(0xFFF4B860);
 
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: AppTheme.glassmorphicDecoration(
+            backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.9),
+            borderColor: Colors.white.withValues(alpha: 0.1),
+            borderRadius: 32,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: accentColor.withValues(alpha: 0.4), width: 2),
+                ),
+                child:
+                    Icon(Icons.upgrade_rounded, color: accentColor, size: 40),
               ),
-              child: Icon(Icons.upgrade_rounded,
-                  color: theme.colorScheme.primary, size: 32),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Pawn Promotion',
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Choose your new piece',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildOption(context, PieceType.queen, 0),
-                _buildOption(context, PieceType.rook, 1),
-                _buildOption(context, PieceType.bishop, 2),
-                _buildOption(context, PieceType.knight, 3),
-              ],
-            ),
-          ],
+              const SizedBox(height: 24),
+              const Text(
+                'PAWN PROMOTION',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose your new piece',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildOption(context, PieceType.queen, 0),
+                  _buildOption(context, PieceType.rook, 1),
+                  _buildOption(context, PieceType.bishop, 2),
+                  _buildOption(context, PieceType.knight, 3),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildOption(BuildContext context, PieceType type, int index) {
-    final theme = Theme.of(context);
     final piece = switch (type) {
       PieceType.queen => Queen(color: color, position: position),
       PieceType.rook => Rook(color: color, position: position),
@@ -92,25 +99,25 @@ class PromotionDialog extends StatelessWidget {
     return GestureDetector(
       onTap: () => onSelect(type),
       child: Container(
-        width: 60,
-        height: 60,
+        width: 64,
+        height: 64,
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+              color: Colors.white.withValues(alpha: 0.1), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Center(
           child: ChessPieceWidget(
             piece: piece,
-            size: 40,
+            size: 44,
             isSelected: false,
             isAnimated: false,
           ),

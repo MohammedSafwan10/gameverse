@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/chess_piece.dart';
 import 'chess_piece_widget.dart';
 import '../controllers/game_controller.dart';
@@ -29,8 +30,8 @@ class ChessSquareWidget extends StatelessWidget {
   Color _getSquareColor(BuildContext context, String theme) {
     return switch (theme) {
       'classic' => isWhite ? const Color(0xFFF0D9B5) : const Color(0xFFB58863),
-      'modern' => isWhite ? const Color(0xFFEBECD0) : const Color(0xFF779556),
-      'forest' => isWhite ? const Color(0xFFE2E2BD) : const Color(0xFF4B7399),
+      'modern' => isWhite ? const Color(0xFFE8EDF9) : const Color(0xFF4B7399),
+      'forest' => isWhite ? const Color(0xFFE2E2BD) : const Color(0xFF779556),
       'royal' => isWhite ? const Color(0xFFFFE0B2) : const Color(0xFF7B1FA2),
       'ocean' => isWhite ? const Color(0xFFE0F7FA) : const Color(0xFF006064),
       'sunset' => isWhite ? const Color(0xFFFCE4EC) : const Color(0xFFE64A19),
@@ -40,8 +41,8 @@ class ChessSquareWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final controller = Get.find<ChessGameController>();
+    final accentColor = const Color(0xFFF4B860);
 
     return Obx(() {
       final baseColor = _getSquareColor(context, controller.boardTheme.value);
@@ -52,10 +53,23 @@ class ChessSquareWidget extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                ? accentColor.withValues(alpha: 0.6)
                 : isLastMove
-                    ? theme.colorScheme.secondary.withValues(alpha: 0.4)
+                    ? accentColor.withValues(alpha: 0.3)
                     : baseColor,
+            border: isSelected
+                ? Border.all(
+                    color: Colors.white.withValues(alpha: 0.5), width: 2)
+                : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.4),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    )
+                  ]
+                : null,
           ),
           child: Stack(
             children: [
@@ -63,11 +77,20 @@ class ChessSquareWidget extends StatelessWidget {
               if (isValidMove && piece == null)
                 Center(
                   child: Container(
-                    width: 14,
-                    height: 14,
+                    width: 20,
+                    height: 20,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.15),
+                      color: accentColor.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                        )
+                      ],
                     ),
                   ),
                 ),
@@ -79,8 +102,8 @@ class ChessSquareWidget extends StatelessWidget {
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        width: 4,
+                        color: Colors.redAccent.withValues(alpha: 0.6),
+                        width: 3,
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -92,7 +115,7 @@ class ChessSquareWidget extends StatelessWidget {
                 Center(
                   child: ChessPieceWidget(
                     piece: piece!,
-                    size: 40,
+                    size: 42,
                     isSelected: isSelected,
                     isAnimated: true,
                   ),
@@ -104,13 +127,15 @@ class ChessSquareWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
                       colors: [
-                        Colors.red.withValues(alpha: 0.8),
-                        Colors.red.withValues(alpha: 0.4),
+                        Colors.redAccent.withValues(alpha: 0.8),
+                        Colors.redAccent.withValues(alpha: 0.4),
                         Colors.transparent,
                       ],
                     ),
                   ),
-                ),
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .shimmer(duration: 1000.ms),
             ],
           ),
         ),

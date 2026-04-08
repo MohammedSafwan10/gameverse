@@ -74,7 +74,7 @@ class ChessBoardWidget extends GetView<ChessGameController> {
               // Rank labels (1-8)
               IgnorePointer(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 2, top: 4),
+                  padding: const EdgeInsets.only(left: 4, top: 4),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(8, (index) {
@@ -84,9 +84,10 @@ class ChessBoardWidget extends GetView<ChessGameController> {
                           child: Text(
                             '${8 - index}',
                             style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white.withValues(alpha: 0.3),
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
@@ -99,7 +100,7 @@ class ChessBoardWidget extends GetView<ChessGameController> {
               // File labels (a-h)
               IgnorePointer(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 4, bottom: 2),
+                  padding: const EdgeInsets.only(right: 6, bottom: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(8, (index) {
@@ -109,9 +110,10 @@ class ChessBoardWidget extends GetView<ChessGameController> {
                           child: Text(
                             String.fromCharCode('a'.codeUnitAt(0) + index),
                             style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white.withValues(alpha: 0.3),
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -7,7 +8,7 @@ import '../controllers/game_controller.dart';
 import '../widgets/chess_board_widget.dart';
 import '../widgets/countdown_timer.dart';
 import 'settings_screen.dart';
-import 'package:gameverse/widgets/premium_background.dart';
+import 'package:gameverse/theme/app_theme.dart';
 import 'package:gameverse/widgets/guarded_exit.dart';
 
 class ChessGameScreen extends StatelessWidget {
@@ -33,52 +34,141 @@ class ChessGameScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Obx(() => Text(
-                _getGameTitle(controller.gameMode.value),
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              )),
-          centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_back_ios_new_rounded,
+                  size: 18, color: Colors.white),
+            ),
             onPressed: () => popAfterConfirmation(
               context,
-              confirmExit: () => _showExitConfirmationDialog(context, controller),
+              confirmExit: () =>
+                  _showExitConfirmationDialog(context, controller),
             ),
           ),
+          title: Obx(() => FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _getGameTitle(controller.gameMode.value),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                    color: Colors.white,
+                  ),
+                ),
+              )),
+          centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.restart_alt_rounded),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.restart_alt_rounded,
+                    size: 16, color: Colors.white),
+              ),
               onPressed: () =>
                   _showRestartConfirmationDialog(context, controller),
               tooltip: 'Restart Game',
             ),
             IconButton(
-              icon: const Icon(Icons.history_rounded),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.history_rounded,
+                    size: 16, color: Colors.white),
+              ),
               onPressed: () => _showMoveHistoryDialog(context, controller),
               tooltip: 'Move History',
             ),
-            Obx(() => IconButton(
-                  icon: Icon(
-                    controller.soundService.isSoundEnabled.value
-                        ? Icons.volume_up_rounded
-                        : Icons.volume_off_rounded,
-                  ),
-                  onPressed: controller.soundService.toggleSound,
-                )),
             IconButton(
-              icon: const Icon(Icons.settings_outlined),
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.settings_outlined,
+                    size: 16, color: Colors.white),
+              ),
               onPressed: () {
                 controller.soundService.playMenuSelectionSound();
                 Get.to(() => const ChessSettingsScreen(),
                     transition: Transition.rightToLeft);
               },
             ),
+            const SizedBox(width: 4),
           ],
         ),
         body: Stack(
           children: [
-            const PremiumBackground(),
+            // Chess specific animated/gradient background - more vibrant
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF0F172A),
+                    Color(0xFF1E3A8A), // Brighter blue
+                    Color(0xFF0F172A),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -50,
+              right: -50,
+              child: Container(
+                width: 400,
+                height: 400,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFF4B860).withValues(alpha: 0.12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF4B860).withValues(alpha: 0.2),
+                      blurRadius: 120,
+                      spreadRadius: 60,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 100,
+              left: -80,
+              child: Container(
+                width: 350,
+                height: 350,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blueAccent.withValues(alpha: 0.1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blueAccent.withValues(alpha: 0.15),
+                      blurRadius: 100,
+                      spreadRadius: 50,
+                    ),
+                  ],
+                ),
+              ),
+            ),
             SafeArea(
               child: Column(
                 children: [
@@ -88,18 +178,19 @@ class ChessGameScreen extends StatelessWidget {
                       physics: const BouncingScrollPhysics(),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8.0),
+                            horizontal: 12.0, vertical: 8.0),
                         child: Column(
                           children: [
-                            _buildCapturedPieces(context, controller,
-                                false), // Black's pieces captured by White
+                            _buildCapturedPieces(context, controller, false),
+                            // Black's pieces captured by White
                             const SizedBox(height: 12),
                             _buildMainBoard(context, controller),
                             const SizedBox(height: 12),
-                            _buildCapturedPieces(context, controller,
-                                true), // White's pieces captured by Black
+                            _buildCapturedPieces(context, controller, true),
+                            // White's pieces captured by Black
                             const SizedBox(height: 20),
                             _buildGameStatusMessage(context, controller),
+                            const SizedBox(height: 40),
                           ],
                         ),
                       ),
@@ -138,22 +229,13 @@ class ChessGameScreen extends StatelessWidget {
 
   Widget _buildTopInfoBar(
       BuildContext context, ChessGameController controller) {
-    final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        borderColor: Colors.white.withValues(alpha: 0.1),
+        borderRadius: 24,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -161,47 +243,60 @@ class ChessGameScreen extends StatelessWidget {
           // Player Turn Info
           Obx(() {
             final isWhite = controller.isWhiteTurn.value;
+
             return Row(
               children: [
                 AnimatedContainer(
                   duration: 400.ms,
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isWhite ? Colors.white : Colors.black87,
+                    color: isWhite
+                        ? Colors.white.withValues(alpha: 0.9)
+                        : const Color(0xFF0F172A),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                        width: 2),
+                      color: isWhite
+                          ? const Color(0xFFF4B860).withValues(alpha: 0.4)
+                          : Colors.white.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: (isWhite ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.3),
-                        blurRadius: 8,
+                        color:
+                            (isWhite ? const Color(0xFFF4B860) : Colors.white)
+                                .withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
                       )
                     ],
                   ),
                   child: Icon(
                     Icons.person,
-                    size: 16,
-                    color: isWhite ? Colors.black87 : Colors.white,
+                    size: 20,
+                    color: isWhite ? const Color(0xFF0F172A) : Colors.white,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       isWhite ? 'White\'s Turn' : 'Black\'s Turn',
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
                       _getStateText(controller.gameState.value),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: _getStateColor(controller.gameState.value),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
+                      style: TextStyle(
+                        color: _getStateColor(controller.gameState.value)
+                            .withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        letterSpacing: 1,
                       ),
                     ),
                   ],
@@ -220,7 +315,7 @@ class ChessGameScreen extends StatelessWidget {
                     'W',
                     controller.whiteTimeRemaining.value,
                     controller.isWhiteTurn.value),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 _buildCompactTimer(
                     context,
                     'B',
@@ -236,24 +331,30 @@ class ChessGameScreen extends StatelessWidget {
 
   Widget _buildCompactTimer(
       BuildContext context, String label, int seconds, bool isActive) {
-    final theme = Theme.of(context);
     final timeStr = seconds ~/ 60 == 0 && seconds < 10
         ? '0:${seconds.toString().padLeft(2, '0')}'
         : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
 
     return AnimatedContainer(
       duration: 300.ms,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isActive
-            ? theme.colorScheme.primary
-            : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+            ? const Color(0xFFF4B860).withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive
+              ? Colors.white.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.1),
+          width: 1,
+        ),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 4)
+                    color: const Color(0xFFF4B860).withValues(alpha: 0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2))
               ]
             : null,
       ),
@@ -262,23 +363,19 @@ class ChessGameScreen extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w900,
-              color: isActive
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.onSurfaceVariant,
+              color: isActive ? const Color(0xFF0F172A) : Colors.white60,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
             timeStr,
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
               fontFamily: 'monospace',
-              color: isActive
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.onSurfaceVariant,
+              color: isActive ? const Color(0xFF0F172A) : Colors.white,
             ),
           ),
         ],
@@ -288,12 +385,10 @@ class ChessGameScreen extends StatelessWidget {
 
   Widget _buildCapturedPieces(
       BuildContext context, ChessGameController controller, bool forWhite) {
-    final theme = Theme.of(context);
     return Obx(() {
       final pieces = controller.capturedPieces
           .where((p) => forWhite ? p.contains('white') : p.contains('black'))
           .toList();
-      if (pieces.isEmpty) return const SizedBox(height: 40);
 
       // Simple scoring for ordering
       pieces.sort((a, b) {
@@ -308,64 +403,57 @@ class ChessGameScreen extends StatelessWidget {
       });
 
       return Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.05)),
+        height: 52,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: AppTheme.glassmorphicDecoration(
+          backgroundColor: Colors.white.withValues(alpha: 0.03),
+          borderColor: Colors.white.withValues(alpha: 0.08),
+          borderRadius: 20,
         ),
         child: Row(
           children: [
             Icon(Icons.outbox_rounded,
-                size: 14,
-                color:
-                    theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-            const SizedBox(width: 8),
+                size: 16, color: Colors.white.withValues(alpha: 0.4)),
+            const SizedBox(width: 12),
             Expanded(
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: pieces.length,
-                itemBuilder: (context, index) {
-                  final isWhitePiece = pieces[index].contains('white');
-                  final pieceColor =
-                      isWhitePiece ? const Color(0xFFF7F7FA) : const Color(0xFF111111);
-                  final outlineColor =
-                      isWhitePiece ? const Color(0xCC2D3142) : const Color(0x66FFFFFF);
+              child: pieces.isEmpty
+                  ? Center(
+                      child: Text('NO CAPTURES',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1)))
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: pieces.length,
+                      itemBuilder: (context, index) {
+                        final isWhitePiece = pieces[index].contains('white');
+                        final pieceColor = isWhitePiece
+                            ? const Color(0xFFF7F7FA)
+                            : const Color(0xFF111111);
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Transform.translate(
-                          offset: const Offset(0.8, 1.0),
-                          child: SvgPicture.asset(
-                            'assets/chess/images/${pieces[index]}.svg',
-                            width: 24,
-                            height: 24,
-                            colorFilter: ColorFilter.mode(
-                              outlineColor.withValues(alpha: isWhitePiece ? 0.55 : 0.35),
-                              BlendMode.srcIn,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/chess/images/${pieces[index]}.svg',
+                              width: 28,
+                              height: 28,
+                              colorFilter: ColorFilter.mode(
+                                isWhitePiece
+                                    ? pieceColor
+                                    : const Color(0xFF1E293B),
+                                BlendMode.srcIn,
+                              ),
                             ),
                           ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/chess/images/${pieces[index]}.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter: ColorFilter.mode(
-                            pieceColor,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ],
+                        )
+                            .animate()
+                            .scale(delay: (index * 50).ms, duration: 300.ms);
+                      },
                     ),
-                  ).animate().scale(delay: (index * 50).ms, duration: 300.ms);
-                },
-              ),
             ),
           ],
         ),
@@ -374,131 +462,165 @@ class ChessGameScreen extends StatelessWidget {
   }
 
   Widget _buildMainBoard(BuildContext context, ChessGameController controller) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size.width - 32;
+    // Made board bigger by reducing side margin padding
+    final size = MediaQuery.of(context).size.width - 16;
 
     return Container(
       width: size,
       height: size,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
+        color: const Color(0xFF1E293B).withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFF4B860).withValues(alpha: 0.3),
+          width: 2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 30,
-            offset: const Offset(0, 15),
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
           ),
         ],
       ),
-      child: const ChessBoardWidget(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: const ChessBoardWidget(),
+      ),
     ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack);
   }
 
   Widget _buildGameStatusMessage(
       BuildContext context, ChessGameController controller) {
-    final theme = Theme.of(context);
     return Obx(() {
       final message = _getGameMessage(controller.gameState.value,
           controller.isWhiteTurn.value, controller.gameMode.value);
       if (message.isEmpty) return const SizedBox.shrink();
 
+      final statusColor = _getStateColor(controller.gameState.value);
+
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        // Removed double.infinity to make it compact
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+          color: statusColor.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: statusColor.withValues(alpha: 0.1),
+              blurRadius: 15,
+            )
+          ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // Compact size
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(_getMessageIcon(controller.gameState.value),
-                color: theme.colorScheme.primary, size: 20),
+                color: statusColor, size: 20),
             const SizedBox(width: 12),
             Text(
               message,
-              style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary),
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 16, // Slightly smaller font
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+              ),
             ),
           ],
         ),
-      ).animate().fadeIn().slideY(begin: 0.5);
+      ).animate().fadeIn().slideY(begin: 0.3);
     });
   }
 
   Widget _buildPauseOverlay(
       BuildContext context, ChessGameController controller) {
-    final theme = Theme.of(context);
     return Container(
       color: Colors.black.withValues(alpha: 0.6),
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 40),
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle),
-                child: Icon(Icons.pause_rounded,
-                    size: 48, color: theme.colorScheme.primary),
-              ),
-              const SizedBox(height: 24),
-              Text('Game Paused',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () {
-                        controller.forfeitGame();
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('FORFEIT',
-                          style: TextStyle(
-                              color: Colors.red, fontWeight: FontWeight.bold)),
-                    ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Center(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.all(32),
+            decoration: AppTheme.glassmorphicDecoration(
+              backgroundColor: Colors.white.withValues(alpha: 0.05),
+              borderColor: Colors.white.withValues(alpha: 0.1),
+              borderRadius: 32,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4B860).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: const Color(0xFFF4B860).withValues(alpha: 0.4),
+                        width: 2),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: controller.resumeGame,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+                  child: const Icon(Icons.pause_rounded,
+                      size: 48, color: Color(0xFFF4B860)),
+                ),
+                const SizedBox(height: 24),
+                const Text('Game Paused',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1)),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          controller.forfeitGame();
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('FORFEIT',
+                            style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2)),
                       ),
-                      child: const Text('RESUME'),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: controller.resumeGame,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF4B860),
+                          foregroundColor: const Color(0xFF0F172A),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                          elevation: 8,
+                          shadowColor:
+                              const Color(0xFFF4B860).withValues(alpha: 0.4),
+                        ),
+                        child: const Text('RESUME',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
-    );
+      ),
+    ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9));
   }
 
   String _getGameTitle(ChessGameMode mode) {
     return switch (mode) {
-      ChessGameMode.local => 'Two Players',
-      ChessGameMode.ai => 'vs Computer',
+      ChessGameMode.local => 'Local PVP',
+      ChessGameMode.ai => 'vs AI',
       ChessGameMode.training => 'Training',
     };
   }
@@ -516,11 +638,11 @@ class ChessGameScreen extends StatelessWidget {
 
   Color _getStateColor(ChessGameState state) {
     return switch (state) {
-      ChessGameState.check => Colors.orange,
-      ChessGameState.checkmate => Colors.red,
-      ChessGameState.stalemate => Colors.blueGrey,
-      ChessGameState.draw => Colors.blueGrey,
-      _ => Colors.green,
+      ChessGameState.check => Colors.orangeAccent,
+      ChessGameState.checkmate => Colors.redAccent,
+      ChessGameState.stalemate => Colors.blueGrey.shade300,
+      ChessGameState.draw => Colors.blueGrey.shade300,
+      _ => Colors.greenAccent,
     };
   }
 
@@ -561,19 +683,26 @@ class ChessGameScreen extends StatelessWidget {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Text('Exit Game?'),
-            content: const Text('Your current progress will be lost.'),
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            title: const Text('Exit Game?',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+            content: const Text('Your current progress will be lost.',
+                style: TextStyle(color: Colors.white70)),
             actions: [
               TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('CANCEL')),
+                  child: const Text('CANCEL',
+                      style: TextStyle(color: Colors.white60))),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('EXIT',
                     style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold)),
+                        color: Colors.redAccent, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -587,18 +716,26 @@ class ChessGameScreen extends StatelessWidget {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Move History'),
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        title: const Text('Move History',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 320,
           child: moves.isEmpty
-              ? const Text('No moves yet.')
+              ? const Text('No moves yet.',
+                  style: TextStyle(color: Colors.white70))
               : ListView.builder(
                   shrinkWrap: true,
                   itemCount: moves.length,
                   itemBuilder: (context, index) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: SelectableText(moves[index]),
+                    child: SelectableText(moves[index],
+                        style: const TextStyle(
+                            color: Colors.white, fontFamily: 'monospace')),
                   ),
                 ),
         ),
@@ -611,15 +748,23 @@ class ChessGameScreen extends StatelessWidget {
               if (context.mounted) {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Move history copied')),
+                  SnackBar(
+                    content: const Text('Move history copied'),
+                    backgroundColor: const Color(0xFFF4B860),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
                 );
               }
             },
-            child: const Text('COPY'),
+            child: const Text('COPY',
+                style: TextStyle(
+                    color: Color(0xFFF4B860), fontWeight: FontWeight.bold)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CLOSE'),
+            child: const Text('CLOSE', style: TextStyle(color: Colors.white60)),
           ),
         ],
       ),
@@ -631,17 +776,25 @@ class ChessGameScreen extends StatelessWidget {
     final shouldRestart = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Restart?'),
-        content: const Text('This will reset the current match.'),
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        title: const Text('Restart?',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text('This will reset the current match.',
+            style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('CANCEL')),
+              child: const Text('CANCEL',
+                  style: TextStyle(color: Colors.white60))),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('RESTART',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: Color(0xFFF4B860), fontWeight: FontWeight.bold)),
           ),
         ],
       ),

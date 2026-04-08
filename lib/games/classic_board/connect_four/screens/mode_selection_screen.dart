@@ -6,6 +6,8 @@ import '../controllers/settings_controller.dart';
 import '../bindings/game_binding.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import 'stats_screen.dart';
+import 'package:gameverse/theme/app_theme.dart';
 import 'package:gameverse/widgets/premium_background.dart';
 
 class ConnectFourModeScreen extends StatelessWidget {
@@ -15,101 +17,91 @@ class ConnectFourModeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Connect Four Theme Colors
+    final primaryColor = Colors.blue.shade600;
+    final secondaryColor = Colors.redAccent;
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Get.back(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              if (!Get.isRegistered<ConnectFourSettingsController>()) {
-                Get.put(ConnectFourSettingsController(), permanent: true);
-              }
-              Get.to(() => ConnectFourSettingsScreen());
-            },
-          ),
-        ],
-      ),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           const PremiumBackground(),
+          Positioned.fill(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/games/connect_four.png',
+                  fit: BoxFit.cover,
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.32),
+                        const Color(0xFF0F172A).withValues(alpha: 0.88),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Header with Icon
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.blur_on_rounded,
-                        size: 80,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                        .animate()
-                        .scale(duration: 600.ms, curve: Curves.easeOutBack),
-
-                    const SizedBox(height: 24),
-                    Text(
-                      'CONNECT FOUR',
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ).animate().fadeIn().slideY(begin: 0.2),
-
-                    const SizedBox(height: 8),
-                    Text(
-                      'STRATEGY & TACTICS',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        letterSpacing: 4,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms),
-
-                    const SizedBox(height: 48),
-
-                    // Mode Selection
-                    _buildModeCard(
-                      context,
-                      title: 'Player vs Player',
-                      description: 'Challenge a friend sitting next to you',
-                      icon: Icons.people_outline_rounded,
-                      color: Colors.blue,
-                      onTap: () => _startGame(GameMode.pvp),
-                    ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.2),
-
-                    const SizedBox(height: 16),
-
-                    _buildModeCard(
-                      context,
-                      title: 'Player vs AI',
-                      description: 'Test your skills against our smart bot',
-                      icon: Icons.smart_toy_outlined,
-                      color: Colors.purple,
-                      onTap: () => _startGame(GameMode.vsAI),
-                    ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.2),
-
-                    const SizedBox(height: 40),
-                  ],
-                ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTopBar(context),
+                  const SizedBox(height: 28),
+                  Text(
+                    'Choose how you want to play',
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: const Duration(milliseconds: 500))
+                      .slideY(begin: 0.15),
+                  const SizedBox(height: 20),
+                  _buildHeroCard(theme, primaryColor)
+                      .animate()
+                      .fadeIn(
+                          delay: const Duration(milliseconds: 120),
+                          duration: const Duration(milliseconds: 600))
+                      .slideY(begin: 0.12),
+                  const SizedBox(height: 20),
+                  _buildModeCard(
+                    icon: Icons.smart_toy_rounded,
+                    title: 'Single Player',
+                    subtitle: 'Play against AI',
+                    mode: GameMode.vsAI,
+                    accentColor: secondaryColor,
+                  )
+                      .animate()
+                      .fadeIn(
+                          delay: const Duration(milliseconds: 180),
+                          duration: const Duration(milliseconds: 600))
+                      .slideX(begin: 0.08),
+                  const SizedBox(height: 16),
+                  _buildModeCard(
+                    icon: Icons.groups_2_rounded,
+                    title: 'Two Players',
+                    subtitle: 'Play with a friend',
+                    mode: GameMode.pvp,
+                    accentColor: primaryColor,
+                  )
+                      .animate()
+                      .fadeIn(
+                          delay: const Duration(milliseconds: 240),
+                          duration: const Duration(milliseconds: 600))
+                      .slideX(begin: 0.08),
+                ],
               ),
             ),
           ),
@@ -118,67 +110,184 @@ class ConnectFourModeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModeCard(
-    BuildContext context, {
-    required String title,
-    required String description,
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: IconButton(
+            onPressed: Get.back,
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white, size: 18),
+          ),
+        ),
+        const Spacer(),
+        _quickActionButton(
+          icon: Icons.bar_chart_rounded,
+          onTap: () => Get.to(() => const ConnectFourStatsScreen()),
+        ),
+        const SizedBox(width: 10),
+        _quickActionButton(
+          icon: Icons.settings_rounded,
+          onTap: () {
+            if (!Get.isRegistered<ConnectFourSettingsController>()) {
+              Get.put(ConnectFourSettingsController(), permanent: true);
+            }
+            Get.to(() => ConnectFourSettingsScreen());
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _quickActionButton({
     required IconData icon,
-    required Color color,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: AppTheme.glassmorphicDecoration(
+            backgroundColor: Colors.white.withValues(alpha: 0.14),
+            borderColor: Colors.white.withValues(alpha: 0.16),
+            borderRadius: 999,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroCard(ThemeData theme, Color primaryColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.amberAccent,
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amberAccent.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'CONNECT FOUR',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: 4,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModeCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required GameMode mode,
+    required Color accentColor,
+  }) {
+    return Container(
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white,
+        borderColor: Colors.white,
+        borderRadius: 28,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          onTap: () => _startGame(mode),
+          borderRadius: BorderRadius.circular(28),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
+                  width: 62,
+                  height: 62,
+                  decoration: AppTheme.glassmorphicDecoration(
+                    backgroundColor: accentColor.withValues(alpha: 0.16),
+                    borderColor: accentColor.withValues(alpha: 0.24),
+                    borderRadius: 20,
                   ),
-                  child: Icon(icon, color: color, size: 32),
+                  child: Icon(
+                    icon,
+                    size: 30,
+                    color: accentColor,
+                  ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 18),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        description,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant),
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.72),
+                          height: 1.45,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded,
-                    size: 16, color: theme.colorScheme.outline),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: AppTheme.glassmorphicDecoration(
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    borderColor: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: 999,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
               ],
             ),
           ),

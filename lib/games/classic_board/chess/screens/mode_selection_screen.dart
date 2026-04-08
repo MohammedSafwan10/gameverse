@@ -9,6 +9,7 @@ import '../services/sound_service.dart';
 import 'settings_screen.dart';
 import 'game_screen.dart';
 import '../widgets/game_options_dialog.dart';
+import 'package:gameverse/theme/app_theme.dart';
 import 'package:gameverse/widgets/premium_background.dart';
 
 class ChessModeSelectionScreen extends StatelessWidget {
@@ -23,104 +24,88 @@ class ChessModeSelectionScreen extends StatelessWidget {
     dev.log('Chess dependencies initialized', name: 'Chess');
 
     final theme = Theme.of(context);
+    final primaryColor = const Color(0xFFF4B860); // Warm gold for Chess
+    final secondaryColor = const Color(0xFF7CC6D9); // Soft teal accent
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Get.back(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              dev.log('Navigating to settings screen', name: 'Chess');
-              _openSettings();
-            },
-          ),
-        ],
-      ),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           const PremiumBackground(),
+          Positioned.fill(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/games/chess.png',
+                  fit: BoxFit.cover,
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.32),
+                        const Color(0xFF0F172A).withValues(alpha: 0.88),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Header with Icon
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.grid_view_rounded,
-                        size: 80,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                        .animate()
-                        .scale(duration: 600.ms, curve: Curves.easeOutBack),
-
-                    const SizedBox(height: 24),
-                    Text(
-                      'CHESS',
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 4,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ).animate().fadeIn().slideY(begin: 0.2),
-
-                    const SizedBox(height: 8),
-                    Text(
-                      'THE ULTIMATE STRATEGY GAME',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        letterSpacing: 2,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms),
-
-                    const SizedBox(height: 48),
-
-                    // Mode Selection
-                    _buildModeCard(
-                      context,
-                      title: 'Play vs AI',
-                      description: 'Test your skills against the engine',
-                      icon: Icons.psychology_outlined,
-                      color: theme.colorScheme.primary,
-                      onTap: () => _startGame(ChessGameMode.ai),
-                    ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.2),
-
-                    const SizedBox(height: 16),
-
-                    _buildModeCard(
-                      context,
-                      title: 'Two Players',
-                      description: 'Classic local match with a friend',
-                      icon: Icons.people_outline_rounded,
-                      color: theme.colorScheme.secondary,
-                      onTap: () => _startGame(ChessGameMode.local),
-                    ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.2),
-
-                    const SizedBox(height: 40),
-
-                    // Quick Stats
-                    _buildStatsOverview(context),
-                    const SizedBox(height: 40),
-                  ],
-                ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTopBar(context),
+                  const SizedBox(height: 28),
+                  Text(
+                    'Choose your strategy',
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.15),
+                  const SizedBox(height: 20),
+                  _buildHeroCard(theme, primaryColor)
+                      .animate()
+                      .fadeIn(delay: 120.ms, duration: 600.ms)
+                      .slideY(begin: 0.12),
+                  const SizedBox(height: 20),
+                  _buildModeCard(
+                    context,
+                    icon: Icons.psychology_rounded,
+                    title: 'Play vs AI',
+                    subtitle: 'Test your skills against the engine',
+                    mode: ChessGameMode.ai,
+                    accentColor: primaryColor,
+                  )
+                      .animate()
+                      .fadeIn(delay: 180.ms, duration: 600.ms)
+                      .slideX(begin: 0.08),
+                  const SizedBox(height: 16),
+                  _buildModeCard(
+                    context,
+                    icon: Icons.groups_2_rounded,
+                    title: 'Two Players',
+                    subtitle: 'Classic local match with a friend',
+                    mode: ChessGameMode.local,
+                    accentColor: secondaryColor,
+                  )
+                      .animate()
+                      .fadeIn(delay: 240.ms, duration: 600.ms)
+                      .slideX(begin: 0.08),
+                  const SizedBox(height: 32),
+                  _buildStatsOverview(context)
+                      .animate()
+                      .fadeIn(delay: 350.ms, duration: 600.ms)
+                      .slideY(begin: 0.1),
+                ],
               ),
             ),
           ),
@@ -129,67 +114,175 @@ class ChessModeSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModeCard(
-    BuildContext context, {
-    required String title,
-    required String description,
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: IconButton(
+            onPressed: Get.back,
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white, size: 18),
+          ),
+        ),
+        const Spacer(),
+        _quickActionButton(
+          icon: Icons.settings_rounded,
+          onTap: _openSettings,
+        ),
+      ],
+    );
+  }
+
+  Widget _quickActionButton({
     required IconData icon,
-    required Color color,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: AppTheme.glassmorphicDecoration(
+            backgroundColor: Colors.white.withValues(alpha: 0.14),
+            borderColor: Colors.white.withValues(alpha: 0.16),
+            borderRadius: 999,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroCard(ThemeData theme, Color primaryColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'CHESS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: 4,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModeCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required ChessGameMode mode,
+    required Color accentColor,
+  }) {
+    return Container(
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white,
+        borderColor: Colors.white,
+        borderRadius: 28,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          onTap: () => _startGame(mode),
+          borderRadius: BorderRadius.circular(28),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
+                  width: 62,
+                  height: 62,
+                  decoration: AppTheme.glassmorphicDecoration(
+                    backgroundColor: accentColor.withValues(alpha: 0.16),
+                    borderColor: accentColor.withValues(alpha: 0.24),
+                    borderRadius: 20,
                   ),
-                  child: Icon(icon, color: color, size: 32),
+                  child: Icon(
+                    icon,
+                    size: 30,
+                    color: accentColor,
+                  ),
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 18),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        description,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant),
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.72),
+                          height: 1.45,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded,
-                    size: 16, color: theme.colorScheme.outline),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: AppTheme.glassmorphicDecoration(
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    borderColor: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: 999,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
               ],
             ),
           ),
@@ -200,48 +293,55 @@ class ChessModeSelectionScreen extends StatelessWidget {
 
   Widget _buildStatsOverview(BuildContext context) {
     final theme = Theme.of(context);
-    return Obx(() {
-      final storage = Get.find<ChessStorageService>();
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.05)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Icon(Icons.bar_chart_rounded,
-                    size: 20, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Text(
-                  'STATISTICS',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                  ),
+    final storage = Get.find<ChessStorageService>();
+    final primaryColor = const Color(0xFFF4B860);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: AppTheme.glassmorphicDecoration(
+        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        borderColor: Colors.white.withValues(alpha: 0.1),
+        borderRadius: 32,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildCompactStat('PLAYED', storage.gamesPlayed.toString(),
-                    theme.colorScheme.primary),
-                _buildCompactStat(
-                    'WON', storage.gamesWon.toString(), Colors.green),
-                _buildCompactStat(
-                    'LOST', storage.gamesLost.toString(), Colors.red),
-              ],
-            ),
-          ],
-        ),
-      );
-    }).animate().fadeIn(delay: 700.ms);
+                child: Icon(Icons.bar_chart_rounded,
+                    size: 20, color: primaryColor),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'STATISTICS',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Obx(() => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildCompactStat(
+                      'PLAYED', storage.gamesPlayed.toString(), primaryColor),
+                  _buildCompactStat(
+                      'WON', storage.gamesWon.toString(), Colors.greenAccent),
+                  _buildCompactStat(
+                      'LOST', storage.gamesLost.toString(), Colors.redAccent),
+                ],
+              )),
+        ],
+      ),
+    );
   }
 
   Widget _buildCompactStat(String label, String value, Color color) {
@@ -250,13 +350,21 @@ class ChessModeSelectionScreen extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-              fontSize: 24, fontWeight: FontWeight.w900, color: color),
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            color: color,
+            height: 1,
+          ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(
-              fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+            color: Colors.white.withValues(alpha: 0.5),
+          ),
         ),
       ],
     );
@@ -281,8 +389,10 @@ class ChessModeSelectionScreen extends StatelessWidget {
     if (result != null) {
       controller.timerEnabled.value = result['timerEnabled'] ?? false;
       controller.timePerPlayer.value = result['timePerPlayer'] ?? 10;
-      controller.storageService.updateTimerEnabled(controller.timerEnabled.value);
-      controller.storageService.updateTimePerPlayer(controller.timePerPlayer.value);
+      controller.storageService
+          .updateTimerEnabled(controller.timerEnabled.value);
+      controller.storageService
+          .updateTimePerPlayer(controller.timePerPlayer.value);
       if (mode == ChessGameMode.ai) {
         final difficulty = result['difficulty'] ?? 2;
         controller.aiDifficulty.value = difficulty;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/player.dart';
 import '../theme/game_theme.dart';
+import 'symbol_painters.dart';
 
 class BoardCell extends StatefulWidget {
   final Player player;
@@ -26,7 +27,6 @@ class _BoardCellState extends State<BoardCell>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
-  late final Animation<double> _rotateAnimation;
   bool _isPressed = false;
 
   @override
@@ -39,13 +39,6 @@ class _BoardCellState extends State<BoardCell>
 
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
-
-    _rotateAnimation = Tween<double>(
-      begin: widget.player == Player.x ? -0.25 : 0.0,
-      end: widget.player == Player.x ? 0.0 : 0.25,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     if (widget.player != Player.none) {
@@ -105,10 +98,10 @@ class _BoardCellState extends State<BoardCell>
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
           color: _getCellBackgroundColor(),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: _getCellBorderColor(),
-            width: widget.isWinningCell ? 2.0 : 1.0,
+            width: widget.isWinningCell ? 2.2 : 1.2,
           ),
           boxShadow: _getCellShadow(),
         ),
@@ -118,10 +111,7 @@ class _BoardCellState extends State<BoardCell>
           builder: (context, child) {
             return Transform.scale(
               scale: _scaleAnimation.value,
-              child: Transform.rotate(
-                angle: _rotateAnimation.value * 3.14159,
-                child: _buildPlayerSymbol(),
-              ),
+              child: _buildPlayerSymbol(),
             );
           },
         ),
@@ -129,16 +119,14 @@ class _BoardCellState extends State<BoardCell>
     );
   }
 
-  Color _getCellBackgroundColor() {
+    Color _getCellBackgroundColor() {
     if (widget.isWinningCell) {
-      return TicTacToeTheme.primaryColor.withValues(alpha: 0.1);
+      return TicTacToeTheme.primaryColor.withValues(alpha: 0.2);
     }
     if (widget.isHighlighted) {
-      return Colors.grey.withValues(alpha: 0.1);
+      return Colors.white.withValues(alpha: 0.15);
     }
-    return widget.isEnabled && widget.player == Player.none
-        ? Theme.of(context).colorScheme.surface
-        : Theme.of(context).colorScheme.surface;
+    return Colors.white.withValues(alpha: widget.player == Player.none ? 0.05 : 0.1);
   }
 
   Color _getCellBorderColor() {
@@ -146,24 +134,36 @@ class _BoardCellState extends State<BoardCell>
       return TicTacToeTheme.primaryColor;
     }
     return widget.isHighlighted
-        ? TicTacToeTheme.primaryColor.withValues(alpha: 0.5)
-        : TicTacToeTheme.gridColor.withValues(alpha: 0.2);
+        ? TicTacToeTheme.primaryColor.withValues(alpha: 0.6)
+        : Colors.white.withValues(alpha: 0.1);
   }
 
   List<BoxShadow> _getCellShadow() {
     final shadows = <BoxShadow>[];
     if (widget.isWinningCell) {
       shadows.add(BoxShadow(
-        color: TicTacToeTheme.primaryColor.withValues(alpha: 0.3),
-        blurRadius: 8,
+        color: (widget.player == Player.x ? TicTacToeTheme.xColor : TicTacToeTheme.oColor)
+            .withValues(alpha: 0.4),
+        blurRadius: 24,
         spreadRadius: 2,
+        offset: const Offset(0, 4),
       ));
     } else if (widget.isHighlighted) {
       shadows.add(BoxShadow(
-        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
-        blurRadius: 4,
-        spreadRadius: 1,
+        color: Colors.black.withValues(alpha: 0.24),
+        blurRadius: 18,
+        spreadRadius: -2,
+        offset: const Offset(0, 8),
       ));
+    } else {
+      shadows.add(
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.12),
+          blurRadius: 12,
+          spreadRadius: -4,
+          offset: const Offset(0, 6),
+        ),
+      );
     }
     return shadows;
   }
@@ -179,58 +179,25 @@ class _BoardCellState extends State<BoardCell>
     }
   }
 
-  Widget _buildXSymbol() {
-    return ShaderMask(
-      shaderCallback: (bounds) => LinearGradient(
-        colors: [
-          TicTacToeTheme.xColor,
-          TicTacToeTheme.xColor.withValues(alpha: 0.7),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(bounds),
-      child: Icon(
-        Icons.close_rounded,
-        size: 50,
-        color: Colors.white,
-        shadows: widget.isWinningCell
-            ? [
-                Shadow(
-                  color: TicTacToeTheme.xColor.withValues(alpha: 0.5),
-                  blurRadius: 8,
-                ),
-              ]
-            : null,
+    Widget _buildXSymbol() {
+    return CustomPaint(
+      size: const Size(48, 48),
+      painter: XSymbolPainter(
+        color: TicTacToeTheme.xColor,
+        isWinning: widget.isWinningCell,
       ),
     );
   }
 
   Widget _buildOSymbol() {
-    return ShaderMask(
-      shaderCallback: (bounds) => LinearGradient(
-        colors: [
-          TicTacToeTheme.oColor,
-          TicTacToeTheme.oColor.withValues(alpha: 0.7),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(bounds),
-      child: Icon(
-        Icons.circle_outlined,
-        size: 50,
-        color: Colors.white,
-        shadows: widget.isWinningCell
-            ? [
-                Shadow(
-                  color: TicTacToeTheme.oColor.withValues(alpha: 0.5),
-                  blurRadius: 8,
-                ),
-              ]
-            : null,
+    return CustomPaint(
+      size: const Size(48, 48),
+      painter: OSymbolPainter(
+        color: TicTacToeTheme.oColor,
+        isWinning: widget.isWinningCell,
       ),
     );
   }
-
   Widget _buildEmptyCell() {
     if (!widget.isEnabled) return const SizedBox();
 
@@ -248,3 +215,5 @@ class _BoardCellState extends State<BoardCell>
     );
   }
 }
+
+// Painters moved to symbol_painters.dart

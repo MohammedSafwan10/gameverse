@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import '../models/game_state.dart';
 import '../models/player.dart';
@@ -17,8 +18,10 @@ class TicTacToeGameController extends GetxController {
 
   final Rx<TicTacToeState> _gameState = TicTacToeState.initial().obs;
   final RxBool _isThinking = false.obs;
+  final RxInt countdown = 3.obs;
   final Stopwatch _gameStopwatch = Stopwatch();
   bool _isDisposed = false;
+  Timer? _countdownTimer;
 
   TicTacToeGameController(this._navigationService, this._aiService) {
     _gameStopwatch.start();
@@ -124,9 +127,20 @@ class TicTacToeGameController extends GetxController {
     }
 
     if (_settingsController.settings.autoRestart) {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (!_isDisposed && _gameState.value.status != GameStatus.playing) {
-          resetGame();
+      countdown.value = 3;
+      _countdownTimer?.cancel();
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_isDisposed) {
+          timer.cancel();
+          return;
+        }
+        if (countdown.value > 1) {
+          countdown.value--;
+        } else {
+          timer.cancel();
+          if (_gameState.value.status != GameStatus.playing) {
+            resetGame();
+          }
         }
       });
     }
@@ -157,10 +171,12 @@ class TicTacToeGameController extends GetxController {
   }
 
   void resetGame() {
+    _countdownTimer?.cancel();
     _gameState.value = TicTacToeState.initial().copyWith(
       settings: _settingsController.settings,
     );
     _isThinking.value = false;
+    countdown.value = 3;
     _gameStopwatch.reset();
     _gameStopwatch.start();
   }
@@ -213,6 +229,7 @@ class TicTacToeGameController extends GetxController {
   @override
   void onClose() {
     _isDisposed = true;
+    _countdownTimer?.cancel();
     _gameStopwatch.stop();
     super.onClose();
   }
