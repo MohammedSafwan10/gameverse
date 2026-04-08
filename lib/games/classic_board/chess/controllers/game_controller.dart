@@ -124,7 +124,7 @@ class ChessGameController extends GetxController {
 
   void startNewGame(ChessGameMode mode) {
     gameMode.value = mode;
-    storageService.clearAllData();
+    storageService.saveSerializedGameState('');
     board.initializeBoard();
     isWhiteTurn.value = board.positionState.isWhiteToMove;
     moveHistory.clear();
@@ -198,7 +198,8 @@ class ChessGameController extends GetxController {
       return;
     }
 
-    final legalMoves = board.getLegalMoves(from).where((move) => move.to == to).toList();
+    final legalMoves =
+        board.getLegalMoves(from).where((move) => move.to == to).toList();
     if (legalMoves.isEmpty) {
       dev.log('Invalid move $from-$to', name: 'Chess');
       soundService.playErrorSound();
@@ -432,8 +433,10 @@ class ChessGameController extends GetxController {
     for (var i = 0; i < board.moveHistory.length; i += 2) {
       final moveNumber = (i ~/ 2) + 1;
       final whiteMove = board.moveHistory[i];
-      final blackMove = i + 1 < board.moveHistory.length ? board.moveHistory[i + 1] : '';
-      pairs.add('$moveNumber. $whiteMove${blackMove.isEmpty ? '' : '  $blackMove'}');
+      final blackMove =
+          i + 1 < board.moveHistory.length ? board.moveHistory[i + 1] : '';
+      pairs.add(
+          '$moveNumber. $whiteMove${blackMove.isEmpty ? '' : '  $blackMove'}');
     }
     return pairs;
   }

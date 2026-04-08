@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:get/get.dart';
 import 'dart:developer' as dev;
+import 'storage_service.dart';
 
 class ChessSoundService extends GetxService {
   final player = AudioPlayer();
@@ -9,7 +10,9 @@ class ChessSoundService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+    isSoundEnabled.value = Get.find<ChessStorageService>().soundEnabled;
     player.setReleaseMode(ReleaseMode.stop);
+    player.setPlayerMode(PlayerMode.lowLatency);
     player.setVolume(0.5);
   }
 
@@ -35,7 +38,7 @@ class ChessSoundService extends GetxService {
 
   Future<void> playCaptureSound() async {
     if (!isSoundEnabled.value) return;
-    await _playSound('chess/sounds/capture.wav');
+    await _playSound('chess/sounds/piece_move.wav');
   }
 
   Future<void> playPromotionSound() async {
@@ -82,6 +85,7 @@ class ChessSoundService extends GetxService {
 
   void toggleSound() {
     isSoundEnabled.value = !isSoundEnabled.value;
+    Get.find<ChessStorageService>().updateSoundEnabled(isSoundEnabled.value);
   }
 
   @override
