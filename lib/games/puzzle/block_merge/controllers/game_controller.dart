@@ -251,7 +251,7 @@ class BlockMergeController extends GetxController {
   @override
   void onClose() {
     _gameTimer?.cancel();
-    clearGameState();
+    // Don't clear saved game state on close — preserve progress
     super.onClose();
   }
 
@@ -455,7 +455,7 @@ class BlockMergeController extends GetxController {
               )
             : null;
       });
-      List<Block?> newRow = _mergeLine(row, toRight, y);
+      List<Block?> newRow = _mergeLine(row, toRight, y, isHorizontal: true);
       if (!_listEquals(row, newRow)) {
         moved = true;
         newGrid[y] = newRow;
@@ -478,7 +478,7 @@ class BlockMergeController extends GetxController {
               )
             : null;
       });
-      List<Block?> newColumn = _mergeLine(column, toBottom, x);
+      List<Block?> newColumn = _mergeLine(column, toBottom, x, isHorizontal: false);
       if (!_listEquals(column, newColumn)) {
         moved = true;
         for (int y = 0; y < 4; y++) {
@@ -489,10 +489,17 @@ class BlockMergeController extends GetxController {
     return moved;
   }
 
-  List<Block?> _mergeLine(List<Block?> line, bool reverse, int index) {
+  List<Block?> _mergeLine(List<Block?> line, bool reverse, int index, {required bool isHorizontal}) {
     if (reverse) line = line.reversed.toList();
     List<Block?> result = List.filled(4, null);
     int resultIndex = 0;
+
+    // For horizontal moves: index = row (y), resultIndex = column (x)
+    // For vertical moves: index = column (x), resultIndex = row (y)
+    Position makePosition(int ri) {
+      final pos = reverse ? 3 - ri : ri;
+      return isHorizontal ? Position(pos, index) : Position(index, pos);
+    }
 
     List<Block?> nonNull = line.where((block) => block != null).toList();
     for (int i = 0; i < nonNull.length; i++) {
@@ -501,7 +508,7 @@ class BlockMergeController extends GetxController {
         final newValue = nonNull[i]!.value * 2;
         result[resultIndex] = Block(
           value: newValue,
-          position: Position(reverse ? 3 - resultIndex : resultIndex, index),
+          position: makePosition(resultIndex),
           isMerged: true,
         );
         score.value += newValue;
@@ -535,7 +542,7 @@ class BlockMergeController extends GetxController {
         i++;
       } else {
         result[resultIndex] = nonNull[i]!.copyWith(
-          position: Position(reverse ? 3 - resultIndex : resultIndex, index),
+          position: makePosition(resultIndex),
           isNew: false,
           isMerged: false,
         );

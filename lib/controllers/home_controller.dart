@@ -248,7 +248,7 @@ class HomeController extends GetxController {
         categories[3], // Brain Training
         categories[4], // Puzzle
         categories[5], // Quick Casual
-        categories[8], // Educational
+        categories[10], // Educational
       ];
   List<GameCategory> get allCategories => categories;
 

@@ -29,6 +29,8 @@ class AppTheme {
     'Puzzle': Color(0xFFFF6B81),
     'Quick Casual': Color(0xFFECCC68),
     'Strategy': Color(0xFF1E90FF),
+    'Simulation': Color(0xFF78909C),
+    'Sports': Color(0xFFFF7043),
     'Reaction': Color(0xFFFF4757),
     'Educational': Color(0xFF5E7CB6),
   };

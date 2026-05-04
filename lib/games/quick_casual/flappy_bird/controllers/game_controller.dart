@@ -8,6 +8,7 @@ import '../models/pipe.dart';
 import '../models/game_stats.dart';
 import '../services/score_service.dart';
 import '../utils/constants.dart';
+import 'dart:math';
 import 'settings_controller.dart';
 
 class FlappyBirdGameController extends GetxController {
@@ -35,10 +36,12 @@ class FlappyBirdGameController extends GetxController {
   DateTime? lastFrameTime;
   final fps = GameConstants.fps.obs;
   bool _audioAssetsAvailable = false;
+  late final Random _random;
 
   FlappyBirdGameController({required this.scoreService}) {
     developer.log('Initializing FlappyBirdGameController');
     settingsController = Get.find<FlappyBirdSettingsController>();
+    _random = Random();
   }
 
   @override
@@ -215,8 +218,14 @@ class FlappyBirdGameController extends GetxController {
     final gapHeight = settingsController.pipeGap;
     final minY = gapHeight;
     final maxY = Get.height - gapHeight - 100; // Leave some space at bottom
-    final random = DateTime.now().millisecondsSinceEpoch;
-    final centerY = minY + (random % (maxY - minY).toInt());
+
+    // Safety check: ensure valid range
+    if (maxY <= minY) {
+      developer.log('Screen too small for pipes: minY=$minY, maxY=$maxY');
+      return;
+    }
+
+    final centerY = minY + _random.nextDouble() * (maxY - minY);
 
     // Top pipe
     pipes.add(
