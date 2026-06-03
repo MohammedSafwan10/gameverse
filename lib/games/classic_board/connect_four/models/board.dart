@@ -14,11 +14,18 @@ class Board extends Equatable {
   final GameStatus status;
   final List<Point<int>> winningCells;
 
-  const Board({
-    required this.cells,
+  Board({
+    required List<List<CellState>> cells,
     this.status = GameStatus.playing,
-    this.winningCells = const [],
-  });
+    List<Point<int>> winningCells = const [],
+  })  : cells = _copyCells(cells),
+        winningCells = List<Point<int>>.unmodifiable(winningCells);
+
+  static List<List<CellState>> _copyCells(List<List<CellState>> cells) {
+    return List<List<CellState>>.unmodifiable(
+      cells.map((row) => List<CellState>.unmodifiable(row)),
+    );
+  }
 
   factory Board.empty() {
     return Board(

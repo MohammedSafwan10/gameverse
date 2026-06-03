@@ -28,6 +28,9 @@ class ConnectFourController extends GetxController {
   final _logger = Logger();
   final previewColumn = Rx<int?>(null);
   final Stopwatch _gameStopwatch = Stopwatch();
+  final List<Worker> _settingsWorkers = [];
+  int _gameGeneration = 0;
+  bool _isDisposed = false;
 
   bool get isGameOver => board.value.status != GameStatus.playing;
 
@@ -52,16 +55,16 @@ class ConnectFourController extends GetxController {
 
   void _setupSettingsListeners() {
     // Listen for game mode changes
-    ever(_settingsController.gameMode, (GameMode mode) {
+    _settingsWorkers.add(ever(_settingsController.gameMode, (GameMode mode) {
       if (gameMode.value != mode) {
         gameMode.value = mode;
         resetGame();
         _logger.d('Game mode updated from settings: $mode');
       }
-    });
+    }));
 
     // Listen for difficulty changes
-    ever(_settingsController.difficulty, (AIDifficulty difficulty) {
+    _settingsWorkers.add(ever(_settingsController.difficulty, (AIDifficulty difficulty) {
       if (aiDifficulty.value != difficulty) {
         aiDifficulty.value = difficulty;
         aiController.setDifficulty(difficulty);
@@ -70,7 +73,17 @@ class ConnectFourController extends GetxController {
         }
         _logger.d('AI difficulty updated from settings: $difficulty');
       }
-    });
+    }));
+  }
+
+  bool _isCurrentGeneration(int generation) {
+    return !_isDisposed && generation == _gameGeneration;
+  }
+
+  void _cancelPendingWork() {
+    _gameGeneration++;
+    isAnimating.value = false;
+    isAIThinking.value = false;
   }
 
   void setGameMode(GameMode mode) {
@@ -103,6 +116,7 @@ class ConnectFourController extends GetxController {
   }
 
   Future<void> makeMove(int col) async {
+    final generation = _gameGeneration;
     // Prevent multiple moves while processing
     if (isAnimating.value ||
         isGameOver ||
@@ -191,6 +205,7 @@ class ConnectFourController extends GetxController {
       // For game over cases, manually reset animation flag after a delay
       // to ensure the disc animation completes
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!_isCurrentGeneration(generation)) return;
       isAnimating.value = false;
       _logger.d('Animation flag reset after win');
       return;
@@ -202,6 +217,7 @@ class ConnectFourController extends GetxController {
 
       // For game over cases, manually reset animation flag after a delay
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!_isCurrentGeneration(generation)) return;
       isAnimating.value = false;
       _logger.d('Animation flag reset after draw');
       return;
@@ -209,6 +225,8 @@ class ConnectFourController extends GetxController {
 
     // Wait for animation to complete
     await Future.delayed(const Duration(milliseconds: 500));
+    if (!_isCurrentGeneration(generation)) return;
+    if (!_isCurrentGeneration(generation)) return;
 
     // After animation, clear flag and switch players
     isAnimating.value = false;
@@ -227,6 +245,7 @@ class ConnectFourController extends GetxController {
         currentPlayer.value == CellState.player2) {
       // Add a short delay before AI thinking for better UX
       await Future.delayed(const Duration(milliseconds: 200));
+      if (!_isCurrentGeneration(generation)) return;
 
       if (!isGameOver) {
         // Double-check game is still ongoing
@@ -240,6 +259,7 @@ class ConnectFourController extends GetxController {
                 ? 700
                 : 1000;
         await Future.delayed(Duration(milliseconds: thinkingTime));
+        if (!_isCurrentGeneration(generation)) return;
 
         // Verify game is still in progress before AI makes a move
         if (!isGameOver && currentPlayer.value == CellState.player2) {
@@ -250,7 +270,7 @@ class ConnectFourController extends GetxController {
 
           if (aiMove != -1) {
             // Use direct makeMoveInternal to avoid re-entry logic
-            await _makeMoveInternal(aiMove);
+            await _makeMoveInternal(aiMove, generation: generation);
           } else {
             _logger.w('AI could not find a valid move');
             isAnimating.value = false;
@@ -265,7 +285,8 @@ class ConnectFourController extends GetxController {
   }
 
   // Internal version that bypasses player turn check for AI
-  Future<void> _makeMoveInternal(int col) async {
+  Future<void> _makeMoveInternal(int col, {required int generation}) async {
+    if (!_isCurrentGeneration(generation)) return;
     // Core logic without player turn validation
     if (isAnimating.value || isGameOver || !board.value.isValidMove(col)) {
       _logger.d(
@@ -331,6 +352,7 @@ class ConnectFourController extends GetxController {
       }
       _handleGameOver(newStatus);
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!_isCurrentGeneration(generation)) return;
       isAnimating.value = false;
       return;
     } else if (newStatus == GameStatus.draw) {
@@ -339,6 +361,7 @@ class ConnectFourController extends GetxController {
       }
       _handleGameOver(newStatus);
       await Future.delayed(const Duration(milliseconds: 500));
+      if (!_isCurrentGeneration(generation)) return;
       isAnimating.value = false;
       return;
     }
@@ -373,8 +396,12 @@ class ConnectFourController extends GetxController {
 
     // Check if auto-restart is enabled
     if (_settingsController.isAutoRestartEnabled.value) {
+      final generation = _gameGeneration;
       Future.delayed(const Duration(seconds: 2), () {
-        if (!Get.isRegistered<ConnectFourController>()) return;
+        if (!Get.isRegistered<ConnectFourController>() ||
+            !_isCurrentGeneration(generation)) {
+          return;
+        }
         _logger.i('Auto-restarting game');
         resetGame();
       });
@@ -473,6 +500,7 @@ class ConnectFourController extends GetxController {
 
   void resetGame() {
     _logger.i('Resetting game');
+    _cancelPendingWork();
     board.value = Board.empty();
     currentPlayer.value = CellState.player1;
     lastMove.value = null;
@@ -487,6 +515,12 @@ class ConnectFourController extends GetxController {
 
   @override
   void onClose() {
+    _isDisposed = true;
+    _cancelPendingWork();
+    for (final worker in _settingsWorkers) {
+      worker.dispose();
+    }
+    _settingsWorkers.clear();
     _gameStopwatch.stop();
     _logger.i('Connect Four game controller disposed');
     super.onClose();
