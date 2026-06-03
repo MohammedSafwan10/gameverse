@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gameverse/games/classic_board/chess/models/chess_board.dart';
 import 'package:gameverse/games/classic_board/chess/models/chess_piece.dart';
+import 'package:gameverse/games/classic_board/chess/models/piece_types/bishop.dart';
 import 'package:gameverse/games/classic_board/chess/models/piece_types/king.dart';
+import 'package:gameverse/games/classic_board/chess/models/piece_types/knight.dart';
 
 void main() {
   test('board tracks FEN snapshots for repetition detection', () {
@@ -18,6 +20,21 @@ void main() {
     board.positionHistory
       ..clear()
       ..addAll([currentFen, currentFen, currentFen]);
+
+    expect(board.isThreefoldRepetition(), isTrue);
+  });
+
+  test('threefold repetition ignores halfmove and fullmove counters', () {
+    final board = ChessBoard();
+    const positionKey = '8/8/8/8/8/8/8/4K2k w - -';
+    board.loadFen('$positionKey 0 1');
+    board.positionHistory
+      ..clear()
+      ..addAll([
+        '$positionKey 0 1',
+        '$positionKey 8 5',
+        '$positionKey 26 14',
+      ]);
 
     expect(board.isThreefoldRepetition(), isTrue);
   });
@@ -53,5 +70,27 @@ void main() {
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
 
     expect(board.isInsufficientMaterial(), isTrue);
+  });
+
+  test('insufficient material detects same-colored bishops only', () {
+    final board = ChessBoard();
+    board.board = List.generate(8, (_) => List.generate(8, (_) => null));
+    board.board[7][4] = King(color: PieceColor.white, position: 'e1');
+    board.board[0][4] = King(color: PieceColor.black, position: 'e8');
+    board.board[7][2] = Bishop(color: PieceColor.white, position: 'c1');
+    board.board[2][3] = Bishop(color: PieceColor.black, position: 'd6');
+
+    expect(board.isInsufficientMaterial(), isTrue);
+  });
+
+  test('king bishop and knight versus king has mating material', () {
+    final board = ChessBoard();
+    board.board = List.generate(8, (_) => List.generate(8, (_) => null));
+    board.board[7][4] = King(color: PieceColor.white, position: 'e1');
+    board.board[0][4] = King(color: PieceColor.black, position: 'e8');
+    board.board[7][2] = Bishop(color: PieceColor.white, position: 'c1');
+    board.board[7][1] = Knight(color: PieceColor.white, position: 'b1');
+
+    expect(board.isInsufficientMaterial(), isFalse);
   });
 }

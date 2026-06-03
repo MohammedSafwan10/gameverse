@@ -3,6 +3,7 @@ import 'package:gameverse/games/classic_board/chess/models/chess_board.dart';
 import 'package:gameverse/games/classic_board/chess/models/chess_piece.dart';
 import 'package:gameverse/games/classic_board/chess/models/piece_types/king.dart';
 import 'package:gameverse/games/classic_board/chess/models/piece_types/pawn.dart';
+import 'package:gameverse/games/classic_board/chess/models/piece_types/queen.dart';
 import 'package:gameverse/games/classic_board/chess/models/piece_types/rook.dart';
 
 void main() {
@@ -37,6 +38,50 @@ void main() {
     expect(board.positionState.castlingRights.whiteKingside, isFalse);
     expect(board.positionState.castlingRights.whiteQueenside, isFalse);
     expect(board.structuredMoveHistory.last.isCastleKingside, isTrue);
+  });
+
+  test('castling is blocked when king travels through an attacked square', () {
+    final board = ChessBoard();
+
+    board.board = List.generate(8, (_) => List.generate(8, (_) => null));
+    board.board[7][4] = King(color: PieceColor.white, position: 'e1');
+    board.board[7][7] = Rook(color: PieceColor.white, position: 'h1');
+    board.board[0][4] = King(color: PieceColor.black, position: 'e8');
+    board.board[0][5] = Rook(color: PieceColor.black, position: 'f8');
+
+    final legalMoves = board.getLegalMoves('e1');
+
+    expect(legalMoves.where((move) => move.to == 'g1'), isEmpty);
+  });
+
+  test('moving a rook clears only its matching castling right', () {
+    final board = ChessBoard();
+
+    board.board[6][7] = null;
+
+    final moved = board.movePiece('h1', 'h2');
+
+    expect(moved, isTrue);
+    expect(board.positionState.castlingRights.whiteKingside, isFalse);
+    expect(board.positionState.castlingRights.whiteQueenside, isTrue);
+  });
+
+  test('capturing a corner rook clears that rook castling right', () {
+    final board = ChessBoard();
+
+    board.board = List.generate(8, (_) => List.generate(8, (_) => null));
+    board.board[7][4] = King(color: PieceColor.white, position: 'e1');
+    board.board[7][7] = Rook(color: PieceColor.white, position: 'h1');
+    board.board[0][4] = King(color: PieceColor.black, position: 'e8');
+    board.board[4][7] = Queen(color: PieceColor.black, position: 'h4');
+    board.positionState = board.positionState.copyWith(isWhiteToMove: false);
+
+    final moved = board.movePiece('h4', 'h1');
+
+    expect(moved, isTrue);
+    expect(board.getPieceAt('h1')!.type, PieceType.queen);
+    expect(board.positionState.castlingRights.whiteKingside, isFalse);
+    expect(board.positionState.castlingRights.whiteQueenside, isTrue);
   });
 
   test('en passant target creates legal en passant move', () {
@@ -80,6 +125,26 @@ void main() {
     expect(board.capturedPieces.last.type, PieceType.pawn);
     expect(board.positionState.enPassantTarget, isNull);
     expect(board.structuredMoveHistory.last.isEnPassant, isTrue);
+  });
+
+  test('en passant is illegal when it exposes own king to check', () {
+    final board = ChessBoard();
+
+    board.board = List.generate(8, (_) => List.generate(8, (_) => null));
+    board.board[7][4] = King(color: PieceColor.white, position: 'e1');
+    board.board[0][0] = King(color: PieceColor.black, position: 'a8');
+    board.board[0][4] = Rook(color: PieceColor.black, position: 'e8');
+    board.board[3][4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
+    board.board[3][3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
+    board.positionState = board.positionState.copyWith(
+      isWhiteToMove: true,
+      enPassantTarget: 'd6',
+    );
+
+    final legalMoves = board.getLegalMoves('e5');
+
+    expect(legalMoves.where((move) => move.to == 'd6'), isEmpty);
+    expect(board.movePiece('e5', 'd6'), isFalse);
   });
 
   test('pawn promotion exposes all promotion options and applies selected piece', () {
