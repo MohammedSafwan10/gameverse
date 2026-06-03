@@ -28,6 +28,8 @@ class ChessGameController extends GetxController {
   final RxList<String> moveHistory = <String>[].obs;
   final RxList<String> capturedPieces = <String>[].obs;
   final RxBool isGamePaused = false.obs;
+  int _gameGeneration = 0;
+  bool _isDisposed = false;
 
   // Board state
   final Rxn<ChessPiece> selectedPiece = Rxn<ChessPiece>();
@@ -62,6 +64,7 @@ class ChessGameController extends GetxController {
   }
 
   void _initializeGame() {
+    _advanceGameGeneration();
     final savedState = storageService.loadSerializedGameState();
     if (savedState != null) {
       try {
@@ -85,7 +88,7 @@ class ChessGameController extends GetxController {
 
     board.initializeBoard();
     isWhiteTurn.value = board.positionState.isWhiteToMove;
-    gameState.value = ChessGameState.initial;
+    gameState.value = ChessGameState.inProgress;
     clearSelection();
     lastMove.value = null;
     moveHistory.clear();
@@ -118,11 +121,29 @@ class ChessGameController extends GetxController {
 
   @override
   void onClose() {
+    _isDisposed = true;
+    _advanceGameGeneration();
     _timer?.cancel();
     super.onClose();
   }
 
+  void _advanceGameGeneration() {
+    _gameGeneration++;
+  }
+
+  bool _isCurrentAiTurn(int generation) {
+    return !_isDisposed &&
+        generation == _gameGeneration &&
+        gameMode.value == ChessGameMode.ai &&
+        !isWhiteTurn.value &&
+        !isGamePaused.value &&
+        gameState.value != ChessGameState.checkmate &&
+        gameState.value != ChessGameState.stalemate &&
+        gameState.value != ChessGameState.draw;
+  }
+
   void startNewGame(ChessGameMode mode) {
+    _advanceGameGeneration();
     gameMode.value = mode;
     storageService.saveSerializedGameState('');
     board.initializeBoard();
@@ -131,7 +152,7 @@ class ChessGameController extends GetxController {
     capturedPieces.clear();
     clearSelection();
     lastMove.value = null;
-    gameState.value = ChessGameState.initial;
+    gameState.value = ChessGameState.inProgress;
     isGamePaused.value = false;
 
     // Initialize timer if enabled
@@ -171,6 +192,7 @@ class ChessGameController extends GetxController {
   }
 
   void _handleTimeUp() {
+    _advanceGameGeneration();
     _timer?.cancel();
     soundService.playTimeUpSound();
     gameState.value = ChessGameState.checkmate;
@@ -264,6 +286,7 @@ class ChessGameController extends GetxController {
   }
 
   Future<void> _makeAiMove() async {
+    final generation = _gameGeneration;
     // Add a variable delay based on difficulty and move complexity to simulate human thinking
     // In timer mode, AI should still "think" but more efficiently
     final isTimerMode = timerEnabled.value;
@@ -299,11 +322,15 @@ class ChessGameController extends GetxController {
         name: 'Chess');
     await Future.delayed(Duration(milliseconds: actualThinkingTime));
 
+    if (!_isCurrentAiTurn(generation)) return;
+
     // Set AI difficulty
     aiService.setDifficulty(aiDifficulty.value);
 
     try {
       final move = aiService.getBestEngineMove(board, PieceColor.black);
+
+      if (!_isCurrentAiTurn(generation)) return;
 
       if (move == null) {
         dev.log('AI could not find a valid move', name: 'Chess');
@@ -380,6 +407,7 @@ class ChessGameController extends GetxController {
 
   // Game control
   void pauseGame() {
+    _advanceGameGeneration();
     isGamePaused.value = true;
     _timer?.cancel();
   }
@@ -392,6 +420,7 @@ class ChessGameController extends GetxController {
   }
 
   void forfeitGame() {
+    _advanceGameGeneration();
     _timer?.cancel();
     gameState.value = ChessGameState.checkmate;
     soundService.playGameEndSound();
@@ -416,6 +445,7 @@ class ChessGameController extends GetxController {
   }
 
   void importFen(String fen) {
+    _advanceGameGeneration();
     board.loadFen(fen);
     isWhiteTurn.value = board.positionState.isWhiteToMove;
     moveHistory.clear();

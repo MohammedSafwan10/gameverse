@@ -23,6 +23,11 @@ class ChessBoard {
     initializeBoard();
   }
 
+  String repetitionKey() {
+    final parts = toFen().split(' ');
+    return parts.take(4).join(' ');
+  }
+
   ChessBoard._empty({required this.positionState}) {
     board = List.generate(8, (_) => List.generate(8, (_) => null));
   }
@@ -281,14 +286,19 @@ class ChessBoard {
         _generateMoveNotation(board[toRow][toCol]!, move.from, move.to, capturedPiece != null);
     moveHistory.add(moveNotation);
     structuredMoveHistory.add(move);
-    _updatePositionState(board[toRow][toCol]!, move.from, move.to, capturedPiece != null);
+    _updatePositionState(
+      board[toRow][toCol]!,
+      move.from,
+      move.to,
+      capturedPiece,
+    );
   }
 
   void _updatePositionState(
     ChessPiece piece,
     String from,
     String to,
-    bool isCapture,
+    ChessPiece? capturedPiece,
   ) {
     final (_, fromCol) = ChessPiece.notationToCoordinates(from);
     final (toRow, _) = ChessPiece.notationToCoordinates(to);
@@ -323,9 +333,8 @@ class ChessBoard {
       }
     }
 
-    final lastCaptured = capturedPieces.lastOrNull;
-    if (lastCaptured?.type == PieceType.rook) {
-      switch (lastCaptured!.position) {
+    if (capturedPiece?.type == PieceType.rook) {
+      switch (capturedPiece!.position) {
         case 'a1':
           castlingRights = castlingRights.copyWith(whiteQueenside: false);
           break;
@@ -350,7 +359,7 @@ class ChessBoard {
               fromCol,
             )
           : null,
-      halfmoveClock: (piece.type == PieceType.pawn || isCapture)
+      halfmoveClock: (piece.type == PieceType.pawn || capturedPiece != null)
           ? 0
           : positionState.halfmoveClock + 1,
       fullmoveNumber: piece.color == PieceColor.black
@@ -410,8 +419,16 @@ class ChessBoard {
   }
 
   bool isThreefoldRepetition() {
-    final current = toFen();
-    return positionHistory.where((fen) => fen == current).length >= 3;
+    final current = repetitionKey();
+    return positionHistory.where((fen) => _normalizeRepetitionKey(fen) == current).length >= 3;
+  }
+
+  String _normalizeRepetitionKey(String fenOrKey) {
+    final parts = fenOrKey.split(' ');
+    if (parts.length >= 4) {
+      return parts.take(4).join(' ');
+    }
+    return fenOrKey;
   }
 
   bool isFiftyMoveRuleDraw() {
@@ -762,38 +779,22 @@ class ChessBoard {
   }
 
   bool isCheck(PieceColor color) {
-    // Find king's position
-    String? kingPosition;
     for (var row = 0; row < 8; row++) {
       for (var col = 0; col < 8; col++) {
         final piece = board[row][col];
         if (piece != null &&
             piece.color == color &&
             piece.type == PieceType.king) {
-          kingPosition = ChessPiece.coordinatesToNotation(row, col);
-          break;
-        }
-      }
-      if (kingPosition != null) break;
-    }
-
-    if (kingPosition == null) return false;
-
-    // Check if any enemy piece can capture the king
-    for (var row = 0; row < 8; row++) {
-      for (var col = 0; col < 8; col++) {
-        final piece = board[row][col];
-        if (piece != null && piece.color != color) {
-          final moves = piece.getPossibleMoves(board);
-          if (moves.contains(kingPosition)) {
-            return true;
-          }
+          final attackingColor =
+              color == PieceColor.white ? PieceColor.black : PieceColor.white;
+          return _isSquareAttacked(row, col, attackingColor);
         }
       }
     }
 
     return false;
   }
+
 
   bool isCheckmate(PieceColor color) {
     if (!isCheck(color)) return false;
