@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:get/get.dart';
+import '../controllers/game_controller.dart';
 import '../models/game_state.dart';
-import '../services/word_service.dart';
+import '../services/sound_service.dart';
+import '../services/storage_service.dart';
 
 class HangmanGameScreen extends StatefulWidget {
   final HangmanGameState initialState;
@@ -19,17 +22,36 @@ class HangmanGameScreen extends StatefulWidget {
 
 class _HangmanGameScreenState extends State<HangmanGameScreen> {
   late HangmanGameState gameState;
-  final Set<String> _guessedLetters = {};
+  late final HangmanGameController _controller;
   Timer? _timer;
   String _timeDisplay = '0s';
+  bool _gameOverDialogShown = false;
 
   @override
   void initState() {
     super.initState();
+    _controller = _findOrCreateController();
+    _controller.loadGame(widget.initialState);
     gameState = widget.initialState;
-    // Normalize existing guessed letters if any
-    _guessedLetters.addAll(gameState.guessedLetters.map((e) => e.toLowerCase()));
     _startTimer();
+  }
+
+  HangmanGameController _findOrCreateController() {
+    if (!Get.isRegistered<HangmanStorageService>()) {
+      Get.put(HangmanStorageService());
+    }
+    if (!Get.isRegistered<HangmanSoundService>()) {
+      Get.put(HangmanSoundService());
+    }
+    if (!Get.isRegistered<HangmanGameController>()) {
+      Get.put(
+        HangmanGameController(
+          Get.find<HangmanStorageService>(),
+          Get.find<HangmanSoundService>(),
+        ),
+      );
+    }
+    return Get.find<HangmanGameController>();
   }
 
   @override
@@ -55,53 +77,40 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
     });
   }
 
-  void _onLetterPressed(String letter) {
+  Future<void> _onLetterPressed(String letter) async {
     if (gameState.isGameOver) return;
-    
-    final l = letter.toLowerCase();
-    if (_guessedLetters.contains(l)) return;
+
+    await _controller.makeGuess(letter);
+    if (!mounted) return;
 
     setState(() {
-      _guessedLetters.add(l);
-
-      // Update game state
-      final isCorrect = gameState.word.toLowerCase().contains(l);
-      final newLives = isCorrect ? gameState.remainingLives : gameState.remainingLives - 1;
-
-      gameState = gameState.copyWith(
-        guessedLetters: _guessedLetters,
-        remainingLives: newLives,
-        status: _determineGameStatus(newLives),
-      );
-
-      if (gameState.isGameOver) {
-        _showGameOverDialog();
-      }
+      gameState = _controller.gameState.value;
     });
+
+    if (gameState.isGameOver && !_gameOverDialogShown) {
+      _gameOverDialogShown = true;
+      _showGameOverDialog();
+    }
   }
 
-  void _useHint() {
+  Future<void> _useHint() async {
     if (gameState.hintsRemaining <= 0 || gameState.isGameOver) return;
 
-    final hint = WordService.getRandomHint(gameState);
-    if (hint.isEmpty) return;
+    await _controller.useHint();
+    if (!mounted) return;
 
     setState(() {
-      gameState = gameState.copyWith(
-        hintsRemaining: gameState.hintsRemaining - 1,
-      );
+      gameState = _controller.gameState.value;
     });
-    _onLetterPressed(hint);
-  }
 
-  HangmanGameStatus _determineGameStatus(int lives) {
-    if (gameState.isWordGuessed) return HangmanGameStatus.won;
-    if (lives <= 0) return HangmanGameStatus.lost;
-    return HangmanGameStatus.playing;
+    if (gameState.isGameOver && !_gameOverDialogShown) {
+      _gameOverDialogShown = true;
+      _showGameOverDialog();
+    }
   }
 
   void _showGameOverDialog() {
-    final score = WordService.calculateScore(gameState);
+    final score = gameState.score;
     final won = gameState.status == HangmanGameStatus.won;
 
     showGeneralDialog(
@@ -175,13 +184,13 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
                           letterSpacing: 6,
                         ),
                       ),
-                    ).animate().shimmer(delay: 600.ms, duration: 1.seconds, color: Colors.white30),
+                    ).animate().shimmer(delay: 600.ms, duration: const Duration(seconds: 1), color: Colors.white30),
                   ],
                   if (won) ...[
                     const SizedBox(height: 32),
                     _buildStatRow('Score', '$score', Icons.stars_rounded, Colors.amberAccent),
                     _buildStatRow('Time', '${DateTime.now().difference(gameState.startTime).inSeconds}s', Icons.timer_outlined, Colors.cyanAccent),
-                    _buildStatRow('Precision', '${((gameState.word.length / _guessedLetters.length) * 100).clamp(0, 100).toInt()}%', Icons.analytics_outlined, Colors.purpleAccent),
+                    _buildStatRow('Precision', '${((gameState.word.length / gameState.guessedLetters.length) * 100).clamp(0, 100).toInt()}%', Icons.analytics_outlined, Colors.purpleAccent),
                   ],
                   const SizedBox(height: 40),
                   Row(
@@ -207,16 +216,13 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).pop();
+                              _controller.startGame(
+                                HangmanGameMode.singlePlayer,
+                                category: gameState.category,
+                              );
                               setState(() {
-                                gameState = gameState.copyWith(
-                                  word: WordService.getRandomWord(gameState.category),
-                                  guessedLetters: {},
-                                  remainingLives: 6,
-                                  hintsRemaining: 3,
-                                  status: HangmanGameStatus.playing,
-                                  startTime: DateTime.now(),
-                                );
-                                _guessedLetters.clear();
+                                gameState = _controller.gameState.value;
+                                _gameOverDialogShown = false;
                               });
                             },
                             style: ElevatedButton.styleFrom(
@@ -308,7 +314,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
                 color: Colors.amberAccent,
                 onPressed: _useHint,
                 tooltip: 'Use Hint (${gameState.hintsRemaining} remaining)',
-              ).animate(onPlay: (controller) => controller.repeat(reverse: true)).shimmer(duration: 2.seconds, color: Colors.white),
+              ).animate(onPlay: (controller) => controller.repeat(reverse: true)).shimmer(duration: const Duration(seconds: 2), color: Colors.white),
             ),
         ],
       ),
@@ -386,7 +392,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
           _buildGlassMetric('LIVES', '${gameState.remainingLives}', Colors.pinkAccent),
           _buildGlassMetric('TIME', _timeDisplay, Colors.cyanAccent),
           if (gameState.mode == HangmanGameMode.singlePlayer) ...[
-            _buildGlassMetric('SCORE', '${WordService.calculateScore(gameState)}', Colors.amberAccent),
+            _buildGlassMetric('SCORE', '${gameState.score}', Colors.amberAccent),
           ] else ... [
             _buildGlassMetric('MODE', 'PVP', Colors.purpleAccent),
           ]
@@ -503,7 +509,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(gameState.word.length, (index) {
             final letter = gameState.word[index];
-            final isGuessed = _guessedLetters.contains(letter.toLowerCase());
+            final isGuessed = gameState.guessedLetters.contains(letter.toLowerCase());
             final isSpace = letter == ' ';
             
             if (isSpace) return const SizedBox(width: 24);
@@ -579,7 +585,7 @@ class _HangmanGameScreenState extends State<HangmanGameScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: row.map((letter) {
-                final isGuessed = _guessedLetters.contains(letter.toLowerCase());
+                final isGuessed = gameState.guessedLetters.contains(letter.toLowerCase());
                 final isCorrect = gameState.word.toUpperCase().contains(letter);
                 
                 return Padding(

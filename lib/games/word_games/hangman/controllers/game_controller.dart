@@ -30,8 +30,15 @@ class HangmanGameController extends GetxController {
     _loadStats();
   }
 
-  Future<void> startGame(HangmanGameMode mode,
-      {WordCategory? category, String? customWord}) async {
+  void loadGame(HangmanGameState state) {
+    gameState.value = state;
+  }
+
+  Future<void> startGame(
+    HangmanGameMode mode, {
+    WordCategory? category,
+    String? customWord,
+  }) async {
     String word;
     WordCategory finalCategory;
 
@@ -80,20 +87,17 @@ class HangmanGameController extends GetxController {
     final isCorrect =
         gameState.value.word.toLowerCase().contains(normalizedLetter);
 
-    // Play sound effect
     if (isCorrect) {
       await _soundService.playCorrectGuess();
     } else {
       await _soundService.playWrongGuess();
     }
 
-    // Update game state
     final newLives = isCorrect
         ? gameState.value.remainingLives
         : gameState.value.remainingLives - 1;
     final newGuessedLetters = Set<String>.from(gameState.value.guessedLetters)
       ..add(normalizedLetter);
-
     final newStatus = _determineGameStatus(
       newLives,
       gameState.value.word,
@@ -104,9 +108,15 @@ class HangmanGameController extends GetxController {
       guessedLetters: newGuessedLetters,
       remainingLives: newLives,
       status: newStatus,
+      score: newStatus == HangmanGameStatus.won
+          ? WordService.calculateScore(gameState.value.copyWith(
+              guessedLetters: newGuessedLetters,
+              remainingLives: newLives,
+              status: newStatus,
+            ))
+          : gameState.value.score,
     );
 
-    // Handle game over
     if (newStatus != HangmanGameStatus.playing) {
       await _handleGameOver(newStatus);
     }
@@ -121,7 +131,6 @@ class HangmanGameController extends GetxController {
     if (hint.isEmpty) return;
 
     await _soundService.playHint();
-
     gameState.value = gameState.value.copyWith(
       hintsRemaining: gameState.value.hintsRemaining - 1,
     );
@@ -136,12 +145,11 @@ class HangmanGameController extends GetxController {
   ) {
     if (lives <= 0) return HangmanGameStatus.lost;
 
-    // Check if all letters are guessed
     final unguessedLetters = word
         .toLowerCase()
         .split('')
-        .where((letter) => !guessedLetters.contains(letter))
-        .where((letter) => letter != ' ');
+        .where((letter) => letter != ' ')
+        .where((letter) => !guessedLetters.contains(letter));
 
     return unguessedLetters.isEmpty
         ? HangmanGameStatus.won
@@ -152,6 +160,8 @@ class HangmanGameController extends GetxController {
     final score = status == HangmanGameStatus.won
         ? WordService.calculateScore(gameState.value)
         : 0;
+
+    gameState.value = gameState.value.copyWith(score: score);
 
     if (status == HangmanGameStatus.won) {
       await _soundService.playGameWon();
@@ -182,7 +192,7 @@ class HangmanGameController extends GetxController {
 
   void toggleSound() {
     _soundService.toggleMute();
-    update(); // Notify UI about sound state change
+    update();
   }
 
   bool get isSoundMuted => _soundService.isMuted;
