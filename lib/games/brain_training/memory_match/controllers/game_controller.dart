@@ -14,9 +14,11 @@ class MemoryMatchGameController extends GetxController {
 
   Timer? _gameTimer;
   Timer? _flipBackTimer;
+  Timer? _mismatchResetTimer;
   Timer? _completionTimer;
   late final MemoryMatchSoundService _soundService;
   bool _isDisposed = false;
+  int _gameGeneration = 0;
 
   // Challenge mode tracking
   int _challengeLevel = 1;
@@ -33,13 +35,16 @@ class MemoryMatchGameController extends GetxController {
     _isDisposed = true;
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _mismatchResetTimer?.cancel();
     _completionTimer?.cancel();
     super.onClose();
   }
 
   void initGame(MemoryMatchMode mode, GameDifficulty difficulty) {
+    _gameGeneration++;
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _mismatchResetTimer?.cancel();
     _completionTimer?.cancel();
     if (mode == MemoryMatchMode.challenge) _challengeLevel = 1;
 
@@ -164,7 +169,9 @@ class MemoryMatchGameController extends GetxController {
 
   void _checkMatch() {
     _flipBackTimer?.cancel();
+    final generation = _gameGeneration;
     _flipBackTimer = Timer(const Duration(milliseconds: 700), () {
+      if (_isDisposed || generation != _gameGeneration) return;
       final s = state;
       if (s == null || !s.isChecking) return;
 
@@ -209,14 +216,19 @@ class MemoryMatchGameController extends GetxController {
 
         if (isComplete) {
           _completionTimer?.cancel();
-          _completionTimer =
-              Timer(const Duration(milliseconds: 800), _onGameComplete);
+          _completionTimer = Timer(const Duration(milliseconds: 800), () {
+            if (_isDisposed || generation != _gameGeneration) return;
+            _onGameComplete(generation);
+          });
         }
       } else {
         // ---- NO MATCH ----
         _soundService.playMatchFail();
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (state == null) return;
+        _mismatchResetTimer?.cancel();
+        _mismatchResetTimer = Timer(const Duration(milliseconds: 300), () {
+          if (_isDisposed || generation != _gameGeneration || state == null) {
+            return;
+          }
           final updatedCards = List<MemoryCard>.from(state!.cards);
           final fi = updatedCards.indexWhere((c) => c.id == first.id);
           final si = updatedCards.indexWhere((c) => c.id == second.id);
@@ -275,22 +287,25 @@ class MemoryMatchGameController extends GetxController {
 
   // ---- Game Lifecycle ----
 
-  void _onGameComplete() {
+  void _onGameComplete(int generation) {
+    if (_isDisposed || generation != _gameGeneration) return;
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _mismatchResetTimer?.cancel();
     _soundService.playGameComplete();
 
     final s = state;
     if (s == null) return;
 
     // Challenge mode: auto-advance difficulty
+    final completedChallengeLevel = _challengeLevel;
     if (s.mode == MemoryMatchMode.challenge) {
       _challengeLevel++;
     }
 
     _completionTimer?.cancel();
     _completionTimer = Timer(const Duration(milliseconds: 400), () {
-      if (_isDisposed || state == null) return;
+      if (_isDisposed || generation != _gameGeneration || state == null) return;
       Get.to(
         () => GameCompletionScreen(
           mode: s.mode,
@@ -300,7 +315,7 @@ class MemoryMatchGameController extends GetxController {
           timeElapsed: s.timeElapsed,
           combo: s.bestCombo,
           starRating: s.starRating,
-          challengeLevel: _challengeLevel,
+          challengeLevel: completedChallengeLevel,
         ),
         transition: Transition.fadeIn,
       );
@@ -312,11 +327,13 @@ class MemoryMatchGameController extends GetxController {
     _flipBackTimer?.cancel();
 
     final s = state;
+    final generation = _gameGeneration;
+
     if (s == null) return;
 
     _completionTimer?.cancel();
     _completionTimer = Timer(const Duration(milliseconds: 600), () {
-      if (_isDisposed || state == null) return;
+      if (_isDisposed || generation != _gameGeneration || state == null) return;
       Get.to(
         () => GameCompletionScreen(
           mode: s.mode,
@@ -354,8 +371,10 @@ class MemoryMatchGameController extends GetxController {
     final s = state;
     if (s == null) return;
 
+    _gameGeneration++;
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _mismatchResetTimer?.cancel();
     _completionTimer?.cancel();
 
     final cards = _generateCards(s.difficulty);
@@ -385,13 +404,11 @@ class MemoryMatchGameController extends GetxController {
   }
 
   void cleanupGame() {
+    _gameGeneration++;
     _gameTimer?.cancel();
     _flipBackTimer?.cancel();
+    _mismatchResetTimer?.cancel();
     _completionTimer?.cancel();
     state = null;
-  }
-
-  void showMatchAnimation(int index) {
-    // Kept for backward compatibility - animation is handled by widget
   }
 }

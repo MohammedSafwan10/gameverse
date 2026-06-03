@@ -3,57 +3,16 @@ import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
 class MemoryMatchSoundService extends GetxService {
-  late AudioPlayer _audioPlayer;
+  AudioPlayer? _audioPlayer;
   final _isMuted = false.obs;
   final _logger = Logger();
 
   bool get isMuted => _isMuted.value;
-
-  @override
-  void onInit() {
-    super.onInit();
-    _audioPlayer = AudioPlayer();
-    _initAudioPlayer();
-  }
-
-  void _initAudioPlayer() {
-    try {
-      // Set global volume to moderate level
-      _audioPlayer.setVolume(0.7);
-
-      // Pre-load common sounds to reduce lag
-      _preloadSounds();
-
-      _logger.i('Audio player initialized successfully');
-    } catch (e) {
-      _logger.e('Error initializing audio player: $e');
-    }
-  }
-
-  Future<void> _preloadSounds() async {
-    try {
-      await Future.wait([
-        _loadSound('sounds/card_flip.mp3'),
-        _loadSound('sounds/match_success.mp3'),
-        _loadSound('sounds/match_fail.mp3'),
-        _loadSound('sounds/game_complete.mp3'),
-      ]);
-    } catch (e) {
-      _logger.w('Error preloading sounds: $e');
-    }
-  }
-
-  Future<void> _loadSound(String path) async {
-    try {
-      await _audioPlayer.audioCache.load(path);
-    } catch (e) {
-      _logger.w('Could not preload sound: $path - $e');
-    }
-  }
+  AudioPlayer get _player => _audioPlayer ??= AudioPlayer();
 
   @override
   void onClose() {
-    _audioPlayer.dispose();
+    _audioPlayer?.dispose();
     super.onClose();
   }
 
@@ -65,7 +24,7 @@ class MemoryMatchSoundService extends GetxService {
   Future<void> playCardFlip() async {
     if (_isMuted.value) return;
     try {
-      await _audioPlayer.play(AssetSource('sounds/card_flip.mp3'));
+      await _player.play(AssetSource('sounds/card_flip.mp3'));
     } catch (e) {
       _logger.w('Error playing sound: card_flip.mp3 - $e');
     }
@@ -74,7 +33,7 @@ class MemoryMatchSoundService extends GetxService {
   Future<void> playMatchSuccess() async {
     if (_isMuted.value) return;
     try {
-      await _audioPlayer.play(AssetSource('sounds/match_success.mp3'));
+      await _player.play(AssetSource('sounds/match_success.mp3'));
     } catch (e) {
       _logger.w('Error playing sound: match_success.mp3 - $e');
     }
@@ -83,7 +42,7 @@ class MemoryMatchSoundService extends GetxService {
   Future<void> playMatchFail() async {
     if (_isMuted.value) return;
     try {
-      await _audioPlayer.play(AssetSource('sounds/match_fail.mp3'));
+      await _player.play(AssetSource('sounds/match_fail.mp3'));
     } catch (e) {
       _logger.w('Error playing sound: match_fail.mp3 - $e');
     }
@@ -92,7 +51,7 @@ class MemoryMatchSoundService extends GetxService {
   Future<void> playGameComplete() async {
     if (_isMuted.value) return;
     try {
-      await _audioPlayer.play(AssetSource('sounds/game_complete.mp3'));
+      await _player.play(AssetSource('sounds/game_complete.mp3'));
     } catch (e) {
       _logger.w('Error playing sound: game_complete.mp3 - $e');
     }

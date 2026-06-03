@@ -134,8 +134,6 @@ class CardThemes {
     travel,
   ];
 
-  /// Legacy accessor - flattened list of all emojis
-  static List<String> get emojis => allThemes.expand((t) => t).toSet().toList();
 
   static const List<Color> cardColors = [
     Color(0xFF6C63FF),
