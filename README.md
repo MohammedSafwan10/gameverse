@@ -64,10 +64,11 @@ A beautifully crafted Flutter game collection featuring classic board games, bra
 |------|-------------|--------|
 | **🐦 Flappy Bird** | Classic one-touch arcade game | ✅ Available |
 
-### ⚡ Reaction Games (1 Game)
+### ⚡ Reaction Games (Coming Soon)
 | Game | Description | Status |
 |------|-------------|--------|
-| **🔨 Whack-A-Mole** | Test your reflexes by whacking moles | ✅ Available |
+| **🔨 Whack-A-Mole** | Test your reflexes by whacking moles | 🔜 Coming Soon |
+
 
 ### 📚 Educational (1 Game)
 | Game | Description | Status |
@@ -165,7 +166,7 @@ lib/
 │   ├── brain_training/         # Memory Match
 │   ├── puzzle/                 # Block Merge (2048)
 │   ├── quick_casual/           # Flappy Bird
-│   ├── reaction/               # Whack-A-Mole
+│   ├── reaction/               # Future reaction games
 │   ├── educational/            # Quiz Master
 │   └── arcade/                 # Future arcade games
 ├── models/                      # Data models
@@ -238,11 +239,11 @@ game_name/
 - Obstacle generation
 - Smooth physics
 
-### 🔨 Whack-A-Mole
-- Reflex-based gameplay
-- Multiple difficulty modes
-- Score multipliers
-- Time-based challenges
+### 🔨 Whack-A-Mole (Coming Soon)
+- Planned reflex-based gameplay
+- Planned difficulty modes
+- Planned score multipliers
+- Planned time-based challenges
 
 ### ❓ Quiz Master
 - Multiple categories (Science, History, etc.)

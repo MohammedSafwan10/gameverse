@@ -39,7 +39,7 @@ class HomeController extends GetxController {
       title: 'Arcade',
       icon: Icons.sports_esports,
       color: Colors.deepPurple,
-      gamesCount: 8,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Pac-Maze',
@@ -55,7 +55,7 @@ class HomeController extends GetxController {
       title: 'Classic Board',
       icon: Icons.grid_on,
       color: Colors.blue,
-      gamesCount: 6,
+      gamesCount: 3,
       games: [
         GameInfo(
           name: 'Tic Tac Toe',
@@ -123,7 +123,7 @@ class HomeController extends GetxController {
       title: 'Brain Training',
       icon: Icons.psychology,
       color: Colors.purple,
-      gamesCount: 8,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Memory Match',
@@ -138,7 +138,7 @@ class HomeController extends GetxController {
       title: 'Puzzle',
       icon: Icons.extension,
       color: Colors.orange,
-      gamesCount: 8,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Block Merge',
@@ -154,7 +154,7 @@ class HomeController extends GetxController {
       title: 'Quick Casual',
       icon: Icons.sports_esports,
       color: Colors.green,
-      gamesCount: 8,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Flappy Bird',
@@ -170,7 +170,7 @@ class HomeController extends GetxController {
       title: 'Strategy',
       icon: Icons.psychology_outlined,
       color: Colors.teal,
-      gamesCount: 5,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Battle Tanks',
@@ -185,7 +185,7 @@ class HomeController extends GetxController {
       title: 'Simulation',
       icon: Icons.precision_manufacturing_rounded,
       color: Colors.blueGrey,
-      gamesCount: 3,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'City Builder',
@@ -200,7 +200,7 @@ class HomeController extends GetxController {
       title: 'Sports',
       icon: Icons.sports_basketball_rounded,
       color: Colors.deepOrange,
-      gamesCount: 4,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Hoop Master',
@@ -215,14 +215,14 @@ class HomeController extends GetxController {
       title: 'Reaction',
       icon: Icons.bolt,
       color: Colors.amber,
-      gamesCount: 5,
+      gamesCount: 0,
       games: [],
     ),
     GameCategory(
       title: 'Educational',
       icon: Icons.school,
       color: Colors.indigo,
-      gamesCount: 5,
+      gamesCount: 1,
       games: [
         GameInfo(
           name: 'Quiz Master',

@@ -217,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
             'My Achievements',
             Icons.workspace_premium_outlined,
             const Color(0xFF7CC6D9),
-            onTap: () {},
+            onTap: () => Get.toNamed('/achievements'),
           ),
           _buildDivider(),
           _buildMenuTile(
@@ -225,7 +225,7 @@ class ProfileScreen extends StatelessWidget {
             'Game History',
             Icons.history_rounded,
             const Color(0xFF5E7CB6),
-            onTap: () {},
+            onTap: () => Get.toNamed('/leaderboard'),
           ),
           _buildDivider(),
           _buildMenuTile(
