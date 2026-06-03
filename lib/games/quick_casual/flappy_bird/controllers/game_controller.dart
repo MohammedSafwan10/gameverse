@@ -14,7 +14,8 @@ import 'settings_controller.dart';
 class FlappyBirdGameController extends GetxController {
   final ScoreService scoreService;
   late final FlappyBirdSettingsController settingsController;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _musicPlayer = AudioPlayer();
+  final AudioPlayer _effectsPlayer = AudioPlayer();
 
   // Game state
   final gameRunning = false.obs;
@@ -56,7 +57,8 @@ class FlappyBirdGameController extends GetxController {
   void onClose() {
     developer.log('onClose called');
     gameTimer?.cancel();
-    _audioPlayer.dispose();
+    _musicPlayer.dispose();
+    _effectsPlayer.dispose();
     super.onClose();
   }
 
@@ -98,23 +100,31 @@ class FlappyBirdGameController extends GetxController {
   Future<bool> _detectAudioAssets() async {
     try {
       final manifest = await rootBundle.loadString('AssetManifest.json');
-      return manifest.contains('assets/audio/background_music.mp3') &&
-          manifest.contains('assets/audio/wing.mp3') &&
-          manifest.contains('assets/audio/score.mp3') &&
-          manifest.contains('assets/audio/hit.mp3') &&
-          manifest.contains('assets/audio/die.mp3');
+      return manifest.contains('assets/sounds/drop.mp3') &&
+          manifest.contains('assets/sounds/win.mp3');
     } catch (e) {
       developer.log('Audio manifest check failed: $e');
       return false;
     }
   }
 
-  Future<void> _playSound(String assetPath, {double? volume}) async {
+  Future<void> _playEffect(String assetPath, {double? volume}) async {
     if (!_audioAssetsAvailable) return;
     try {
-      await _audioPlayer.play(AssetSource(assetPath), volume: volume);
+      await _effectsPlayer.stop();
+      await _effectsPlayer.play(AssetSource(assetPath), volume: volume);
     } catch (e) {
       developer.log('Audio playback failed for $assetPath: $e');
+    }
+  }
+
+  Future<void> _startBackgroundAudio() async {
+    if (!_audioAssetsAvailable || !settingsController.musicEnabled.value) return;
+    try {
+      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _musicPlayer.play(AssetSource('sounds/drop.mp3'), volume: 0.12);
+    } catch (e) {
+      developer.log('Background audio playback failed: $e');
     }
   }
 
@@ -133,8 +143,7 @@ class FlappyBirdGameController extends GetxController {
 
     if (settingsController.musicEnabled.value && _audioAssetsAvailable) {
       developer.log('Starting background music');
-      _playSound('audio/background_music.mp3', volume: 0.5);
-      _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      _startBackgroundAudio();
     }
 
     gameTimer = Timer.periodic(
@@ -159,7 +168,7 @@ class FlappyBirdGameController extends GetxController {
       }
 
       if (settingsController.soundEnabled.value) {
-        _playSound('audio/wing.mp3', volume: 0.3);
+        _playEffect('sounds/drop.mp3', volume: 0.3);
       }
     }
   }
@@ -173,9 +182,10 @@ class FlappyBirdGameController extends GetxController {
       return;
     }
 
-    // Calculate delta time with a maximum to prevent huge jumps
+    // Calculate delta time with a maximum to prevent huge jumps while still
+    // letting slow frames advance closer to real elapsed time.
     final dt = (now.difference(lastFrameTime!).inMicroseconds / 1000000)
-        .clamp(0, 0.016);
+        .clamp(0, 0.05);
     lastFrameTime = now;
 
     // Update bird physics with scaled delta time based on difficulty
@@ -288,7 +298,7 @@ class FlappyBirdGameController extends GetxController {
         );
 
         if (settingsController.soundEnabled.value) {
-          _playSound('audio/score.mp3');
+          _playEffect('sounds/win.mp3', volume: 0.4);
         }
       }
     }
@@ -306,9 +316,9 @@ class FlappyBirdGameController extends GetxController {
     gameTimer?.cancel();
 
     if (settingsController.soundEnabled.value) {
-      await _playSound('audio/hit.mp3');
+      await _playEffect('sounds/drop.mp3', volume: 0.5);
       await Future.delayed(Duration(milliseconds: 300));
-      await _playSound('audio/die.mp3');
+      await _playEffect('sounds/win.mp3', volume: 0.5);
     }
     if (settingsController.vibrationEnabled.value) {
       HapticFeedback.heavyImpact();
@@ -377,7 +387,7 @@ class FlappyBirdGameController extends GetxController {
       pauseStartTime.value = DateTime.now();
       gameTimer?.cancel();
       if (settingsController.musicEnabled.value) {
-        _audioPlayer.pause();
+        _musicPlayer.pause();
       }
     }
   }
@@ -402,7 +412,7 @@ class FlappyBirdGameController extends GetxController {
         (_) => updateGame(),
       );
       if (settingsController.musicEnabled.value) {
-        _audioPlayer.resume();
+        _musicPlayer.resume();
       }
     }
   }
