@@ -34,31 +34,35 @@ class ConnectFourSettingsController extends GetxController {
   void _loadSettings() {
     // Game mode (PvP or vs AI)
     final savedGameMode = _storage.read(_gameModeKey);
-    if (savedGameMode != null) {
+    if (savedGameMode is int &&
+        savedGameMode >= 0 &&
+        savedGameMode < GameMode.values.length) {
       gameMode.value = GameMode.values[savedGameMode];
     }
 
     // AI difficulty
     final savedDifficulty = _storage.read(_difficultyKey);
-    if (savedDifficulty != null) {
+    if (savedDifficulty is int &&
+        savedDifficulty >= 0 &&
+        savedDifficulty < AIDifficulty.values.length) {
       difficulty.value = AIDifficulty.values[savedDifficulty];
     }
 
     // Sound settings
     final savedSoundEnabled = _storage.read(_soundEnabledKey);
-    if (savedSoundEnabled != null) {
+    if (savedSoundEnabled is bool) {
       isSoundEnabled.value = savedSoundEnabled;
     }
 
     // Vibration settings
     final savedVibrationEnabled = _storage.read(_vibrationEnabledKey);
-    if (savedVibrationEnabled != null) {
+    if (savedVibrationEnabled is bool) {
       isVibrationEnabled.value = savedVibrationEnabled;
     }
 
     // Auto restart settings
     final savedAutoRestart = _storage.read(_autoRestartKey);
-    if (savedAutoRestart != null) {
+    if (savedAutoRestart is bool) {
       isAutoRestartEnabled.value = savedAutoRestart;
     }
 

@@ -31,6 +31,7 @@ class ConnectFourController extends GetxController {
   final List<Worker> _settingsWorkers = [];
   int _gameGeneration = 0;
   bool _isDisposed = false;
+  bool _isGameResultRecorded = false;
 
   bool get isGameOver => board.value.status != GameStatus.playing;
 
@@ -64,7 +65,8 @@ class ConnectFourController extends GetxController {
     }));
 
     // Listen for difficulty changes
-    _settingsWorkers.add(ever(_settingsController.difficulty, (AIDifficulty difficulty) {
+    _settingsWorkers
+        .add(ever(_settingsController.difficulty, (AIDifficulty difficulty) {
       if (aiDifficulty.value != difficulty) {
         aiDifficulty.value = difficulty;
         aiController.setDifficulty(difficulty);
@@ -226,7 +228,6 @@ class ConnectFourController extends GetxController {
     // Wait for animation to complete
     await Future.delayed(const Duration(milliseconds: 500));
     if (!_isCurrentGeneration(generation)) return;
-    if (!_isCurrentGeneration(generation)) return;
 
     // After animation, clear flag and switch players
     isAnimating.value = false;
@@ -369,6 +370,8 @@ class ConnectFourController extends GetxController {
     // Wait for animation to complete
     await Future.delayed(const Duration(milliseconds: 500));
 
+    if (!_isCurrentGeneration(generation)) return;
+
     // After animation, clear flag and switch players
     isAnimating.value = false;
 
@@ -383,6 +386,11 @@ class ConnectFourController extends GetxController {
 
   void _handleGameOver(GameStatus status) {
     _gameStopwatch.stop();
+    if (_isGameResultRecorded) {
+      _logger.d('Ignoring duplicate game-over handling for status: $status');
+      return;
+    }
+    _isGameResultRecorded = true;
     final gameDuration = _gameStopwatch.elapsed;
     _logger.i('Game over with status: $status, duration: $gameDuration');
 
@@ -450,9 +458,8 @@ class ConnectFourController extends GetxController {
 
       if (line.length >= winLength) {
         final centerIndex = line.indexOf(Point(row, col));
-        final start = centerIndex >= winLength - 1
-            ? centerIndex - (winLength - 1)
-            : 0;
+        final start =
+            centerIndex >= winLength - 1 ? centerIndex - (winLength - 1) : 0;
         final end = line.length - winLength;
         final safeStart = start > end ? end : start;
         final winningLine = line.sublist(safeStart, safeStart + winLength);
@@ -501,6 +508,7 @@ class ConnectFourController extends GetxController {
   void resetGame() {
     _logger.i('Resetting game');
     _cancelPendingWork();
+    _isGameResultRecorded = false;
     board.value = Board.empty();
     currentPlayer.value = CellState.player1;
     lastMove.value = null;
