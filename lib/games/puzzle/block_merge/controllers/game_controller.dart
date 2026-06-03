@@ -25,6 +25,9 @@ class BlockMergeController extends GetxController {
   final RxInt previousScore = 0.obs;
 
   Timer? _gameTimer;
+  Timer? _firstStartupBlockTimer;
+  Timer? _secondStartupBlockTimer;
+  int _gameGeneration = 0;
   final RxInt timeRemaining = 180.obs;
   final RxBool isPaused = false.obs;
 
@@ -83,6 +86,8 @@ class BlockMergeController extends GetxController {
   }
 
   void _resetGameState() {
+    _cancelStartupBlockTimers();
+    final generation = ++_gameGeneration;
     grid.value = List.generate(4, (_) => List.generate(4, (_) => null));
     previousGrid.value = List.generate(4, (_) => List.generate(4, (_) => null));
     score.value = 0;
@@ -103,12 +108,21 @@ class BlockMergeController extends GetxController {
       highestTile: 0,
     );
 
-    Future.delayed(const Duration(milliseconds: 100), () {
+    _firstStartupBlockTimer = Timer(const Duration(milliseconds: 100), () {
+      if (generation != _gameGeneration) return;
       _addNewBlock();
-      Future.delayed(const Duration(milliseconds: 100), () {
+      _secondStartupBlockTimer = Timer(const Duration(milliseconds: 100), () {
+        if (generation != _gameGeneration) return;
         _addNewBlock();
       });
     });
+  }
+
+  void _cancelStartupBlockTimers() {
+    _firstStartupBlockTimer?.cancel();
+    _secondStartupBlockTimer?.cancel();
+    _firstStartupBlockTimer = null;
+    _secondStartupBlockTimer = null;
   }
 
   void _saveGameState() {
@@ -241,6 +255,8 @@ class BlockMergeController extends GetxController {
   }
 
   void clearGameState() {
+    _cancelStartupBlockTimers();
+    _gameGeneration++;
     _storage.remove('block_merge_grid');
     _storage.remove('block_merge_current_score');
     _storage.remove('block_merge_time_remaining');
@@ -250,6 +266,8 @@ class BlockMergeController extends GetxController {
 
   @override
   void onClose() {
+    _cancelStartupBlockTimers();
+    _gameGeneration++;
     _gameTimer?.cancel();
     // Don't clear saved game state on close — preserve progress
     super.onClose();
@@ -383,11 +401,11 @@ class BlockMergeController extends GetxController {
       }
 
       if (moved) {
+        grid.value = newGrid;
         _saveState(
           previousGridSnapshot: previousGridSnapshot,
           previousScoreSnapshot: previousScoreSnapshot,
         );
-        grid.value = newGrid;
         _addNewBlock();
         _checkGameState();
 
@@ -456,7 +474,7 @@ class BlockMergeController extends GetxController {
             : null;
       });
       List<Block?> newRow = _mergeLine(row, toRight, y, isHorizontal: true);
-      if (!_listEquals(row, newRow)) {
+      if (!_lineValuesEqual(row, newRow)) {
         moved = true;
         newGrid[y] = newRow;
       }
@@ -479,7 +497,7 @@ class BlockMergeController extends GetxController {
             : null;
       });
       List<Block?> newColumn = _mergeLine(column, toBottom, x, isHorizontal: false);
-      if (!_listEquals(column, newColumn)) {
+      if (!_lineValuesEqual(column, newColumn)) {
         moved = true;
         for (int y = 0; y < 4; y++) {
           newGrid[y][x] = newColumn[y];
@@ -607,10 +625,10 @@ class BlockMergeController extends GetxController {
     return false;
   }
 
-  bool _listEquals<T>(List<T?> a, List<T?> b) {
+  bool _lineValuesEqual(List<Block?> a, List<Block?> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
+      if (a[i]?.value != b[i]?.value) return false;
     }
     return true;
   }
