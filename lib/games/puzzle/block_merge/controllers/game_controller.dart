@@ -27,14 +27,29 @@ class BlockMergeController extends GetxController {
   Timer? _gameTimer;
   Timer? _firstStartupBlockTimer;
   Timer? _secondStartupBlockTimer;
+  Worker? _gameStateWorker;
   int _gameGeneration = 0;
+  bool _isClosed = false;
+  bool _hasRecordedWinForGame = false;
   final RxInt timeRemaining = 180.obs;
   final RxBool isPaused = false.obs;
 
   BlockMergeController(this._settingsController) {
-    ever(gameState, _onGameStateChanged);
+    _gameStateWorker = ever(gameState, _onGameStateChanged);
     bestScore.value = _storage.read('block_merge_best_score') ?? 0;
     _loadGameState();
+  }
+
+  int _highestTileInGrid(List<List<Block?>> source) {
+    var highest = 0;
+    for (final row in source) {
+      for (final block in row) {
+        if (block != null && block.value > highest) {
+          highest = block.value;
+        }
+      }
+    }
+    return highest;
   }
 
   void _loadGameState() {
@@ -57,11 +72,21 @@ class BlockMergeController extends GetxController {
                 : List.generate(4, (_) => List.generate(4, (_) => null));
             previousScore.value = savedPrevScore as int;
 
+            gameState.value = gameState.value.copyWith(
+              status: GameStatus.playing,
+              highestTile: _highestTileInGrid(grid.value),
+              currentScore: score.value,
+              canUndo: savedPrevGrid != null,
+              previousGrid: _cloneGrid(previousGrid.value),
+              previousScore: previousScore.value,
+            );
+
             if (_settingsController.gameMode.value ==
                 BlockMergeMode.timeChallenge) {
               timeRemaining.value = savedTime as int;
               if (timeRemaining.value > 0) {
-                Future.microtask(() => _startTimer());
+                final generation = _gameGeneration;
+                Future.microtask(() => _startTimer(generation: generation));
               }
             }
 
@@ -94,11 +119,12 @@ class BlockMergeController extends GetxController {
     previousScore.value = 0;
     isGameOver.value = false;
     hasWon.value = false;
+    _hasRecordedWinForGame = false;
     isPaused.value = false;
     timeRemaining.value = 180;
 
     if (_settingsController.gameMode.value == BlockMergeMode.timeChallenge) {
-      Future.microtask(() => _startTimer());
+      Future.microtask(() => _startTimer(generation: generation));
     }
 
     gameState.value = BlockMergeGameState.initial().copyWith(
@@ -109,14 +135,16 @@ class BlockMergeController extends GetxController {
     );
 
     _firstStartupBlockTimer = Timer(const Duration(milliseconds: 100), () {
-      if (generation != _gameGeneration) return;
+      if (_isStale(generation)) return;
       _addNewBlock();
       _secondStartupBlockTimer = Timer(const Duration(milliseconds: 100), () {
-        if (generation != _gameGeneration) return;
+        if (_isStale(generation)) return;
         _addNewBlock();
       });
     });
   }
+
+  bool _isStale(int generation) => _isClosed || generation != _gameGeneration;
 
   void _cancelStartupBlockTimers() {
     _firstStartupBlockTimer?.cancel();
@@ -245,6 +273,7 @@ class BlockMergeController extends GetxController {
 
   void newGame() {
     try {
+      if (_isClosed) return;
       _gameTimer?.cancel();
       clearGameState();
       _resetGameState();
@@ -266,9 +295,12 @@ class BlockMergeController extends GetxController {
 
   @override
   void onClose() {
+    _isClosed = true;
     _cancelStartupBlockTimers();
     _gameGeneration++;
     _gameTimer?.cancel();
+    _gameStateWorker?.dispose();
+    _gameStateWorker = null;
     // Don't clear saved game state on close — preserve progress
     super.onClose();
   }
@@ -279,27 +311,41 @@ class BlockMergeController extends GetxController {
       _settingsController.updateBestScore(score.value);
       _settingsController.updateHighestTile(gameState.value.highestTile);
       if (state.status == GameStatus.won) {
-        _settingsController.incrementWins();
+        _recordWinOnce();
       }
     }
   }
 
+  void _recordWinOnce() {
+    if (_hasRecordedWinForGame) return;
+    _hasRecordedWinForGame = true;
+    _settingsController.incrementWins();
+  }
+
   void togglePause() {
+    if (_isClosed) return;
     isPaused.value = !isPaused.value;
     if (isPaused.value) {
       _gameTimer?.cancel();
     } else {
-      _startTimer();
+      _startTimer(generation: _gameGeneration);
     }
   }
 
-  void _startTimer() {
-    if (_settingsController.gameMode.value != BlockMergeMode.timeChallenge) {
+  void _startTimer({required int generation}) {
+    if (_isStale(generation) ||
+        _settingsController.gameMode.value != BlockMergeMode.timeChallenge) {
       return;
     }
 
     _gameTimer?.cancel();
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isStale(generation) ||
+          _settingsController.gameMode.value != BlockMergeMode.timeChallenge) {
+        timer.cancel();
+        return;
+      }
+
       if (!isPaused.value && timeRemaining.value > 0) {
         timeRemaining.value--;
         if (timeRemaining.value == 0) {
@@ -496,7 +542,8 @@ class BlockMergeController extends GetxController {
               )
             : null;
       });
-      List<Block?> newColumn = _mergeLine(column, toBottom, x, isHorizontal: false);
+      List<Block?> newColumn =
+          _mergeLine(column, toBottom, x, isHorizontal: false);
       if (!_lineValuesEqual(column, newColumn)) {
         moved = true;
         for (int y = 0; y < 4; y++) {
@@ -507,7 +554,8 @@ class BlockMergeController extends GetxController {
     return moved;
   }
 
-  List<Block?> _mergeLine(List<Block?> line, bool reverse, int index, {required bool isHorizontal}) {
+  List<Block?> _mergeLine(List<Block?> line, bool reverse, int index,
+      {required bool isHorizontal}) {
     if (reverse) line = line.reversed.toList();
     List<Block?> result = List.filled(4, null);
     int resultIndex = 0;
@@ -540,7 +588,7 @@ class BlockMergeController extends GetxController {
 
         if (newValue == 2048 && !hasWon.value) {
           hasWon.value = true;
-          _settingsController.incrementWins();
+          _recordWinOnce();
           gameState.value = gameState.value.copyWith(
             status: _settingsController.gameMode.value == BlockMergeMode.zen
                 ? GameStatus.playing
