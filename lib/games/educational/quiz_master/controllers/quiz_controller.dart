@@ -51,9 +51,11 @@ class QuizMasterController extends GetxController {
 
   Timer? _timer;
   bool _hasSavedStats = false;
+  int _quizGeneration = 0;
 
   @override
   void onClose() {
+    _quizGeneration++;
     _timer?.cancel();
     super.onClose();
   }
@@ -63,6 +65,9 @@ class QuizMasterController extends GetxController {
     required int questionCount,
     required QuizMode mode,
   }) async {
+    final generation = ++_quizGeneration;
+    _timer?.cancel();
+
     try {
       isLoading.value = true;
       errorMessage.value = null;
@@ -75,10 +80,13 @@ class QuizMasterController extends GetxController {
         mode: mode,
       );
 
-      questions.value = await _quizService.getQuestions(
+      final loadedQuestions = await _quizService.getQuestions(
         categoryId: category.id,
         count: questionCount,
       );
+
+      if (generation != _quizGeneration) return;
+      questions.value = loadedQuestions;
 
       // Initialize game state
       currentQuestionIndex.value = 0;
@@ -97,7 +105,9 @@ class QuizMasterController extends GetxController {
         errorMessage.value = 'No questions available for this selection yet.';
       }
     } finally {
-      isLoading.value = false;
+      if (generation == _quizGeneration) {
+        isLoading.value = false;
+      }
     }
   }
 
@@ -153,9 +163,17 @@ class QuizMasterController extends GetxController {
     final streakBonus = streak.value > 1 ? (streak.value - 1) * 5 : 0;
     final timeBonus = (timeRemaining.value / 30 * 10).round();
 
+    final question = currentQuestion.value;
+    final correctIndex = question?.correctOptionIndex ?? -1;
+    final correctAnswer = question != null &&
+            correctIndex >= 0 &&
+            correctIndex < question.options.length
+        ? question.options[correctIndex]
+        : 'Unknown';
+
     String message = isCorrect
         ? 'Great job! +$points points\n'
-        : 'The correct answer was: ${currentQuestion.value?.options[currentQuestion.value?.correctOptionIndex ?? 0]}\n';
+        : 'The correct answer was: $correctAnswer\n';
 
     if (isCorrect) {
       if (streakBonus > 0) {

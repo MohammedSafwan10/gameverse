@@ -146,6 +146,7 @@ class WordService {
   static String getRandomHint(HangmanGameState state) {
     final unguessedLetters = state.word
         .split('')
+        .where((letter) => letter != ' ')
         .where((letter) => !state.guessedLetters.contains(letter.toLowerCase()))
         .toList();
 

@@ -50,7 +50,7 @@ class HangmanGameController extends GetxController {
       if (customWord == null || customWord.isEmpty) {
         throw ArgumentError('Custom word required for two players mode');
       }
-      word = customWord;
+      word = customWord.toUpperCase();
       finalCategory = WordCategory.custom;
     } else {
       if (category == null) {
@@ -71,8 +71,14 @@ class HangmanGameController extends GetxController {
   Future<void> makeGuess(String letter) async {
     if (gameState.value.isGameOver) return;
 
+    final normalizedLetter = letter.trim().toLowerCase();
+    if (normalizedLetter.isEmpty ||
+        gameState.value.guessedLetters.contains(normalizedLetter)) {
+      return;
+    }
+
     final isCorrect =
-        gameState.value.word.toLowerCase().contains(letter.toLowerCase());
+        gameState.value.word.toLowerCase().contains(normalizedLetter);
 
     // Play sound effect
     if (isCorrect) {
@@ -86,7 +92,7 @@ class HangmanGameController extends GetxController {
         ? gameState.value.remainingLives
         : gameState.value.remainingLives - 1;
     final newGuessedLetters = Set<String>.from(gameState.value.guessedLetters)
-      ..add(letter.toLowerCase());
+      ..add(normalizedLetter);
 
     final newStatus = _determineGameStatus(
       newLives,

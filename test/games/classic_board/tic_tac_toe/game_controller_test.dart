@@ -45,8 +45,10 @@ void main() {
   setUpAll(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathProviderChannel, (methodCall) async {
-      if (methodCall.method == 'getApplicationDocumentsDirectory') {
-        return 'C:/Users/User/AppData/Local/Temp';
+      if (methodCall.method == 'getApplicationDocumentsDirectory' ||
+          methodCall.method == 'getApplicationSupportDirectory' ||
+          methodCall.method == 'getTemporaryDirectory') {
+        return 'D:/Dev/freela/gameverse/.dart_tool/test_storage';
       }
       return null;
     });
@@ -88,6 +90,40 @@ void main() {
     expect(controller.gameState.board[0], Player.x);
     expect(controller.gameState.board.where((cell) => cell == Player.o), isEmpty);
     expect(controller.gameState.currentPlayer, Player.o);
+    expect(controller.isThinking, isFalse);
+  });
+
+  test('ignores invalid human move indexes without throwing', () async {
+    final controller = createController(
+      aiService: _FakeAIService(null),
+      settings: const GameSettings(gameMode: GameMode.multiPlayer),
+    );
+
+    await controller.makeMove(-1);
+    await controller.makeMove(9);
+
+    expect(controller.gameState.board.every((cell) => cell == Player.none),
+        isTrue);
+    expect(controller.gameState.currentPlayer, Player.x);
+  });
+
+  test('stale AI response is ignored after reset', () async {
+    final controller = createController(
+      aiService: _FakeAIService(4),
+      settings: const GameSettings(
+        gameMode: GameMode.singlePlayer,
+        aiDelay: Duration(milliseconds: 20),
+      ),
+    );
+
+    final moveFuture = controller.makeMove(0);
+    controller.resetGame();
+    await moveFuture;
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+
+    expect(controller.gameState.board.every((cell) => cell == Player.none),
+        isTrue);
+    expect(controller.gameState.currentPlayer, Player.x);
     expect(controller.isThinking, isFalse);
   });
 

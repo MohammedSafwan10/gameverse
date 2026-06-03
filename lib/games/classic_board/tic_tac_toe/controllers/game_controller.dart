@@ -22,6 +22,7 @@ class TicTacToeGameController extends GetxController {
   final Stopwatch _gameStopwatch = Stopwatch();
   bool _isDisposed = false;
   Timer? _countdownTimer;
+  int _moveGeneration = 0;
 
   TicTacToeGameController(this._navigationService, this._aiService) {
     _gameStopwatch.start();
@@ -40,10 +41,16 @@ class TicTacToeGameController extends GetxController {
   }
 
   Future<void> makeMove(int index) async {
-    if (isThinking || isGameOver || gameState.board[index] != Player.none) {
+    if (_isDisposed ||
+        index < 0 ||
+        index >= gameState.board.length ||
+        isThinking ||
+        isGameOver ||
+        gameState.board[index] != Player.none) {
       return;
     }
 
+    _moveGeneration++;
     final currentPlayer = gameState.currentPlayer;
 
     final newBoard = List<Player>.from(gameState.board);
@@ -80,9 +87,30 @@ class TicTacToeGameController extends GetxController {
   }
 
   Future<void> _makeAIMove() async {
+    final generation = _moveGeneration;
+    final aiPlayer = gameState.currentPlayer;
+
     _isThinking.value = true;
     await Future.delayed(gameState.settings.aiDelay);
+
+    if (_isDisposed ||
+        isGameOver ||
+        generation != _moveGeneration ||
+        gameState.currentPlayer != aiPlayer) {
+      _isThinking.value = false;
+      return;
+    }
+
     final aiMove = await _aiService.getNextMove(gameState);
+
+    if (_isDisposed ||
+        isGameOver ||
+        generation != _moveGeneration ||
+        gameState.currentPlayer != aiPlayer) {
+      _isThinking.value = false;
+      return;
+    }
+
     _isThinking.value = false;
 
     if (aiMove != null && aiMove >= 0 && aiMove < gameState.board.length) {
@@ -171,6 +199,7 @@ class TicTacToeGameController extends GetxController {
   }
 
   void resetGame() {
+    _moveGeneration++;
     _countdownTimer?.cancel();
     _gameState.value = TicTacToeState.initial().copyWith(
       settings: _settingsController.settings,
@@ -229,6 +258,7 @@ class TicTacToeGameController extends GetxController {
   @override
   void onClose() {
     _isDisposed = true;
+    _moveGeneration++;
     _countdownTimer?.cancel();
     _gameStopwatch.stop();
     super.onClose();

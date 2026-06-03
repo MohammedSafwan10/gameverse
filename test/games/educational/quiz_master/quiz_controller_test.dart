@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'dart:async';
 import 'package:gameverse/games/educational/quiz_master/controllers/mode_selection_controller.dart';
 import 'package:gameverse/games/educational/quiz_master/controllers/quiz_controller.dart';
 import 'package:gameverse/games/educational/quiz_master/models/quiz_category.dart';
@@ -18,6 +19,18 @@ class _FakeQuizService implements QuizQuestionLoader {
     required int count,
   }) async {
     return (responses[categoryId] ?? <QuizQuestion>[]).take(count).toList();
+  }
+}
+
+class _CompleterQuizService implements QuizQuestionLoader {
+  final Map<String, Completer<List<QuizQuestion>>> completers = {};
+
+  @override
+  Future<List<QuizQuestion>> getQuestions({
+    required String categoryId,
+    required int count,
+  }) {
+    return completers.putIfAbsent(categoryId, Completer.new).future;
   }
 }
 
@@ -151,6 +164,48 @@ void main() {
     expect(controller.isCompleted.value, isFalse);
     expect(controller.sessionResult.value, isNull);
     expect(controller.currentQuestionIndex.value, 0);
+  });
+
+  test('stale startQuiz result does not overwrite newer quiz', () async {
+    const math = QuizCategory(
+      id: 'math',
+      name: 'Math',
+      description: 'desc',
+      icon: Icons.calculate,
+      color: Colors.green,
+      questionCount: 1,
+    );
+    final service = _CompleterQuizService();
+    final controller = QuizMasterController(
+      quizLoader: service,
+      feedbackPresenter: ({required bool isCorrect, required String message}) {},
+      statsSaver: ({required QuizCategory category, required int score}) {},
+    );
+
+    final firstStart = controller.startQuiz(
+      category: science,
+      questionCount: 1,
+      mode: QuizMode.practice,
+    );
+    final secondStart = controller.startQuiz(
+      category: math,
+      questionCount: 1,
+      mode: QuizMode.practice,
+    );
+
+    service.completers['math']!.complete([
+      question(id: 'math-1', correctOptionIndex: 0),
+    ]);
+    await secondStart;
+
+    service.completers['science']!.complete([
+      question(id: 'science-1', correctOptionIndex: 1),
+    ]);
+    await firstStart;
+
+    expect(controller.sessionConfig.value!.category, math);
+    expect(controller.currentQuestion.value!.id, 'math-1');
+    expect(controller.questions.single.id, 'math-1');
   });
 
   test('completeQuiz saves stats once even if called repeatedly', () async {
