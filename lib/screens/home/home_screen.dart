@@ -1,320 +1,992 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../controllers/home_controller.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/animated_game_card.dart';
-import '../../widgets/premium_background.dart';
-import '../../widgets/featured_carousel.dart';
+import 'package:get/get.dart';
 
-class HomeScreen extends GetView<HomeController> {
+const _ink = Color(0xFF191919);
+const _cream = Color(0xFFFFFAF0);
+const _orange = Color(0xFFFF5A16);
+const _cobalt = Color(0xFF1455D9);
+
+enum _GameMood { quick, smart, classic }
+
+class _HomeGame {
+  const _HomeGame({
+    required this.name,
+    required this.route,
+    required this.image,
+    required this.tint,
+    required this.moods,
+  });
+
+  final String name;
+  final String route;
+  final String image;
+  final Color tint;
+  final Set<_GameMood> moods;
+}
+
+const _homeGames = <_HomeGame>[
+  _HomeGame(
+    name: 'Tic Tac Toe',
+    route: '/tic-tac-toe',
+    image: 'assets/images/home/games/tic_tac_toe.png',
+    tint: Color(0xFFE4F5E9),
+    moods: {_GameMood.quick, _GameMood.classic},
+  ),
+  _HomeGame(
+    name: 'Chess',
+    route: '/chess',
+    image: 'assets/images/home/games/chess.png',
+    tint: Color(0xFFF1E7FB),
+    moods: {_GameMood.smart, _GameMood.classic},
+  ),
+  _HomeGame(
+    name: 'Hangman',
+    route: '/hangman',
+    image: 'assets/images/home/games/hangman.png',
+    tint: Color(0xFFFFF0C9),
+    moods: {_GameMood.quick, _GameMood.smart, _GameMood.classic},
+  ),
+  _HomeGame(
+    name: 'Flappy Bird',
+    route: '/flappy-bird',
+    image: 'assets/images/home/games/flappy_bird.png',
+    tint: Color(0xFFDDF3FF),
+    moods: {_GameMood.quick},
+  ),
+  _HomeGame(
+    name: 'Connect Four',
+    route: '/connect-four',
+    image: 'assets/images/home/games/connect_four.png',
+    tint: Color(0xFFDDEEFF),
+    moods: {_GameMood.quick, _GameMood.smart, _GameMood.classic},
+  ),
+  _HomeGame(
+    name: 'Memory Match',
+    route: '/memory-match',
+    image: 'assets/images/games/memory_match_home_hero.png',
+    tint: Color(0xFFFFE4ED),
+    moods: {_GameMood.quick, _GameMood.smart},
+  ),
+  _HomeGame(
+    name: 'Block Merge',
+    route: '/block-merge',
+    image: 'assets/images/home/games/block_merge.png',
+    tint: Color(0xFFFFE7D9),
+    moods: {_GameMood.smart},
+  ),
+  _HomeGame(
+    name: 'Quiz Master',
+    route: '/quiz-master',
+    image: 'assets/images/home/games/quiz_master.png',
+    tint: Color(0xFFF1E4FF),
+    moods: {_GameMood.smart},
+  ),
+];
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _gamesKey = GlobalKey();
+  _GameMood? _selectedMood;
+
+  List<_HomeGame> get _visibleGames => _selectedMood == null
+      ? _homeGames
+      : _homeGames
+          .where((game) => game.moods.contains(_selectedMood))
+          .toList(growable: false);
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          final shouldExit = await _showExitConfirmationDialog(context);
-          if (shouldExit) {
-            SystemNavigator.pop();
-          }
-        }
+        if (didPop) return;
+        final shouldExit = await _showExitConfirmationDialog(context);
+        if (shouldExit) SystemNavigator.pop();
       },
       child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            const PremiumBackground(),
-            Positioned.fill(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset(
-                    'assets/images/home_bg.png',
-                    fit: BoxFit.cover,
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.4),
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.2),
-                        ],
-                        stops: const [0.0, 0.3, 1.0],
-                      ),
-                    ),
-                  ),
-                ],
-              ).animate().fadeIn(duration: 800.ms),
+        backgroundColor: _cream,
+        body: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0.85, -0.8),
+              radius: 1.3,
+              colors: [Color(0xFFFFF4D8), _cream],
             ),
-            SafeArea(
-              bottom: false,
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // Header
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                    sliver: SliverToBoxAdapter(
-                      child: _buildHeader(context),
-                    ),
-                  ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final denseMobile = constraints.maxWidth < 370;
+                    final horizontalPadding = constraints.maxWidth < 370
+                        ? 12.0
+                        : constraints.maxWidth < 600
+                            ? 20.0
+                            : 32.0;
 
-                  // Search Bar
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver: SliverToBoxAdapter(
-                      child: _buildSearchBar(context),
-                    ),
-                  ),
-
-                  // Featured Section
-                  SliverToBoxAdapter(
-                    child: _buildFeaturedSection(context),
-                  ),
-
-                  // Discover All Section
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
-                    sliver: SliverToBoxAdapter(
-                      child: _buildSectionTitle(context, 'Discover All'),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).size.width > 900
-                            ? 4
-                            : (MediaQuery.of(context).size.width > 600 ? 3 : 2),
-                        childAspectRatio: 0.82,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
+                    return ListView(
+                      controller: _scrollController,
+                      key: const Key('home-scroll-view'),
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        denseMobile ? 6 : 18,
+                        horizontalPadding,
+                        denseMobile ? 18 : 32,
                       ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final category = controller.categories[index];
-                          final int actualGamesCount = category.games
-                              .where((game) => game.isAvailable)
-                              .length;
-                          final color =
-                              AppTheme.categoryColors[category.title] ??
-                                  category.color;
-
-                          String? bgImage;
-                          switch (category.title) {
-                            case 'Arcade': bgImage = 'assets/images/categories/arcade.png'; break;
-                            case 'Classic Board': bgImage = 'assets/images/categories/classic_board.png'; break;
-                            case 'Word Games': bgImage = 'assets/images/categories/word_games.png'; break;
-                            case 'Brain Training': bgImage = 'assets/images/categories/brain_training.png'; break;
-                            case 'Puzzle': bgImage = 'assets/images/categories/puzzle.png'; break;
-                            case 'Quick Casual': bgImage = 'assets/images/categories/quick_casual.png'; break;
-                            case 'Strategy': bgImage = 'assets/images/categories/strategy.png'; break;
-                            case 'Simulation': bgImage = 'assets/images/categories/simulation.png'; break;
-                            case 'Sports': bgImage = 'assets/images/categories/sports.png'; break;
-                            case 'Reaction': bgImage = 'assets/images/categories/reaction.png'; break;
-                            case 'Educational': bgImage = 'assets/images/categories/educational.png'; break;
-                          }
-
-                          return AnimatedGameCard(
-                            title: category.title,
-                            color: color,
-                            gamesCount: actualGamesCount,
-                            backgroundImage: bgImage,
-                            isNew: category.title == 'Brain Training',
-                            isComingSoon: actualGamesCount == 0,
-                            onTap: actualGamesCount == 0
-                                ? null
-                                : () => controller.onCategoryTap(index),
-                            index: index,
-                          );
-                        },
-                        childCount: controller.categories.length,
-                      ),
-                    ),
-                  ),
-
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 120)),
-                ],
+                      children: [
+                        _HomeHeader(onSearch: _showSearch),
+                        SizedBox(height: denseMobile ? 8 : 22),
+                        Text(
+                          'Ready to play?',
+                          key: const Key('home-headline'),
+                          style: Theme.of(context)
+                              .textTheme
+                              .displayMedium
+                              ?.copyWith(
+                                color: _ink,
+                                fontSize: denseMobile ? 29 : 42,
+                                height: 1.02,
+                                letterSpacing: -1.6,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ).animate().fadeIn(duration: 350.ms).slideY(begin: .08),
+                        SizedBox(height: denseMobile ? 14 : 22),
+                        _MemoryHero(
+                          onPlay: () => Get.toNamed('/memory-match'),
+                        ),
+                        SizedBox(height: denseMobile ? 14 : 30),
+                        _SectionTitle(
+                          title: 'Pick a mood',
+                          trailing: _selectedMood == null ? null : 'Clear',
+                          onTrailingTap: _selectedMood == null
+                              ? null
+                              : () => setState(() => _selectedMood = null),
+                        ),
+                        SizedBox(height: denseMobile ? 8 : 14),
+                        _MoodPicker(
+                          selected: _selectedMood,
+                          onSelected: (mood) {
+                            setState(() {
+                              _selectedMood =
+                                  _selectedMood == mood ? null : mood;
+                            });
+                          },
+                        ),
+                        SizedBox(height: denseMobile ? 20 : 32),
+                        KeyedSubtree(
+                          key: _gamesKey,
+                          child: _SectionTitle(
+                            title: _selectedMood == null
+                                ? 'All games'
+                                : '${_moodLabel(_selectedMood!)} games',
+                            trailing: '${_visibleGames.length}',
+                          ),
+                        ),
+                        SizedBox(height: denseMobile ? 8 : 14),
+                        _GamesGrid(games: _visibleGames),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
-          ],
+          ),
+        ),
+        bottomNavigationBar: _HomeNavigation(
+          onGamesTap: _scrollToGames,
+          onProfileTap: () => Get.toNamed('/profile'),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'GameVerse',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    color: const Color(0xFFFFF4DE),
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.8,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.14),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-            ).animate().fadeIn().slideX(begin: -0.2),
-            Text(
-              'Your Ultimate Arcade',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFFF6E7C8).withValues(alpha: 0.88),
-                    fontWeight: FontWeight.w500,
-                  ),
-            ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.2),
-          ],
-        ),
-        _buildProfileAvatar(context),
-      ],
-    );
-  }
-
-  Widget _buildProfileAvatar(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Get.toNamed('/profile'),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFFFFE0A6).withValues(alpha: 0.4),
-          ),
-        ),
-        child: CircleAvatar(
-          radius: 22,
-          backgroundColor: const Color(0xFFFFF4DE).withValues(alpha: 0.88),
-          child: const Icon(
-            Icons.person_rounded,
-            color: Color(0xFF6A5C48),
-            size: 28,
-          ),
-        ),
-      ).animate().scale(delay: 400.ms, curve: Curves.easeOutBack),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: TextField(
-        style: const TextStyle(
-          color: Colors.white,
-          fontFamily: 'Inter',
-          fontSize: 14,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Search your favorite game...',
-          hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
-            fontSize: 14,
-            fontFamily: 'Inter',
-          ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: Colors.white.withValues(alpha: 0.4),
-            size: 20,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-        ),
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, curve: Curves.easeOutCubic);
-  }
-
-  Widget _buildFeaturedSection(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: FeaturedCarousel(
-        categories: controller.featuredCategories,
-        onCategoryTap: (index) {
-          final category = controller.featuredCategories[index];
-          final realIndex = controller.allCategories.indexOf(category);
-          controller.onCategoryTap(realIndex);
-        },
+  void _showSearch() {
+    showSearch<void>(
+      context: context,
+      delegate: _GameSearchDelegate(
+        games: _homeGames,
+        onSelected: (game) => Get.toNamed(game.route),
       ),
     );
   }
 
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-        ),
-        TextButton(
-          onPressed: () {},
-          child: Text('See All', style: TextStyle(color: Colors.grey[500])),
-        ),
-      ],
+  void _scrollToGames() {
+    final gamesContext = _gamesKey.currentContext;
+    if (gamesContext == null) return;
+    Scrollable.ensureVisible(
+      gamesContext,
+      duration: 450.ms,
+      curve: Curves.easeOutCubic,
+      alignment: .08,
     );
   }
 
   Future<bool> _showExitConfirmationDialog(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF1a1f3a),
-              surfaceTintColor: Colors.transparent,
-              title: Text(
-                'Exit GameVerse',
-                style: Theme.of(context).textTheme.titleLarge,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: _cream,
+            surfaceTintColor: Colors.transparent,
+            title: const Text('Leave GameVerse?'),
+            content: const Text('Are you sure you want to exit the app?'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('STAY'),
               ),
-              content: Text(
-                'Are you sure you want to exit the app?',
-                style: Theme.of(context).textTheme.bodyMedium,
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: FilledButton.styleFrom(backgroundColor: _orange),
+                child: const Text('EXIT'),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('CANCEL'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('EXIT'),
-                ),
-              ],
-            );
-          },
+            ],
+          ),
         ) ??
         false;
   }
 }
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.onSearch});
+
+  final VoidCallback onSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    final denseMobile = MediaQuery.sizeOf(context).width < 370;
+    return Row(
+      children: [
+        Expanded(
+          child: FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Semantics(
+              header: true,
+              child: Text.rich(
+                const TextSpan(
+                  children: [
+                    TextSpan(text: 'Game'),
+                    TextSpan(
+                      text: 'Verse',
+                      style: TextStyle(color: _orange),
+                    ),
+                  ],
+                ),
+                key: const Key('gameverse-wordmark'),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      color: _ink,
+                      fontSize: denseMobile ? 25 : 31,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.2,
+                    ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: denseMobile ? 8 : 12),
+        _RoundAction(
+          key: const Key('home-search-button'),
+          icon: Icons.search_rounded,
+          tooltip: 'Search games',
+          onTap: onSearch,
+        ),
+        SizedBox(width: denseMobile ? 7 : 10),
+        Semantics(
+          button: true,
+          label: 'Open profile',
+          child: InkWell(
+            onTap: () => Get.toNamed('/profile'),
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: denseMobile ? 42 : 50,
+              height: denseMobile ? 42 : 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFDCE8FF),
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A151515),
+                    blurRadius: 14,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.face_rounded,
+                color: _cobalt,
+                size: denseMobile ? 24 : 29,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(duration: 300.ms);
+  }
+}
+
+class _RoundAction extends StatelessWidget {
+  const _RoundAction({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final denseMobile = MediaQuery.sizeOf(context).width < 370;
+    return Material(
+      color: Colors.white.withValues(alpha: .88),
+      shape: const CircleBorder(),
+      elevation: 2,
+      shadowColor: const Color(0x22151515),
+      child: IconButton(
+        constraints: BoxConstraints.tightFor(
+          width: denseMobile ? 42 : 50,
+          height: denseMobile ? 42 : 50,
+        ),
+        tooltip: tooltip,
+        onPressed: onTap,
+        icon: Icon(icon, color: _ink, size: denseMobile ? 22 : 27),
+      ),
+    );
+  }
+}
+
+class _MemoryHero extends StatelessWidget {
+  const _MemoryHero({required this.onPlay});
+
+  final VoidCallback onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = math.max(218.0, math.min(300.0, width * .72));
+        final compact = width < 350;
+
+        return Container(
+          key: const Key('memory-match-hero'),
+          height: height,
+          decoration: BoxDecoration(
+            color: _cobalt,
+            borderRadius: BorderRadius.circular(compact ? 34 : 44),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1F1749B4),
+                blurRadius: 24,
+                offset: Offset(0, 12),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'assets/images/games/memory_match_home_hero_v2.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.medium,
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: compact ? .46 : .48,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: _orange,
+                      borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(compact ? 82 : 120),
+                        bottomRight: Radius.circular(compact ? 44 : 72),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 20 : 28,
+                    compact ? 24 : 30,
+                    width * (compact ? .54 : .55),
+                    compact ? 22 : 28,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Spacer(),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'MEMORY\nMATCH',
+                          style: Theme.of(context)
+                              .textTheme
+                              .displayLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontSize: compact ? 31 : 42,
+                                height: .9,
+                                letterSpacing: -1.8,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ),
+                      SizedBox(height: compact ? 10 : 14),
+                      Text(
+                        'Train your brain',
+                        maxLines: 1,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.white,
+                              fontSize: compact ? 13 : 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      SizedBox(height: compact ? 14 : 20),
+                      FilledButton.icon(
+                        key: const Key('memory-match-play-button'),
+                        onPressed: onPlay,
+                        iconAlignment: IconAlignment.end,
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                        label: const Text('PLAY'),
+                        style: FilledButton.styleFrom(
+                          minimumSize: Size(compact ? 108 : 132, 48),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: compact ? 14 : 18,
+                          ),
+                          backgroundColor: Colors.white,
+                          foregroundColor: _orange,
+                          elevation: 3,
+                          shadowColor: const Color(0x33000000),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: .3,
+                          ),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 500.ms).scale(
+              begin: const Offset(.985, .985),
+              curve: Curves.easeOutCubic,
+            );
+      },
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.title,
+    this.trailing,
+    this.onTrailingTap,
+  });
+
+  final String title;
+  final String? trailing;
+  final VoidCallback? onTrailingTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleWidget = Text(
+      title.toUpperCase(),
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: _ink,
+            fontSize: MediaQuery.sizeOf(context).width < 370 ? 15 : 18,
+            letterSpacing: .2,
+            fontWeight: FontWeight.w900,
+          ),
+    );
+
+    if (trailing == null) return titleWidget;
+    return Row(
+      children: [
+        Expanded(child: titleWidget),
+        if (onTrailingTap == null)
+          Text(
+            trailing!,
+            style: const TextStyle(
+              color: Color(0xFF77736C),
+              fontWeight: FontWeight.w800,
+            ),
+          )
+        else
+          TextButton(onPressed: onTrailingTap, child: Text(trailing!)),
+      ],
+    );
+  }
+}
+
+class _MoodPicker extends StatelessWidget {
+  const _MoodPicker({required this.selected, required this.onSelected});
+
+  final _GameMood? selected;
+  final ValueChanged<_GameMood> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const columns = 3;
+        final spacing = constraints.maxWidth < 340 ? 6.0 : 10.0;
+        final itemWidth =
+            (constraints.maxWidth - ((columns - 1) * spacing)) / columns;
+        return Wrap(
+          spacing: spacing,
+          children: [
+            _MoodChip(
+              width: itemWidth,
+              label: 'Quick',
+              icon: Icons.bolt_rounded,
+              foreground: const Color(0xFF008D61),
+              background: const Color(0xFFDDF5E9),
+              selected: selected == _GameMood.quick,
+              onTap: () => onSelected(_GameMood.quick),
+            ),
+            _MoodChip(
+              width: itemWidth,
+              label: 'Smart',
+              icon: Icons.psychology_rounded,
+              foreground: _cobalt,
+              background: const Color(0xFFDCE9FF),
+              selected: selected == _GameMood.smart,
+              onTap: () => onSelected(_GameMood.smart),
+            ),
+            _MoodChip(
+              width: itemWidth,
+              label: 'Classic',
+              icon: Icons.star_rounded,
+              foreground: const Color(0xFFDD3159),
+              background: const Color(0xFFFFDFE7),
+              selected: selected == _GameMood.classic,
+              onTap: () => onSelected(_GameMood.classic),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MoodChip extends StatelessWidget {
+  const _MoodChip({
+    required this.width,
+    required this.label,
+    required this.icon,
+    required this.foreground,
+    required this.background,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final double width;
+  final String label;
+  final IconData icon;
+  final Color foreground;
+  final Color background;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: '$label games',
+      child: AnimatedScale(
+        duration: 180.ms,
+        scale: selected ? .97 : 1,
+        child: Material(
+          color: selected ? foreground : background,
+          borderRadius: BorderRadius.circular(24),
+          elevation: selected ? 1 : 0,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(24),
+            child: SizedBox(
+              width: width,
+              height: width < 100 ? 44 : 52,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: width < 100 ? 5 : 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: width < 100 ? 29 : 33,
+                      height: width < 100 ? 29 : 33,
+                      decoration: BoxDecoration(
+                        color: selected ? Colors.white : foreground,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        icon,
+                        color: selected ? foreground : Colors.white,
+                        size: width < 100 ? 17 : 19,
+                      ),
+                    ),
+                    SizedBox(width: width < 100 ? 4 : 7),
+                    Flexible(
+                      child: Text(
+                        label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.fade,
+                        style: TextStyle(
+                          color: selected ? Colors.white : _ink,
+                          fontSize: width < 100 ? 9 : 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GamesGrid extends StatelessWidget {
+  const _GamesGrid({required this.games});
+
+  final List<_HomeGame> games;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth < 620 ? 2 : 3;
+        final spacing = constraints.maxWidth < 370 ? 8.0 : 12.0;
+        final cardWidth =
+            (constraints.maxWidth - ((columns - 1) * spacing)) / columns;
+        final cardHeight = math.max(82.0, cardWidth * .60);
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (var index = 0; index < games.length; index++)
+              SizedBox(
+                width: cardWidth,
+                height: cardHeight,
+                child: _GameCard(game: games[index], index: index),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _GameCard extends StatelessWidget {
+  const _GameCard({required this.game, required this.index});
+
+  final _HomeGame game;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Play ${game.name}',
+      child: Material(
+        color: game.tint,
+        borderRadius: BorderRadius.circular(18),
+        elevation: 1,
+        shadowColor: const Color(0x22191919),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: Key('game-${game.name.toLowerCase().replaceAll(' ', '-')}'),
+          onTap: () => Get.toNamed(game.route),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 11,
+                child: SizedBox.expand(
+                  child: Image.asset(
+                    game.image,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.medium,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 9,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                  child: Text(
+                    game.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: _ink,
+                          fontSize: 12,
+                          height: 1.05,
+                          letterSpacing: -.35,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    )
+        .animate(delay: (index * 35).ms)
+        .fadeIn(duration: 280.ms)
+        .slideY(begin: .06);
+  }
+}
+
+class _HomeNavigation extends StatelessWidget {
+  const _HomeNavigation({required this.onGamesTap, required this.onProfileTap});
+
+  final VoidCallback onGamesTap;
+  final VoidCallback onProfileTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFFCF6),
+        border: Border(top: BorderSide(color: Color(0x11000000))),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x16000000),
+            blurRadius: 24,
+            offset: Offset(0, -6),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        minimum: EdgeInsets.fromLTRB(
+          12,
+          MediaQuery.sizeOf(context).width < 370 ? 4 : 8,
+          12,
+          MediaQuery.sizeOf(context).width < 370 ? 4 : 8,
+        ),
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _NavItem(
+                    label: 'Home',
+                    icon: Icons.home_rounded,
+                    selected: true,
+                    onTap: () {},
+                  ),
+                ),
+                Expanded(
+                  child: _NavItem(
+                    label: 'Games',
+                    icon: Icons.sports_esports_rounded,
+                    onTap: onGamesTap,
+                  ),
+                ),
+                Expanded(
+                  child: _NavItem(
+                    label: 'Profile',
+                    icon: Icons.person_rounded,
+                    onTap: onProfileTap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final denseMobile = MediaQuery.sizeOf(context).width < 370;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? _orange : Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: SizedBox(
+            height: denseMobile ? 48 : 58,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: selected ? Colors.white : _ink,
+                  size: denseMobile ? 21 : 25,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label.toUpperCase(),
+                  style: TextStyle(
+                    color: selected ? Colors.white : _ink,
+                    fontSize: denseMobile ? 9 : 10,
+                    letterSpacing: .35,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GameSearchDelegate extends SearchDelegate<void> {
+  _GameSearchDelegate({required this.games, required this.onSelected});
+
+  final List<_HomeGame> games;
+  final ValueChanged<_HomeGame> onSelected;
+
+  @override
+  String get searchFieldLabel => 'Search games';
+
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    return Theme.of(context).copyWith(
+      scaffoldBackgroundColor: _cream,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: _cream,
+        foregroundColor: _ink,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      inputDecorationTheme:
+          const InputDecorationTheme(border: InputBorder.none),
+    );
+  }
+
+  @override
+  List<Widget> buildActions(BuildContext context) => [
+        if (query.isNotEmpty)
+          IconButton(
+            tooltip: 'Clear search',
+            onPressed: () => query = '',
+            icon: const Icon(Icons.close_rounded),
+          ),
+      ];
+
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(
+        tooltip: 'Back',
+        onPressed: () => close(context, null),
+        icon: const Icon(Icons.arrow_back_rounded),
+      );
+
+  @override
+  Widget buildResults(BuildContext context) => _buildMatches(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildMatches(context);
+
+  Widget _buildMatches(BuildContext context) {
+    final normalized = query.trim().toLowerCase();
+    final matches = games
+        .where((game) =>
+            normalized.isEmpty || game.name.toLowerCase().contains(normalized))
+        .toList(growable: false);
+
+    if (matches.isEmpty) {
+      return const Center(child: Text('No games found'));
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(20),
+      itemCount: matches.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final game = matches[index];
+        return ListTile(
+          tileColor: game.tint,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(game.image,
+                width: 52, height: 52, fit: BoxFit.cover),
+          ),
+          title: Text(game.name,
+              style: const TextStyle(fontWeight: FontWeight.w800)),
+          trailing: const Icon(Icons.arrow_forward_rounded),
+          onTap: () {
+            close(context, null);
+            onSelected(game);
+          },
+        );
+      },
+    );
+  }
+}
+
+String _moodLabel(_GameMood mood) => switch (mood) {
+      _GameMood.quick => 'Quick',
+      _GameMood.smart => 'Smart',
+      _GameMood.classic => 'Classic',
+    };
