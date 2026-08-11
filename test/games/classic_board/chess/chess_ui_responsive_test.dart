@@ -151,6 +151,13 @@ class _TestStorage extends ChessStorageService {
   @override
   Future<void> saveSerializedGameState(String serializedState) async {}
   @override
+  Future<void> saveSessionMetadata(Map<String, dynamic> metadata) async {}
+  @override
+  Future<void> saveSession(
+      String serializedBoard, Map<String, dynamic> metadata) async {}
+  @override
+  Future<void> clearSavedGame() async {}
+  @override
   Future<void> updateGameStats({required String result}) async {}
   @override
   Future<void> updateShowLegalMoves(bool value) async {}

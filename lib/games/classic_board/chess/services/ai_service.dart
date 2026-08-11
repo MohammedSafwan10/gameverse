@@ -300,6 +300,19 @@ class ChessAIService extends GetxService {
     bool isMaximizing,
     _SearchConfig config,
   ) {
+    final currentColor = isMaximizing ? PieceColor.white : PieceColor.black;
+    List<ChessMove> moves = _getAllValidMoves(board, currentColor);
+
+    if (moves.isEmpty) {
+      if (_isKingInCheck(board, currentColor)) {
+        return isMaximizing
+            ? -_checkmateScore - depth
+            : _checkmateScore + depth;
+      }
+      return 0;
+    }
+    if (_isRuleDraw(board)) return 0;
+
     // At leaf depth, fall into quiescence (or static eval if q-depth = 0)
     if (depth <= 0) {
       if (config.quiescenceDepth > 0) {
@@ -307,20 +320,6 @@ class ChessAIService extends GetxService {
             board, config.quiescenceDepth, alpha, beta, isMaximizing, config);
       }
       return _evaluate(board, config);
-    }
-
-    final currentColor = isMaximizing ? PieceColor.white : PieceColor.black;
-    List<ChessMove> moves = _getAllValidMoves(board, currentColor);
-
-    // Terminal node detection
-    if (moves.isEmpty) {
-      if (_isKingInCheck(board, currentColor)) {
-        // Checkmate — prefer faster mates
-        return isMaximizing
-            ? -_checkmateScore - depth
-            : _checkmateScore + depth;
-      }
-      return 0; // Stalemate
     }
 
     // Move ordering for better pruning
@@ -367,15 +366,27 @@ class ChessAIService extends GetxService {
     bool isMaximizing,
     _SearchConfig config,
   ) {
-    final standPat = _evaluate(board, config);
-    if (depth <= 0) return standPat;
-
     final currentColor = isMaximizing ? PieceColor.white : PieceColor.black;
-    List<ChessMove> captures = _getCaptureMovesOnly(board, currentColor);
+    final inCheck = _isKingInCheck(board, currentColor);
+    final legalMoves = _getAllValidMoves(board, currentColor);
+    if (legalMoves.isEmpty) {
+      if (inCheck) {
+        return isMaximizing ? -_checkmateScore : _checkmateScore;
+      }
+      return 0;
+    }
+    if (_isRuleDraw(board)) return 0;
+
+    final standPat = _evaluate(board, config);
+    if (depth <= 0 && !inCheck) return standPat;
+
+    // Standing pat is illegal while in check: search every legal evasion.
+    List<ChessMove> moves =
+        inCheck ? legalMoves : _getCaptureMovesOnly(board, currentColor);
 
     // Order captures by MVV-LVA for better pruning
-    if (config.useMoveOrdering && captures.length > 1) {
-      captures.sort((a, b) {
+    if (config.useMoveOrdering && moves.length > 1) {
+      moves.sort((a, b) {
         final valA = _getPieceValueAt(board, a.to) * 10 -
             _getPieceValueAt(board, a.from);
         final valB = _getPieceValueAt(board, b.to) * 10 -
@@ -385,10 +396,12 @@ class ChessAIService extends GetxService {
     }
 
     if (isMaximizing) {
-      if (standPat >= beta) return beta; // Standing pat is good enough
-      alpha = max(alpha, standPat);
+      if (!inCheck) {
+        if (standPat >= beta) return beta;
+        alpha = max(alpha, standPat);
+      }
 
-      for (final move in captures) {
+      for (final move in moves) {
         final copy = board.deepCopy();
         _makeMove(copy, move);
         final score = _quiescence(copy, depth - 1, alpha, beta, false, config);
@@ -397,10 +410,12 @@ class ChessAIService extends GetxService {
       }
       return alpha;
     } else {
-      if (standPat <= alpha) return alpha;
-      beta = min(beta, standPat);
+      if (!inCheck) {
+        if (standPat <= alpha) return alpha;
+        beta = min(beta, standPat);
+      }
 
-      for (final move in captures) {
+      for (final move in moves) {
         final copy = board.deepCopy();
         _makeMove(copy, move);
         final score = _quiescence(copy, depth - 1, alpha, beta, true, config);
@@ -409,6 +424,12 @@ class ChessAIService extends GetxService {
       }
       return beta;
     }
+  }
+
+  bool _isRuleDraw(ChessBoard board) {
+    return board.isInsufficientMaterial() ||
+        board.isThreefoldRepetition() ||
+        board.isFiftyMoveRuleDraw();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -462,7 +483,8 @@ class ChessAIService extends GetxService {
     int whiteBishops = 0;
     int blackBishops = 0;
 
-    // ── Pass 1: Material + Piece-Square Tables ──
+    // Determine the phase before applying any piece-square table so every
+    // piece in this position uses the same middlegame/endgame model.
     for (int row = 0; row < 8; row++) {
       for (int col = 0; col < 8; col++) {
         final piece = board.board[row][col];
@@ -486,14 +508,21 @@ class ChessAIService extends GetxService {
             blackBishops++;
           }
         }
+      }
+    }
 
-        // Position value — mirror row for Black pieces
+    final endgame = _isEndgame(whiteMaterial, blackMaterial);
+    for (int row = 0; row < 8; row++) {
+      for (int col = 0; col < 8; col++) {
+        final piece = board.board[row][col];
+        if (piece == null) continue;
+        final matVal = pieceValues[piece.type] ?? 0;
         final tableRow = piece.color == PieceColor.white ? row : 7 - row;
         final posVal = _getPositionValue(
           piece.type,
           tableRow,
           col,
-          _isEndgame(whiteMaterial, blackMaterial),
+          endgame,
         );
 
         final total = matVal + posVal;
@@ -840,4 +869,3 @@ class _SearchConfig {
     required this.topMovesPool,
   });
 }
-

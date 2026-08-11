@@ -37,6 +37,16 @@ class ChessModeSelectionScreen extends StatelessWidget {
                     SizedBox(height: compact ? 10 : 18),
                     _Hero(compact: compact),
                     SizedBox(height: compact ? 12 : 18),
+                    Obx(() {
+                      final controller = Get.find<ChessGameController>();
+                      if (!controller.hasSavedMatch.value) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _ContinueCard(controller: controller),
+                      );
+                    }),
                     _ModeCard(
                       key: const Key('chess-ai-mode'),
                       title: 'PLAY VS AI',
@@ -85,6 +95,59 @@ class ChessModeSelectionScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ContinueCard extends StatelessWidget {
+  const _ContinueCard({required this.controller});
+  final ChessGameController controller;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: ChessDesign.gold,
+        borderRadius: BorderRadius.circular(22),
+        elevation: 7,
+        shadowColor: Colors.black38,
+        child: InkWell(
+          key: const Key('chess-continue-match'),
+          borderRadius: BorderRadius.circular(22),
+          onTap: () {
+            controller.soundService.playMenuSelectionSound();
+            controller.continueSavedGame();
+            Get.to(() => const ChessGameScreen(),
+                transition: Transition.fadeIn);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(children: [
+              const Icon(Icons.play_circle_fill_rounded,
+                  color: ChessDesign.ink, size: 36),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('CONTINUE MATCH',
+                        style: TextStyle(
+                            color: ChessDesign.ink,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900)),
+                    Text(
+                      controller.gameMode.value == ChessGameMode.ai
+                          ? 'Resume your game against AI'
+                          : 'Resume your two-player game',
+                      style: TextStyle(
+                          color: ChessDesign.ink.withValues(alpha: .72),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_rounded, color: ChessDesign.ink),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _TopBar extends StatelessWidget {

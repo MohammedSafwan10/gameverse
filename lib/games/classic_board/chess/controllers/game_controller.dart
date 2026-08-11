@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import '../services/storage_service.dart';
 import '../services/sound_service.dart';
 import '../services/ai_service.dart';
@@ -39,10 +40,13 @@ class ChessGameController extends GetxController {
   final RxList<String> moveHistory = <String>[].obs;
   final RxList<String> capturedPieces = <String>[].obs;
   final RxBool isGamePaused = false.obs;
+  final RxBool hasSavedMatch = false.obs;
   final Rx<ChessEndReason> endReason = ChessEndReason.none.obs;
   int _gameGeneration = 0;
   bool _isDisposed = false;
   bool _gameResultRecorded = false;
+  bool _promotionDialogOpen = false;
+  Future<void> _storageChain = Future<void>.value();
 
   // Board state
   final Rxn<ChessPiece> selectedPiece = Rxn<ChessPiece>();
@@ -80,9 +84,38 @@ class ChessGameController extends GetxController {
     _advanceGameGeneration();
     _timer?.cancel();
     final savedState = storageService.loadSerializedGameState();
-    if (savedState != null) {
+    if (savedState != null && savedState.isNotEmpty) {
       try {
         board.loadJson(savedState);
+        final metadata = storageService.loadSessionMetadata();
+        final modeName = metadata?['mode'] as String?;
+        if (modeName != null) {
+          gameMode.value = ChessGameMode.values.byName(modeName);
+        }
+        timerEnabled.value = metadata?['timerEnabled'] as bool? ?? false;
+        timePerPlayer.value = metadata?['timePerPlayer'] as int? ?? 10;
+        aiDifficulty.value = metadata?['aiDifficulty'] as int? ?? 2;
+        final initialSeconds = timePerPlayer.value * 60;
+        whiteTimeRemaining.value =
+            metadata?['whiteTimeRemaining'] as int? ?? initialSeconds;
+        blackTimeRemaining.value =
+            metadata?['blackTimeRemaining'] as int? ?? initialSeconds;
+        if (timerEnabled.value && metadata?['clockRunning'] == true) {
+          final savedAt = metadata?['savedAtEpochMs'] as int?;
+          if (savedAt != null) {
+            final elapsed = max(
+              0,
+              (DateTime.now().millisecondsSinceEpoch - savedAt) ~/ 1000,
+            );
+            if (board.positionState.isWhiteToMove) {
+              whiteTimeRemaining.value =
+                  max(0, whiteTimeRemaining.value - elapsed);
+            } else {
+              blackTimeRemaining.value =
+                  max(0, blackTimeRemaining.value - elapsed);
+            }
+          }
+        }
         isWhiteTurn.value = board.positionState.isWhiteToMove;
         moveHistory.assignAll(board.moveHistory);
         capturedPieces.assignAll(
@@ -94,7 +127,9 @@ class ChessGameController extends GetxController {
         _gameResultRecorded = false;
         clearSelection();
         lastMove.value = null;
-        isGamePaused.value = false;
+        // A restored match waits safely on the mode screen until Continue.
+        isGamePaused.value = true;
+        hasSavedMatch.value = true;
         endReason.value = ChessEndReason.none;
         return;
       } catch (e) {
@@ -104,22 +139,19 @@ class ChessGameController extends GetxController {
 
     board.initializeBoard();
     isWhiteTurn.value = board.positionState.isWhiteToMove;
-    gameState.value = ChessGameState.inProgress;
+    gameState.value = ChessGameState.initial;
     clearSelection();
     lastMove.value = null;
     moveHistory.clear();
     capturedPieces.clear();
     isGamePaused.value = false;
+    hasSavedMatch.value = false;
     _gameResultRecorded = false;
     endReason.value = ChessEndReason.none;
 
-    // Initialize timer if enabled
-    if (timerEnabled.value) {
-      final timeInSeconds = timePerPlayer.value * 60;
-      whiteTimeRemaining.value = timeInSeconds;
-      blackTimeRemaining.value = timeInSeconds;
-      _startTimer();
-    }
+    final timeInSeconds = timePerPlayer.value * 60;
+    whiteTimeRemaining.value = timeInSeconds;
+    blackTimeRemaining.value = timeInSeconds;
   }
 
   void _loadSettings() {
@@ -141,6 +173,7 @@ class ChessGameController extends GetxController {
   void onClose() {
     _isDisposed = true;
     _advanceGameGeneration();
+    _dismissPromotionDialog();
     _timer?.cancel();
     super.onClose();
   }
@@ -162,9 +195,10 @@ class ChessGameController extends GetxController {
 
   void startNewGame(ChessGameMode mode) {
     _advanceGameGeneration();
+    _dismissPromotionDialog();
     _timer?.cancel();
     gameMode.value = mode;
-    storageService.saveSerializedGameState('');
+    _queueStorage(storageService.clearSavedGame);
     board.initializeBoard();
     isWhiteTurn.value = board.positionState.isWhiteToMove;
     moveHistory.clear();
@@ -173,6 +207,7 @@ class ChessGameController extends GetxController {
     lastMove.value = null;
     gameState.value = ChessGameState.inProgress;
     isGamePaused.value = false;
+    hasSavedMatch.value = false;
     _gameResultRecorded = false;
     endReason.value = ChessEndReason.none;
 
@@ -193,6 +228,10 @@ class ChessGameController extends GetxController {
       if (isWhiteTurn.value) {
         if (whiteTimeRemaining.value > 0) {
           whiteTimeRemaining.value--;
+          if (whiteTimeRemaining.value == 0) {
+            _handleTimeUp();
+            return;
+          }
           if (whiteTimeRemaining.value <= 10) {
             soundService.playClockTickSound();
           }
@@ -202,6 +241,10 @@ class ChessGameController extends GetxController {
       } else {
         if (blackTimeRemaining.value > 0) {
           blackTimeRemaining.value--;
+          if (blackTimeRemaining.value == 0) {
+            _handleTimeUp();
+            return;
+          }
           if (blackTimeRemaining.value <= 10) {
             soundService.playClockTickSound();
           }
@@ -214,11 +257,22 @@ class ChessGameController extends GetxController {
 
   void _handleTimeUp() {
     _advanceGameGeneration();
+    _dismissPromotionDialog();
     _timer?.cancel();
-    soundService.playTimeUpSound();
-    endReason.value = ChessEndReason.timeout;
-    gameState.value = ChessGameState.checkmate;
-    _recordGameResultOnce(isWhiteTurn.value ? 'loss' : 'win');
+    final winnerColor = isWhiteTurn.value ? PieceColor.black : PieceColor.white;
+    if (!board.hasPossibleMatingMaterial(winnerColor)) {
+      soundService.playGameEndSound();
+      endReason.value = ChessEndReason.insufficientMaterial;
+      gameState.value = ChessGameState.draw;
+      _recordGameResultOnce('draw');
+    } else {
+      soundService.playTimeUpSound();
+      endReason.value = ChessEndReason.timeout;
+      gameState.value = ChessGameState.checkmate;
+      _recordGameResultOnce(isWhiteTurn.value ? 'loss' : 'win');
+    }
+    hasSavedMatch.value = false;
+    _queueStorage(storageService.clearSavedGame);
   }
 
   void makeMove(String from, String to) {
@@ -227,6 +281,11 @@ class ChessGameController extends GetxController {
         gameState.value == ChessGameState.stalemate ||
         gameState.value == ChessGameState.draw ||
         isGamePaused.value) {
+      return;
+    }
+
+    if (gameMode.value == ChessGameMode.ai && !isWhiteTurn.value) {
+      soundService.playErrorSound();
       return;
     }
 
@@ -264,18 +323,37 @@ class ChessGameController extends GetxController {
   }
 
   void _handlePromotionMove(ChessMove move, PieceColor color) {
-    Get.dialog(
+    final generation = _gameGeneration;
+    _promotionDialogOpen = true;
+    Get.dialog<void>(
       PromotionDialog(
         color: color,
         position: move.to,
         onSelect: (type) {
+          if (!_promotionDialogOpen ||
+              generation != _gameGeneration ||
+              isGamePaused.value ||
+              gameState.value == ChessGameState.checkmate ||
+              gameState.value == ChessGameState.stalemate ||
+              gameState.value == ChessGameState.draw ||
+              board.getPieceAt(move.from)?.color != color ||
+              isWhiteTurn.value != (color == PieceColor.white)) {
+            return;
+          }
+          _promotionDialogOpen = false;
           Get.back();
           _applyResolvedMove(move.from, move.to, promotionPiece: type);
           soundService.playPromotionSound();
         },
       ),
       barrierDismissible: false,
-    );
+    ).whenComplete(() => _promotionDialogOpen = false);
+  }
+
+  void _dismissPromotionDialog() {
+    if (!_promotionDialogOpen) return;
+    _promotionDialogOpen = false;
+    if (Get.isDialogOpen ?? false) Get.back<void>();
   }
 
   void _applyResolvedMove(String from, String to, {PieceType? promotionPiece}) {
@@ -289,7 +367,7 @@ class ChessGameController extends GetxController {
       moveHistory.assignAll(board.moveHistory);
       _syncCapturedPieces();
       isWhiteTurn.value = board.positionState.isWhiteToMove;
-      storageService.saveSerializedGameState(board.toJson());
+      _persistGame();
       gameState.value = ChessGameState.inProgress;
       clearSelection();
       _checkGameState();
@@ -350,7 +428,32 @@ class ChessGameController extends GetxController {
     aiService.setDifficulty(aiDifficulty.value);
 
     try {
-      final move = aiService.getBestEngineMove(board, PieceColor.black);
+      aiService.isThinking.value = true;
+      final rawMove = await compute(_computeChessAiMove, {
+        'board': board.toJson(),
+        'difficulty': aiDifficulty.value,
+      });
+      aiService.isThinking.value = false;
+      final move = rawMove == null
+          ? null
+          : ChessMove(
+              from: rawMove['from']! as String,
+              to: rawMove['to']! as String,
+              movingPiece:
+                  PieceType.values.byName(rawMove['movingPiece']! as String),
+              capturedPiece: rawMove['capturedPiece'] == null
+                  ? null
+                  : PieceType.values
+                      .byName(rawMove['capturedPiece']! as String),
+              promotionPiece: rawMove['promotionPiece'] == null
+                  ? null
+                  : PieceType.values
+                      .byName(rawMove['promotionPiece']! as String),
+              isCastleKingside: rawMove['isCastleKingside']! as bool? ?? false,
+              isCastleQueenside:
+                  rawMove['isCastleQueenside']! as bool? ?? false,
+              isEnPassant: rawMove['isEnPassant']! as bool? ?? false,
+            );
 
       if (!_isCurrentAiTurn(generation)) return;
 
@@ -367,6 +470,7 @@ class ChessGameController extends GetxController {
         promotionPiece: move.promotionPiece,
       );
     } catch (e) {
+      aiService.isThinking.value = false;
       dev.log('AI move error: $e', name: 'Chess');
       // If AI can't make a move, check if it's in checkmate or stalemate
       _checkGameState();
@@ -385,7 +489,7 @@ class ChessGameController extends GetxController {
     soundService.playCaptureSound();
   }
 
-  void _checkGameState() {
+  void _checkGameState({bool recordResult = true}) {
     final currentColor =
         isWhiteTurn.value ? PieceColor.white : PieceColor.black;
 
@@ -394,20 +498,18 @@ class ChessGameController extends GetxController {
       gameState.value = ChessGameState.checkmate;
       endReason.value = ChessEndReason.checkmate;
       soundService.playCheckmateSound();
-      _recordGameResultOnce(isWhiteTurn.value ? 'loss' : 'win');
+      if (recordResult) {
+        _recordGameResultOnce(isWhiteTurn.value ? 'loss' : 'win');
+      }
       _timer?.cancel();
       dev.log('Checkmate! ${!isWhiteTurn.value ? "White" : "Black"} wins',
           name: 'Chess');
-    } else if (board.isCheck(currentColor)) {
-      gameState.value = ChessGameState.check;
-      soundService.playCheckSound();
-      dev.log('Check!', name: 'Chess');
     } else if (board.isStalemate(currentColor)) {
       _advanceGameGeneration();
       gameState.value = ChessGameState.stalemate;
       endReason.value = ChessEndReason.stalemate;
       soundService.playGameEndSound();
-      _recordGameResultOnce('draw');
+      if (recordResult) _recordGameResultOnce('draw');
       _timer?.cancel();
       dev.log('Stalemate!', name: 'Chess');
     } else if (board.isInsufficientMaterial()) {
@@ -415,7 +517,7 @@ class ChessGameController extends GetxController {
       gameState.value = ChessGameState.draw;
       endReason.value = ChessEndReason.insufficientMaterial;
       soundService.playGameEndSound();
-      _recordGameResultOnce('draw');
+      if (recordResult) _recordGameResultOnce('draw');
       _timer?.cancel();
       dev.log('Draw by insufficient material!', name: 'Chess');
     } else if (board.isThreefoldRepetition()) {
@@ -423,7 +525,7 @@ class ChessGameController extends GetxController {
       gameState.value = ChessGameState.draw;
       endReason.value = ChessEndReason.repetition;
       soundService.playGameEndSound();
-      _recordGameResultOnce('draw');
+      if (recordResult) _recordGameResultOnce('draw');
       _timer?.cancel();
       dev.log('Draw by threefold repetition!', name: 'Chess');
     } else if (board.isFiftyMoveRuleDraw()) {
@@ -431,20 +533,53 @@ class ChessGameController extends GetxController {
       gameState.value = ChessGameState.draw;
       endReason.value = ChessEndReason.fiftyMoveRule;
       soundService.playGameEndSound();
-      _recordGameResultOnce('draw');
+      if (recordResult) _recordGameResultOnce('draw');
       _timer?.cancel();
       dev.log('Draw by 50-move rule!', name: 'Chess');
+    } else if (board.isCheck(currentColor)) {
+      gameState.value = ChessGameState.check;
+      soundService.playCheckSound();
+      dev.log('Check!', name: 'Chess');
+    }
+
+    if (gameState.value == ChessGameState.checkmate ||
+        gameState.value == ChessGameState.stalemate ||
+        gameState.value == ChessGameState.draw) {
+      hasSavedMatch.value = false;
+      _queueStorage(storageService.clearSavedGame);
     }
   }
 
   // Game control
   void pauseGame() {
     _advanceGameGeneration();
+    _dismissPromotionDialog();
     isGamePaused.value = true;
     _timer?.cancel();
+    _persistGame();
+  }
+
+  void continueSavedGame() {
+    if (!hasSavedMatch.value || !isGamePaused.value) return;
+    if (timerEnabled.value &&
+        (isWhiteTurn.value
+                ? whiteTimeRemaining.value
+                : blackTimeRemaining.value) <=
+            0) {
+      isGamePaused.value = false;
+      _handleTimeUp();
+      return;
+    }
+    resumeGame();
   }
 
   void resumeGame() {
+    if (!isGamePaused.value ||
+        gameState.value == ChessGameState.checkmate ||
+        gameState.value == ChessGameState.stalemate ||
+        gameState.value == ChessGameState.draw) {
+      return;
+    }
     isGamePaused.value = false;
     if (timerEnabled.value) {
       _startTimer();
@@ -456,11 +591,14 @@ class ChessGameController extends GetxController {
 
   void forfeitGame() {
     _advanceGameGeneration();
+    _dismissPromotionDialog();
     _timer?.cancel();
     gameState.value = ChessGameState.checkmate;
     endReason.value = ChessEndReason.resignation;
     soundService.playGameEndSound();
     _recordGameResultOnce('loss');
+    hasSavedMatch.value = false;
+    _queueStorage(storageService.clearSavedGame);
   }
 
   void selectPiece(ChessPiece piece) {
@@ -483,11 +621,15 @@ class ChessGameController extends GetxController {
   void _recordGameResultOnce(String result) {
     if (_gameResultRecorded) return;
     _gameResultRecorded = true;
+    if (gameMode.value == ChessGameMode.local) return;
     _updateGameStats(result);
   }
 
   void importFen(String fen) {
     _advanceGameGeneration();
+    _dismissPromotionDialog();
+    _timer?.cancel();
+    final wasPaused = isGamePaused.value;
     board.loadFen(fen);
     isWhiteTurn.value = board.positionState.isWhiteToMove;
     moveHistory.clear();
@@ -497,7 +639,49 @@ class ChessGameController extends GetxController {
     gameState.value = ChessGameState.inProgress;
     _gameResultRecorded = false;
     endReason.value = ChessEndReason.none;
-    storageService.saveSerializedGameState(board.toJson());
+    if (timerEnabled.value) {
+      final seconds = timePerPlayer.value * 60;
+      whiteTimeRemaining.value = seconds;
+      blackTimeRemaining.value = seconds;
+    }
+    _checkGameState(recordResult: false);
+    if (gameState.value == ChessGameState.inProgress ||
+        gameState.value == ChessGameState.check) {
+      _persistGame();
+      if (!wasPaused) {
+        if (timerEnabled.value) _startTimer();
+        if (gameMode.value == ChessGameMode.ai && !isWhiteTurn.value) {
+          unawaited(_makeAiMove());
+        }
+      }
+    }
+  }
+
+  void _persistGame() {
+    if (gameState.value == ChessGameState.checkmate ||
+        gameState.value == ChessGameState.stalemate ||
+        gameState.value == ChessGameState.draw) {
+      return;
+    }
+    hasSavedMatch.value = true;
+    final metadata = <String, dynamic>{
+      'mode': gameMode.value.name,
+      'timerEnabled': timerEnabled.value,
+      'timePerPlayer': timePerPlayer.value,
+      'whiteTimeRemaining': whiteTimeRemaining.value,
+      'blackTimeRemaining': blackTimeRemaining.value,
+      'aiDifficulty': aiDifficulty.value,
+      'clockRunning': timerEnabled.value && !isGamePaused.value,
+      'savedAtEpochMs': DateTime.now().millisecondsSinceEpoch,
+    };
+    final serializedBoard = board.toJson();
+    _queueStorage(() => storageService.saveSession(serializedBoard, metadata));
+  }
+
+  void _queueStorage(Future<void> Function() operation) {
+    _storageChain = _storageChain.then((_) => operation()).catchError((error) {
+      dev.log('Chess persistence failed: $error', name: 'Chess');
+    });
   }
 
   String exportFen() => board.toFen();
@@ -531,4 +715,21 @@ class ChessGameController extends GetxController {
     final remainingSeconds = seconds % 60;
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
+}
+
+Map<String, Object?>? _computeChessAiMove(Map<String, Object?> request) {
+  final searchBoard = ChessBoard()..loadJson(request['board']! as String);
+  final search = ChessAIService()..setDifficulty(request['difficulty']! as int);
+  final move = search.getBestEngineMove(searchBoard, PieceColor.black);
+  if (move == null) return null;
+  return {
+    'from': move.from,
+    'to': move.to,
+    'movingPiece': move.movingPiece.name,
+    'capturedPiece': move.capturedPiece?.name,
+    'promotionPiece': move.promotionPiece?.name,
+    'isCastleKingside': move.isCastleKingside,
+    'isCastleQueenside': move.isCastleQueenside,
+    'isEnPassant': move.isEnPassant,
+  };
 }

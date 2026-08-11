@@ -10,7 +10,25 @@ void main() {
     final board = ChessBoard();
 
     expect(board.positionHistory, isNotEmpty);
-    expect(board.positionHistory.first, board.toFen());
+    expect(board.positionHistory.first, board.repetitionKey());
+  });
+
+  test('irrelevant en passant target does not change repetition identity', () {
+    final withTarget = ChessBoard()
+      ..loadFen('4k3/8/8/8/4p3/8/8/4K3 w - e6 0 1');
+    final withoutTarget = ChessBoard()
+      ..loadFen('4k3/8/8/8/4p3/8/8/4K3 w - - 0 1');
+
+    expect(withTarget.repetitionKey(), withoutTarget.repetitionKey());
+  });
+
+  test('legal en passant target changes repetition identity', () {
+    final withTarget = ChessBoard()
+      ..loadFen('4k3/8/8/3Pp3/8/8/8/4K3 w - e6 0 1');
+    final withoutTarget = ChessBoard()
+      ..loadFen('4k3/8/8/3Pp3/8/8/8/4K3 w - - 0 1');
+
+    expect(withTarget.repetitionKey(), isNot(withoutTarget.repetitionKey()));
   });
 
   test('threefold repetition is detected from repeated positions', () {
@@ -90,6 +108,24 @@ void main() {
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
     board.board[7][2] = Bishop(color: PieceColor.white, position: 'c1');
     board.board[7][1] = Knight(color: PieceColor.white, position: 'b1');
+
+    expect(board.isInsufficientMaterial(), isFalse);
+  });
+
+  test('two knights versus a king is not an automatic dead-position draw', () {
+    final board = ChessBoard()..loadFen('4k3/8/8/8/8/8/6NN/4K3 w - - 0 1');
+
+    expect(board.isInsufficientMaterial(), isFalse);
+  });
+
+  test('knight versus knight is not an automatic dead-position draw', () {
+    final board = ChessBoard()..loadFen('4k3/8/8/8/8/8/6N1/4K1n1 w - - 0 1');
+
+    expect(board.isInsufficientMaterial(), isFalse);
+  });
+
+  test('bishop versus knight is not an automatic dead-position draw', () {
+    final board = ChessBoard()..loadFen('4k3/8/8/8/8/8/6B1/4K1n1 w - - 0 1');
 
     expect(board.isInsufficientMaterial(), isFalse);
   });

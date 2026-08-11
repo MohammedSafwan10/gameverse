@@ -7,6 +7,28 @@ import 'package:gameverse/games/classic_board/chess/models/piece_types/queen.dar
 import 'package:gameverse/games/classic_board/chess/models/piece_types/rook.dart';
 
 void main() {
+  test('quiet promotion resets the halfmove clock', () {
+    final board = ChessBoard()..loadFen('4k3/P7/8/8/8/8/8/4K3 w - - 99 1');
+
+    expect(
+      board.movePiece('a7', 'a8', promotionPiece: PieceType.queen),
+      isTrue,
+    );
+    expect(board.positionState.halfmoveClock, 0);
+    expect(board.moveHistory.last, 'a8=Q+');
+  });
+
+  test('SAN records castling and disambiguates identical pieces', () {
+    final castle = ChessBoard()
+      ..loadFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+    expect(castle.movePiece('e1', 'g1'), isTrue);
+    expect(castle.moveHistory.last, 'O-O');
+
+    final knights = ChessBoard()..loadFen('4k3/8/8/8/8/8/8/1N2KN2 w - - 0 1');
+    expect(knights.movePiece('b1', 'd2'), isTrue);
+    expect(knights.moveHistory.last, 'Nbd2');
+  });
+
   test('kingside castling appears in legal moves when path is clear', () {
     final board = ChessBoard();
 
@@ -90,8 +112,10 @@ void main() {
     board.board = List.generate(8, (_) => List.generate(8, (_) => null));
     board.board[7][4] = King(color: PieceColor.white, position: 'e1');
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
-    board.board[3][4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
-    board.board[3][3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
+    board.board[3]
+        [4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
+    board.board[3]
+        [3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
     board.positionState = board.positionState.copyWith(
       isWhiteToMove: true,
       enPassantTarget: 'd6',
@@ -110,8 +134,10 @@ void main() {
     board.board = List.generate(8, (_) => List.generate(8, (_) => null));
     board.board[7][4] = King(color: PieceColor.white, position: 'e1');
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
-    board.board[3][4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
-    board.board[3][3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
+    board.board[3]
+        [4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
+    board.board[3]
+        [3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
     board.positionState = board.positionState.copyWith(
       isWhiteToMove: true,
       enPassantTarget: 'd6',
@@ -134,8 +160,10 @@ void main() {
     board.board[7][4] = King(color: PieceColor.white, position: 'e1');
     board.board[0][0] = King(color: PieceColor.black, position: 'a8');
     board.board[0][4] = Rook(color: PieceColor.black, position: 'e8');
-    board.board[3][4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
-    board.board[3][3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
+    board.board[3]
+        [4] = Pawn(color: PieceColor.white, position: 'e5')..hasMoved = true;
+    board.board[3]
+        [3] = Pawn(color: PieceColor.black, position: 'd5')..hasMoved = true;
     board.positionState = board.positionState.copyWith(
       isWhiteToMove: true,
       enPassantTarget: 'd6',
@@ -147,16 +175,20 @@ void main() {
     expect(board.movePiece('e5', 'd6'), isFalse);
   });
 
-  test('pawn promotion exposes all promotion options and applies selected piece', () {
+  test(
+      'pawn promotion exposes all promotion options and applies selected piece',
+      () {
     final board = ChessBoard();
 
     board.board = List.generate(8, (_) => List.generate(8, (_) => null));
     board.board[7][4] = King(color: PieceColor.white, position: 'e1');
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
-    board.board[1][0] = Pawn(color: PieceColor.white, position: 'a7')..hasMoved = true;
+    board.board[1]
+        [0] = Pawn(color: PieceColor.white, position: 'a7')..hasMoved = true;
     board.positionState = board.positionState.copyWith(isWhiteToMove: true);
 
-    final promotionMoves = board.getLegalMoves('a7').where((move) => move.to == 'a8').toList();
+    final promotionMoves =
+        board.getLegalMoves('a7').where((move) => move.to == 'a8').toList();
     expect(promotionMoves.map((move) => move.promotionPiece).toSet(), {
       PieceType.queen,
       PieceType.rook,

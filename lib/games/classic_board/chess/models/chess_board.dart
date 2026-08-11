@@ -25,7 +25,31 @@ class ChessBoard {
 
   String repetitionKey() {
     final parts = toFen().split(' ');
+    if (parts[3] != '-' && !_hasLegalEnPassantCapture()) {
+      parts[3] = '-';
+    }
     return parts.take(4).join(' ');
+  }
+
+  bool _hasLegalEnPassantCapture() {
+    final target = positionState.enPassantTarget;
+    if (target == null) return false;
+
+    final (_, targetCol) = ChessPiece.notationToCoordinates(target);
+    final pawnRow = positionState.isWhiteToMove ? 3 : 4;
+    final color =
+        positionState.isWhiteToMove ? PieceColor.white : PieceColor.black;
+    for (final pawnCol in <int>[targetCol - 1, targetCol + 1]) {
+      if (pawnCol < 0 || pawnCol > 7) continue;
+      final pawn = board[pawnRow][pawnCol];
+      if (pawn?.type != PieceType.pawn || pawn?.color != color) continue;
+      if (getLegalMoves(pawn!.position).any(
+        (move) => move.isEnPassant && move.to == target,
+      )) {
+        return true;
+      }
+    }
+    return false;
   }
 
   ChessBoard._empty({required this.positionState}) {
@@ -190,7 +214,7 @@ class ChessBoard {
     _placePiece(7, 6, PieceType.knight, PieceColor.white);
     _placePiece(7, 7, PieceType.rook, PieceColor.white);
 
-    positionHistory.add(toFen());
+    positionHistory.add(repetitionKey());
   }
 
   void _placePiece(int row, int col, PieceType type, PieceColor color) {
@@ -221,7 +245,8 @@ class ChessBoard {
     final legalMoves = getLegalMoves(from);
     final move = legalMoves.where((candidate) => candidate.to == to).firstWhere(
           (candidate) =>
-              promotionPiece == null || candidate.promotionPiece == promotionPiece,
+              promotionPiece == null ||
+              candidate.promotionPiece == promotionPiece,
           orElse: () => const ChessMove(
             from: '',
             to: '',
@@ -241,9 +266,13 @@ class ChessBoard {
     final piece = board[fromRow][fromCol];
     if (piece == null) return;
 
+    final isCapture = move.isEnPassant || board[toRow][toCol] != null;
+    final sanPrefix = _generateSanPrefix(move, piece, isCapture);
+
     ChessPiece? capturedPiece;
     if (move.isEnPassant) {
-      final captureRow = movingColor == PieceColor.white ? toRow + 1 : toRow - 1;
+      final captureRow =
+          movingColor == PieceColor.white ? toRow + 1 : toRow - 1;
       capturedPiece = board[captureRow][toCol];
       board[captureRow][toCol] = null;
     } else {
@@ -266,7 +295,8 @@ class ChessBoard {
       final rookTo = move.isCastleKingside
           ? ChessPiece.coordinatesToNotation(fromRow, toCol - 1)
           : ChessPiece.coordinatesToNotation(fromRow, toCol + 1);
-      final (rookFromRow, rookFromCol) = ChessPiece.notationToCoordinates(rookFrom);
+      final (rookFromRow, rookFromCol) =
+          ChessPiece.notationToCoordinates(rookFrom);
       final (rookToRow, rookToCol) = ChessPiece.notationToCoordinates(rookTo);
       final rook = board[rookFromRow][rookFromCol];
       if (rook != null) {
@@ -278,24 +308,32 @@ class ChessBoard {
     }
 
     if (move.isPromotion && move.promotionPiece != null) {
-      board[toRow][toCol] = _createPiece(move.promotionPiece!, movingColor, move.to)
+      board[toRow]
+          [toCol] = _createPiece(move.promotionPiece!, movingColor, move.to)
         ..hasMoved = true;
     }
 
-    final moveNotation =
-        _generateMoveNotation(board[toRow][toCol]!, move.from, move.to, capturedPiece != null);
-    moveHistory.add(moveNotation);
-    structuredMoveHistory.add(move);
     _updatePositionState(
       board[toRow][toCol]!,
+      move.movingPiece,
       move.from,
       move.to,
       capturedPiece,
     );
+    final opponent =
+        positionState.isWhiteToMove ? PieceColor.white : PieceColor.black;
+    final suffix = isCheckmate(opponent)
+        ? '#'
+        : isCheck(opponent)
+            ? '+'
+            : '';
+    moveHistory.add('$sanPrefix$suffix');
+    structuredMoveHistory.add(move);
   }
 
   void _updatePositionState(
     ChessPiece piece,
+    PieceType movingPieceType,
     String from,
     String to,
     ChessPiece? capturedPiece,
@@ -303,11 +341,11 @@ class ChessBoard {
     final (_, fromCol) = ChessPiece.notationToCoordinates(from);
     final (toRow, _) = ChessPiece.notationToCoordinates(to);
 
-    final isPawnDoubleStep = piece.type == PieceType.pawn &&
+    final isPawnDoubleStep = movingPieceType == PieceType.pawn &&
         (ChessPiece.notationToCoordinates(from).$1 - toRow).abs() == 2;
 
     var castlingRights = positionState.castlingRights;
-    if (piece.type == PieceType.king) {
+    if (movingPieceType == PieceType.king) {
       castlingRights = piece.color == PieceColor.white
           ? castlingRights.copyWith(
               whiteKingside: false,
@@ -317,7 +355,7 @@ class ChessBoard {
               blackKingside: false,
               blackQueenside: false,
             );
-    } else if (piece.type == PieceType.rook) {
+    } else if (movingPieceType == PieceType.rook) {
       if (piece.color == PieceColor.white) {
         if (from == 'a1') {
           castlingRights = castlingRights.copyWith(whiteQueenside: false);
@@ -359,14 +397,15 @@ class ChessBoard {
               fromCol,
             )
           : null,
-      halfmoveClock: (piece.type == PieceType.pawn || capturedPiece != null)
-          ? 0
-          : positionState.halfmoveClock + 1,
+      halfmoveClock:
+          (movingPieceType == PieceType.pawn || capturedPiece != null)
+              ? 0
+              : positionState.halfmoveClock + 1,
       fullmoveNumber: piece.color == PieceColor.black
           ? positionState.fullmoveNumber + 1
           : positionState.fullmoveNumber,
     );
-    positionHistory.add(toFen());
+    positionHistory.add(repetitionKey());
   }
 
   String toFen() {
@@ -420,13 +459,25 @@ class ChessBoard {
 
   bool isThreefoldRepetition() {
     final current = repetitionKey();
-    return positionHistory.where((fen) => _normalizeRepetitionKey(fen) == current).length >= 3;
+    return positionHistory
+            .where((fen) => _normalizeRepetitionKey(fen) == current)
+            .length >=
+        3;
   }
 
   String _normalizeRepetitionKey(String fenOrKey) {
     final parts = fenOrKey.split(' ');
-    if (parts.length >= 4) {
-      return parts.take(4).join(' ');
+    if (parts.length == 6) {
+      try {
+        final historicalBoard = ChessBoard();
+        historicalBoard.loadFen(fenOrKey);
+        return historicalBoard.repetitionKey();
+      } on FormatException {
+        return parts.take(4).join(' ');
+      }
+    }
+    if (parts.length == 4) {
+      return fenOrKey;
     }
     return fenOrKey;
   }
@@ -500,9 +551,9 @@ class ChessBoard {
 
     capturedPieces
       ..clear()
-      ..addAll(((snapshot['capturedPieces'] as List<dynamic>?) ??
-              const <dynamic>[])
-          .map((raw) {
+      ..addAll(
+          ((snapshot['capturedPieces'] as List<dynamic>?) ?? const <dynamic>[])
+              .map((raw) {
         final data = raw as Map<String, dynamic>;
         final piece = _createPiece(
           PieceType.values.byName(data['type'] as String),
@@ -515,20 +566,51 @@ class ChessBoard {
 
     positionHistory
       ..clear()
-      ..addAll((snapshot['positionHistory'] as List<dynamic>? ?? const <dynamic>[])
-          .cast<String>());
+      ..addAll(
+          (snapshot['positionHistory'] as List<dynamic>? ?? const <dynamic>[])
+              .cast<String>());
     if (positionHistory.isEmpty) {
-      positionHistory.add(toFen());
+      positionHistory.add(repetitionKey());
     }
   }
 
   void _loadFromFen(String fen) {
-    final parts = fen.split(' ');
+    final parts = fen.trim().split(RegExp(r'\s+'));
     if (parts.length != 6) {
       throw FormatException('Invalid FEN: $fen');
     }
 
-    board = List.generate(8, (_) => List.generate(8, (_) => null));
+    if (parts[1] != 'w' && parts[1] != 'b') {
+      throw FormatException('Invalid FEN active color: ${parts[1]}');
+    }
+
+    final castling = parts[2];
+    if (!RegExp(r'^(-|K?Q?k?q?)$').hasMatch(castling)) {
+      throw FormatException('Invalid FEN castling rights: $castling');
+    }
+
+    final enPassant = parts[3];
+    if (enPassant != '-' && !RegExp(r'^[a-h][36]$').hasMatch(enPassant)) {
+      throw FormatException('Invalid FEN en passant target: $enPassant');
+    }
+    if (enPassant != '-' &&
+        ((parts[1] == 'w' && !enPassant.endsWith('6')) ||
+            (parts[1] == 'b' && !enPassant.endsWith('3')))) {
+      throw FormatException(
+          'FEN en passant target is inconsistent with active color');
+    }
+
+    final halfmoveClock = int.tryParse(parts[4]);
+    final fullmoveNumber = int.tryParse(parts[5]);
+    if (halfmoveClock == null || halfmoveClock < 0) {
+      throw FormatException('Invalid FEN halfmove clock: ${parts[4]}');
+    }
+    if (fullmoveNumber == null || fullmoveNumber < 1) {
+      throw FormatException('Invalid FEN fullmove number: ${parts[5]}');
+    }
+
+    final parsedBoard =
+        List.generate(8, (_) => List<ChessPiece?>.filled(8, null));
     final ranks = parts[0].split('/');
     if (ranks.length != 8) {
       throw FormatException('Invalid FEN board: ${parts[0]}');
@@ -539,11 +621,22 @@ class ChessBoard {
       for (final char in ranks[row].split('')) {
         final digit = int.tryParse(char);
         if (digit != null) {
+          if (digit < 1 || digit > 8) {
+            throw FormatException('Invalid FEN empty-square count: $char');
+          }
           col += digit;
+          if (col > 8) {
+            throw FormatException('FEN rank ${8 - row} exceeds 8 squares');
+          }
           continue;
         }
 
-        final color = char == char.toUpperCase() ? PieceColor.white : PieceColor.black;
+        if (col >= 8) {
+          throw FormatException('FEN rank ${8 - row} exceeds 8 squares');
+        }
+
+        final color =
+            char == char.toUpperCase() ? PieceColor.white : PieceColor.black;
         final type = switch (char.toLowerCase()) {
           'p' => PieceType.pawn,
           'r' => PieceType.rook,
@@ -556,13 +649,33 @@ class ChessBoard {
         final position = ChessPiece.coordinatesToNotation(row, col);
         final piece = _createPiece(type, color, position);
         piece.hasMoved = _inferHasMoved(type, color, position);
-        board[row][col] = piece;
+        parsedBoard[row][col] = piece;
         col++;
+      }
+      if (col != 8) {
+        throw FormatException('FEN rank ${8 - row} contains $col squares');
       }
     }
 
-    final castling = parts[2];
-    positionState = ChessPositionState(
+    final whiteKings = parsedBoard
+        .expand((rank) => rank)
+        .where((piece) =>
+            piece?.type == PieceType.king && piece?.color == PieceColor.white)
+        .length;
+    final blackKings = parsedBoard
+        .expand((rank) => rank)
+        .where((piece) =>
+            piece?.type == PieceType.king && piece?.color == PieceColor.black)
+        .length;
+    if (whiteKings != 1 || blackKings != 1) {
+      throw const FormatException('FEN must contain exactly one king per side');
+    }
+    if ([...parsedBoard.first, ...parsedBoard.last]
+        .any((piece) => piece?.type == PieceType.pawn)) {
+      throw const FormatException('FEN cannot place a pawn on a back rank');
+    }
+
+    final parsedState = ChessPositionState(
       isWhiteToMove: parts[1] == 'w',
       castlingRights: ChessCastlingRights(
         whiteKingside: castling.contains('K'),
@@ -570,10 +683,22 @@ class ChessBoard {
         blackKingside: castling.contains('k'),
         blackQueenside: castling.contains('q'),
       ),
-      enPassantTarget: parts[3] == '-' ? null : parts[3],
-      halfmoveClock: int.parse(parts[4]),
-      fullmoveNumber: int.parse(parts[5]),
+      enPassantTarget: enPassant == '-' ? null : enPassant,
+      halfmoveClock: halfmoveClock,
+      fullmoveNumber: fullmoveNumber,
     );
+
+    final parsedPosition = ChessBoard._empty(positionState: parsedState)
+      ..board = parsedBoard;
+    final inactiveColor =
+        parsedState.isWhiteToMove ? PieceColor.black : PieceColor.white;
+    if (parsedPosition.isCheck(inactiveColor)) {
+      throw const FormatException(
+          'FEN is illegal: the side that just moved is in check');
+    }
+
+    board = parsedBoard;
+    positionState = parsedState;
   }
 
   bool _inferHasMoved(PieceType type, PieceColor color, String position) {
@@ -584,7 +709,8 @@ class ChessBoard {
       return position != (color == PieceColor.white ? 'e1' : 'e8');
     }
     if (type == PieceType.rook) {
-      final startSquares = color == PieceColor.white ? {'a1', 'h1'} : {'a8', 'h8'};
+      final startSquares =
+          color == PieceColor.white ? {'a1', 'h1'} : {'a8', 'h8'};
       return !startSquares.contains(position);
     }
     return true;
@@ -596,25 +722,56 @@ class ChessBoard {
     loadSnapshot((jsonDecode(json) as Map).cast<String, dynamic>());
   }
 
-  String _generateMoveNotation(
-      ChessPiece piece, String from, String to, bool isCapture) {
+  String _generateSanPrefix(
+    ChessMove move,
+    ChessPiece piece,
+    bool isCapture,
+  ) {
+    if (move.isCastleKingside) return 'O-O';
+    if (move.isCastleQueenside) return 'O-O-O';
+
+    final promotion = move.promotionPiece == null
+        ? ''
+        : '=${_pieceSymbol(move.promotionPiece!)}';
     if (piece.type == PieceType.pawn) {
-      if (isCapture) {
-        return '${from[0]}x$to';
-      }
-      return to;
+      return '${isCapture ? '${move.from[0]}x' : ''}${move.to}$promotion';
     }
 
-    final pieceSymbol = switch (piece.type) {
-      PieceType.king => 'K',
-      PieceType.queen => 'Q',
-      PieceType.rook => 'R',
-      PieceType.bishop => 'B',
-      PieceType.knight => 'N',
-      PieceType.pawn => '',
-    };
+    return '${_pieceSymbol(piece.type)}'
+        '${_sanDisambiguation(move, piece)}'
+        '${isCapture ? 'x' : ''}${move.to}$promotion';
+  }
 
-    return '$pieceSymbol${isCapture ? 'x' : ''}$to';
+  String _pieceSymbol(PieceType type) => switch (type) {
+        PieceType.king => 'K',
+        PieceType.queen => 'Q',
+        PieceType.rook => 'R',
+        PieceType.bishop => 'B',
+        PieceType.knight => 'N',
+        PieceType.pawn => '',
+      };
+
+  String _sanDisambiguation(ChessMove move, ChessPiece piece) {
+    final alternatives = <ChessPiece>[];
+    for (final candidate in board.expand((rank) => rank)) {
+      if (candidate == null ||
+          identical(candidate, piece) ||
+          candidate.color != piece.color ||
+          candidate.type != piece.type) {
+        continue;
+      }
+      if (getLegalMoves(candidate.position)
+          .any((legal) => legal.to == move.to)) {
+        alternatives.add(candidate);
+      }
+    }
+    if (alternatives.isEmpty) return '';
+    final fileIsUnique = alternatives
+        .every((candidate) => candidate.position[0] != move.from[0]);
+    if (fileIsUnique) return move.from[0];
+    final rankIsUnique = alternatives
+        .every((candidate) => candidate.position[1] != move.from[1]);
+    return rankIsUnique ? move.from[1] : move.from;
   }
 
   List<String> getValidMoves(String position) {
@@ -628,6 +785,8 @@ class ChessBoard {
     final moves = <ChessMove>[];
     for (final to in piece.getPossibleMoves(board)) {
       final targetPiece = getPieceAt(to);
+      // Checkmate ends the game; a king is never a capturable piece.
+      if (targetPiece?.type == PieceType.king) continue;
       final isPromotion =
           piece.type == PieceType.pawn && _isPromotionSquare(piece.color, to);
       if (!wouldBeInCheck(piece.color, position, to)) {
@@ -683,8 +842,12 @@ class ChessBoard {
 
     final rights = positionState.castlingRights;
     final moves = <ChessMove>[];
-    final kingside = king.color == PieceColor.white ? rights.whiteKingside : rights.blackKingside;
-    final queenside = king.color == PieceColor.white ? rights.whiteQueenside : rights.blackQueenside;
+    final kingside = king.color == PieceColor.white
+        ? rights.whiteKingside
+        : rights.blackKingside;
+    final queenside = king.color == PieceColor.white
+        ? rights.whiteQueenside
+        : rights.blackQueenside;
 
     if (kingside && _canCastle(king.color, kingside: true)) {
       moves.add(ChessMove(
@@ -712,7 +875,10 @@ class ChessBoard {
     final kingSquare = ChessPiece.coordinatesToNotation(rank, 4);
     final rookSquare = ChessPiece.coordinatesToNotation(rank, kingside ? 7 : 0);
     final rook = getPieceAt(rookSquare);
-    if (rook == null || rook.type != PieceType.rook || rook.color != color || rook.hasMoved) {
+    if (rook == null ||
+        rook.type != PieceType.rook ||
+        rook.color != color ||
+        rook.hasMoved) {
       return false;
     }
 
@@ -723,7 +889,8 @@ class ChessBoard {
 
     final travelCols = kingside ? [4, 5, 6] : [4, 3, 2];
     for (final col in travelCols) {
-      if (_isSquareAttacked(rank, col, color == PieceColor.white ? PieceColor.black : PieceColor.white)) {
+      if (_isSquareAttacked(rank, col,
+          color == PieceColor.white ? PieceColor.black : PieceColor.white)) {
         return false;
       }
     }
@@ -740,7 +907,15 @@ class ChessBoard {
     final direction = pawn.color == PieceColor.white ? -1 : 1;
 
     if (toRow == fromRow + direction && (toCol - fromCol).abs() == 1) {
-      if (!wouldBeInCheck(pawn.color, pawn.position, target, isEnPassant: true)) {
+      if (board[toRow][toCol] != null) return [];
+      final capturedPawn = board[fromRow][toCol];
+      if (capturedPawn == null ||
+          capturedPawn.type != PieceType.pawn ||
+          capturedPawn.color == pawn.color) {
+        return [];
+      }
+      if (!wouldBeInCheck(pawn.color, pawn.position, target,
+          isEnPassant: true)) {
         return [
           ChessMove(
             from: pawn.position,
@@ -794,7 +969,6 @@ class ChessBoard {
 
     return false;
   }
-
 
   bool isCheckmate(PieceColor color) {
     if (!isCheck(color)) return false;
@@ -864,26 +1038,52 @@ class ChessBoard {
       return true; // K+B vs K or K+N vs K
     }
 
-    if (allNonKings.length == 2) {
-      final bishops = allNonKings.where((piece) => piece.type == PieceType.bishop).toList();
-      final knights = allNonKings.where((piece) => piece.type == PieceType.knight).toList();
-
-      if (knights.length == 2) {
-        return true; // K+N vs K+N or K+NN vs K
-      }
-
-      if (bishops.length == 2) {
-        return _sameColorSquare(bishops[0].position) == _sameColorSquare(bishops[1].position);
-      }
-
-      if (bishops.length == 1 && knights.length == 1) {
-        return whiteNonKings.length == 1 && blackNonKings.length == 1;
-      }
-
-      return whiteNonKings.length == 1 && blackNonKings.length == 1;
+    // With bishops only, mate is impossible when every bishop is confined to
+    // the same square color. Knights are deliberately excluded here: K+NN vs K
+    // and minor-piece-vs-minor-piece positions can reach a legal checkmate even
+    // though it cannot necessarily be forced.
+    if (allNonKings.every((piece) => piece.type == PieceType.bishop)) {
+      final squareColor = _sameColorSquare(allNonKings.first.position);
+      return allNonKings
+          .every((piece) => _sameColorSquare(piece.position) == squareColor);
     }
 
     return false;
+  }
+
+  /// Whether [color] could checkmate by some legal sequence from this material.
+  /// Used for flag-fall adjudication, which is side-specific.
+  bool hasPossibleMatingMaterial(PieceColor color) {
+    final own = <ChessPiece>[];
+    final opponent = <ChessPiece>[];
+    for (final piece in board.expand((rank) => rank)) {
+      if (piece == null || piece.type == PieceType.king) continue;
+      (piece.color == color ? own : opponent).add(piece);
+    }
+
+    if (own.any((piece) =>
+        piece.type == PieceType.pawn ||
+        piece.type == PieceType.rook ||
+        piece.type == PieceType.queen)) {
+      return true;
+    }
+
+    final bishops =
+        own.where((piece) => piece.type == PieceType.bishop).toList();
+    final knights = own.where((piece) => piece.type == PieceType.knight).length;
+    if (bishops.isNotEmpty && knights > 0) return true;
+    if (bishops.length >= 2) {
+      final colors = bishops.map((piece) {
+        final (row, col) = ChessPiece.notationToCoordinates(piece.position);
+        return (row + col).isEven;
+      }).toSet();
+      if (colors.length > 1) return true;
+    }
+    if (knights >= 3) return true;
+
+    // Extra opposing material can make otherwise impossible self-blocking mate
+    // constructions legal (for example bishop versus a blocked opposing piece).
+    return own.isNotEmpty && opponent.isNotEmpty;
   }
 
   bool _sameColorSquare(String position) {
@@ -898,7 +1098,7 @@ class ChessBoard {
     capturedPieces.clear();
     positionHistory
       ..clear()
-      ..add(toFen());
+      ..add(repetitionKey());
   }
 
   bool wouldBeInCheck(

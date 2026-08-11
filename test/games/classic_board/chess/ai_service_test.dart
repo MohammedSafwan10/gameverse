@@ -14,7 +14,8 @@ void main() {
     board.board = List.generate(8, (_) => List.generate(8, (_) => null));
     board.board[7][4] = King(color: PieceColor.white, position: 'e1');
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
-    board.board[1][0] = Pawn(color: PieceColor.black, position: 'a7')..hasMoved = true;
+    board.board[1]
+        [0] = Pawn(color: PieceColor.black, position: 'a7')..hasMoved = true;
     board.positionState = board.positionState.copyWith(isWhiteToMove: false);
 
     final move = ai.getBestEngineMove(board, PieceColor.black);
@@ -37,7 +38,8 @@ void main() {
     board.board = List.generate(8, (_) => List.generate(8, (_) => null));
     board.board[7][4] = King(color: PieceColor.white, position: 'e1');
     board.board[0][4] = King(color: PieceColor.black, position: 'e8');
-    board.board[1][0] = Pawn(color: PieceColor.black, position: 'a7')..hasMoved = true;
+    board.board[1]
+        [0] = Pawn(color: PieceColor.black, position: 'a7')..hasMoved = true;
     board.positionState = board.positionState.copyWith(isWhiteToMove: false);
 
     final move = ai.getBestMove(board, PieceColor.black);

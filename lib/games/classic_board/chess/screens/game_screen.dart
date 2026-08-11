@@ -79,9 +79,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                           compact: compact,
                           onBack: _requestExit,
                           onPause: _pause,
-                          onSettings: () => Get.to(
-                            () => const ChessSettingsScreen(),
-                          ),
+                          onSettings: _openSettings,
                         ),
                         Expanded(
                           child: SingleChildScrollView(
@@ -158,6 +156,17 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     if (_isFinished) return;
     controller.pauseGame();
     controller.soundService.playMenuSelectionSound();
+  }
+
+  Future<void> _openSettings() async {
+    if (_isFinished) {
+      await Get.to(() => const ChessSettingsScreen());
+      return;
+    }
+    final wasPaused = controller.isGamePaused.value;
+    if (!wasPaused) controller.pauseGame();
+    await Get.to(() => const ChessSettingsScreen());
+    if (!wasPaused && mounted && !_isFinished) controller.resumeGame();
   }
 
   Future<void> _requestExit() async {

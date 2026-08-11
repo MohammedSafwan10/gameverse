@@ -146,6 +146,10 @@ class ChessBoardWidget extends GetView<ChessGameController> {
         controller.isGamePaused.value) {
       return;
     }
+    if (controller.gameMode.value == ChessGameMode.ai &&
+        !controller.isWhiteTurn.value) {
+      return;
+    }
 
     final selectedPiece = controller.selectedPiece.value;
     final tappedPiece = controller.board.getPieceAt(position);

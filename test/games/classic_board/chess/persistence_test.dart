@@ -15,7 +15,8 @@ void main() {
 
     expect(restored.toFen(), board.toFen());
     expect(restored.moveHistory, board.moveHistory);
-    expect(restored.structuredMoveHistory.length, board.structuredMoveHistory.length);
+    expect(restored.structuredMoveHistory.length,
+        board.structuredMoveHistory.length);
     expect(restored.positionHistory, board.positionHistory);
   });
 
@@ -28,12 +29,14 @@ void main() {
     final restored = ChessBoard();
     restored.loadJson(board.toJson());
 
-    expect(restored.positionState.enPassantTarget, board.positionState.enPassantTarget);
+    expect(restored.positionState.enPassantTarget,
+        board.positionState.enPassantTarget);
     expect(restored.positionState.castlingRights.whiteKingside,
         board.positionState.castlingRights.whiteKingside);
     expect(restored.positionState.castlingRights.whiteQueenside,
         board.positionState.castlingRights.whiteQueenside);
-    expect(restored.positionState.fullmoveNumber, board.positionState.fullmoveNumber);
+    expect(restored.positionState.fullmoveNumber,
+        board.positionState.fullmoveNumber);
   });
 
   test('snapshot preserves captured pieces', () {

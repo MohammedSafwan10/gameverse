@@ -17,7 +17,8 @@ void main() {
     expect(board.structuredMoveHistory, isEmpty);
   });
 
-  test('double pawn move updates en passant target and structured move history', () {
+  test('double pawn move updates en passant target and structured move history',
+      () {
     final board = ChessBoard();
 
     final moved = board.movePiece('e2', 'e4');
@@ -34,7 +35,8 @@ void main() {
     expect(board.structuredMoveHistory.first.isCapture, isFalse);
   });
 
-  test('rook move updates castling rights and black move increments fullmove', () {
+  test('rook move updates castling rights and black move increments fullmove',
+      () {
     final board = ChessBoard();
 
     board.board[6][7] = null;
@@ -66,9 +68,12 @@ void main() {
     final copy = board.deepCopy();
 
     expect(copy.positionState.isWhiteToMove, board.positionState.isWhiteToMove);
-    expect(copy.positionState.enPassantTarget, board.positionState.enPassantTarget);
-    expect(copy.positionState.fullmoveNumber, board.positionState.fullmoveNumber);
-    expect(copy.structuredMoveHistory.length, board.structuredMoveHistory.length);
+    expect(copy.positionState.enPassantTarget,
+        board.positionState.enPassantTarget);
+    expect(
+        copy.positionState.fullmoveNumber, board.positionState.fullmoveNumber);
+    expect(
+        copy.structuredMoveHistory.length, board.structuredMoveHistory.length);
     expect(copy.moveHistory, board.moveHistory);
   });
 }

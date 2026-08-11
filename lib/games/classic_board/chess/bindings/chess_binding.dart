@@ -33,11 +33,6 @@ class ChessBinding extends Bindings {
         Get.find<ChessStorageService>(),
         Get.find<ChessSoundService>(),
       ));
-    } else {
-      dev.log('Game controller already initialized, resetting game', name: 'Chess');
-      Get.find<ChessGameController>().startNewGame(
-        Get.find<ChessGameController>().gameMode.value,
-      );
     }
 
     dev.log('Chess dependencies initialized', name: 'Chess');

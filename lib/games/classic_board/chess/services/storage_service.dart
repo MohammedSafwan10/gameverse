@@ -5,6 +5,7 @@ import 'dart:developer' as dev;
 
 class ChessStorageService extends GetxService {
   static const String _storageKey = 'chess_game_data';
+  static const String _sessionKey = 'chess_game_session';
   final _storage = GetStorage();
 
   // Game statistics as reactive variables
@@ -96,6 +97,20 @@ class ChessStorageService extends GetxService {
     dev.log('Serialized game state saved', name: 'Chess');
   }
 
+  Future<void> saveSession(
+    String serializedBoard,
+    Map<String, dynamic> metadata,
+  ) async {
+    await _storage.write(
+      _storageKey,
+      json.encode({
+        'version': 1,
+        'board': serializedBoard,
+        'metadata': metadata,
+      }),
+    );
+  }
+
   // Load game state
   Map<String, dynamic>? loadGameState() {
     final data = _storage.read(_storageKey);
@@ -107,7 +122,43 @@ class ChessStorageService extends GetxService {
 
   String? loadSerializedGameState() {
     final data = _storage.read(_storageKey);
-    return data is String ? data : null;
+    if (data is! String) return null;
+    try {
+      final decoded = json.decode(data);
+      if (decoded is Map && decoded['board'] is String) {
+        return decoded['board'] as String;
+      }
+    } catch (_) {
+      // Legacy storage contains the serialized board directly.
+    }
+    return data;
+  }
+
+  Future<void> saveSessionMetadata(Map<String, dynamic> metadata) async {
+    await _storage.write(_sessionKey, json.encode(metadata));
+  }
+
+  Map<String, dynamic>? loadSessionMetadata() {
+    final session = _storage.read(_storageKey);
+    if (session is String && session.isNotEmpty) {
+      try {
+        final decoded = json.decode(session);
+        if (decoded is Map && decoded['metadata'] is Map) {
+          return (decoded['metadata'] as Map).cast<String, dynamic>();
+        }
+      } catch (_) {
+        // Fall through to the legacy split metadata key.
+      }
+    }
+    final data = _storage.read(_sessionKey);
+    if (data is! String || data.isEmpty) return null;
+    final decoded = json.decode(data);
+    return decoded is Map<String, dynamic> ? decoded : null;
+  }
+
+  Future<void> clearSavedGame() async {
+    await _storage.remove(_storageKey);
+    await _storage.remove(_sessionKey);
   }
 
   // Update game statistics
@@ -237,6 +288,7 @@ class ChessStorageService extends GetxService {
     await clearStats();
     await resetSettings();
     await _storage.remove(_storageKey);
+    await _storage.remove(_sessionKey);
     dev.log('All chess data cleared', name: 'Chess');
   }
 }
