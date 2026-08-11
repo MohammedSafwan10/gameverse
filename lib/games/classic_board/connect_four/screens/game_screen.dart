@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lottie/lottie.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/stats_controller.dart';
 import '../controllers/settings_controller.dart';
@@ -572,11 +571,45 @@ class ConnectFourGameScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (status != GameStatus.draw)
-                Lottie.network(
-                  'https://assets2.lottiefiles.com/packages/lf20_obhph3sh.json',
-                  width: 300,
-                  height: 300,
-                ),
+                Container(
+                  width: 132,
+                  height: 132,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withValues(alpha: 0.5),
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.35),
+                        blurRadius: 32,
+                        spreadRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.emoji_events_rounded,
+                    color: color,
+                    size: 76,
+                  ),
+                )
+                    .animate(onPlay: (controller) => controller.repeat())
+                    .scaleXY(
+                      begin: .92,
+                      end: 1.05,
+                      duration: 900.ms,
+                      curve: Curves.easeInOut,
+                    )
+                    .then()
+                    .scaleXY(
+                      begin: 1.05,
+                      end: .92,
+                      duration: 900.ms,
+                      curve: Curves.easeInOut,
+                    ),
               Container(
                 padding: const EdgeInsets.all(32),
                 margin: const EdgeInsets.symmetric(horizontal: 32),

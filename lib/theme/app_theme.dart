@@ -15,26 +15,6 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient accentGradient = LinearGradient(
-    colors: [Color(0xFF7CC6D9), Color(0xFF5CA9BF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static final Map<String, Color> categoryColors = {
-    'Arcade': Color(0xFF70A1FF),
-    'Classic Board': Color(0xFFFF7F50),
-    'Word Games': Color(0xFF2ED573),
-    'Brain Training': Color(0xFF8FA7D8),
-    'Puzzle': Color(0xFFFF6B81),
-    'Quick Casual': Color(0xFFECCC68),
-    'Strategy': Color(0xFF1E90FF),
-    'Simulation': Color(0xFF78909C),
-    'Sports': Color(0xFFFF7043),
-    'Reaction': Color(0xFFFF4757),
-    'Educational': Color(0xFF5E7CB6),
-  };
-
   static final TextTheme _textTheme = TextTheme(
     displayLarge: GoogleFonts.outfit(
       fontSize: 36,
@@ -145,34 +125,6 @@ class AppTheme {
     ),
   );
 
-  static ThemeData darkTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    primaryColor: primaryColor,
-    scaffoldBackgroundColor: Color(0xFF121212),
-    colorScheme: ColorScheme.dark(
-      primary: primaryColor,
-      secondary: accentColor,
-      surface: Color(0xFF1E1E1E),
-      error: _errorColor,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: Colors.white,
-      onError: Colors.white,
-    ),
-    textTheme: _textTheme.apply(
-      bodyColor: Colors.white,
-      displayColor: Colors.white,
-    ),
-    cardTheme: CardThemeData(
-      color: Color(0xFF1E1E1E),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-    ),
-  );
-
   static BoxDecoration glassmorphicDecoration({
     Color backgroundColor = Colors.white,
     Color borderColor = Colors.white,
@@ -200,4 +152,3 @@ class AppTheme {
     );
   }
 }
-

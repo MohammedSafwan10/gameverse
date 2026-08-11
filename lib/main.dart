@@ -7,8 +7,6 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/achievements/achievements_screen.dart';
 import 'screens/leaderboard/leaderboard_screen.dart';
 import 'theme/app_theme.dart';
-import 'controllers/theme_controller.dart';
-import 'controllers/home_controller.dart';
 import 'games/classic_board/tic_tac_toe/screens/game_screen.dart'
     as tic_tac_toe;
 import 'games/classic_board/tic_tac_toe/screens/mode_selection_screen.dart'
@@ -44,10 +42,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
 
-  // Initialize core controllers
-  Get.put(ThemeController());
-  Get.put(HomeController());
-
   runApp(const MyApp());
 }
 
@@ -56,13 +50,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Get.find<ThemeController>();
-
     return GetMaterialApp(
       title: 'GameVerse',
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeController.themeMode,
+      themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       getPages: [

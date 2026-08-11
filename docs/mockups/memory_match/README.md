@@ -1,20 +1,9 @@
 # Memory Match Mockup Directions
 
-These mockups cover the three primary Memory Match screens discovered in the
-current Flutter implementation. Choose one direction as a complete visual system
-before implementation.
+These mockups document the approved visual system for the three primary Memory
+Match screens.
 
-## Direction A — Expressive Playroom
-
-- `direction-a-mode-selection.png`
-- `direction-a-gameplay.png`
-- `direction-a-results.png`
-
-Warm cream foundation, colorful tactile cards, and the closest visual transition
-from the redesigned Home screen. This direction feels friendly, bright, and
-accessible.
-
-## Direction B — Immersive Game Table
+## Approved direction — Immersive Game Table
 
 - `direction-b-mode-selection.png`
 - `direction-b-gameplay.png`
@@ -32,15 +21,12 @@ while retaining the established GameVerse palette.
 - Card states: face-down, flipped, matched
 - Results: stars, score, moves, time, best combo, play again/next level and exit
 
-## Supporting states to design after selection
+## Supporting states
 
-Once Direction A or B is selected, create matching mockups for:
+The production implementation also covers:
 
 1. Difficulty chooser
 2. How to Play dialog
 3. Pause/Exit confirmation
 4. Time's Up result variant
 5. Challenge-mode Next Level result variant
-
-Do not mix Direction A and Direction B components unless the user explicitly asks
-for a hybrid refinement.

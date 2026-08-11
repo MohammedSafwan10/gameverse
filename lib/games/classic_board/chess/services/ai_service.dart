@@ -32,11 +32,6 @@ class ChessAIService extends GetxService {
   final RxBool hasError = false.obs;
   final RxString errorMessage = ''.obs;
 
-  // Keep old names accessible for backward compatibility
-  static const int easyDepth = 1;
-  static const int mediumDepth = 2;
-  static const int hardDepth = 3;
-
   // ─── Piece values (centipawn scale — industry standard) ───
   static const Map<PieceType, int> pieceValues = {
     PieceType.pawn: 100,

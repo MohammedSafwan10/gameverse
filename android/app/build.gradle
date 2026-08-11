@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.gameverse.app"
-        minSdkVersion = flutter.minSdkVersion  // Required for Firebase
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -37,8 +37,4 @@ android {
 
 flutter {
     source = "../.."
-}
-
-dependencies {
-    implementation 'androidx.media:media:1.6.0'
 }

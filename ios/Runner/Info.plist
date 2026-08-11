@@ -45,15 +45,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Privacy descriptions -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	<key>NSHapticFeedbackUsageDescription</key>
-	<string>We use haptic feedback to enhance your gaming experience</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>We need access to the local network for multiplayer gaming</string>
 </dict>
 </plist>

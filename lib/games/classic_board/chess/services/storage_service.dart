@@ -111,15 +111,6 @@ class ChessStorageService extends GetxService {
     );
   }
 
-  // Load game state
-  Map<String, dynamic>? loadGameState() {
-    final data = _storage.read(_storageKey);
-    if (data != null) {
-      return json.decode(data);
-    }
-    return null;
-  }
-
   String? loadSerializedGameState() {
     final data = _storage.read(_storageKey);
     if (data is! String) return null;
