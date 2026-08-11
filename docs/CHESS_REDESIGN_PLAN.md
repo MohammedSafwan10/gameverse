@@ -115,3 +115,24 @@ Verify at 320 x 568, 360 x 800, 390 x 844, and 430 x 932.
 6. Settings and How to Play.
 7. Responsive tests, golden tests, logic regressions, analysis, full tests, and
    Android debug build.
+
+## Implementation status
+
+Completed in the Direction A production pass:
+
+- responsive mode selection with isolated 3D hero, AI, and local-player art;
+- native match setup with Easy, Medium, and Hard AI choices and four clocks;
+- compact gameplay header, player panels, clocks, captures, status, and actions;
+- six genuinely distinct board palettes with matching frames and accents;
+- deterministic vector pieces with a cleaner ceramic/metal material treatment;
+- redesigned pause, leave, restart, promotion, history, checkmate, and draw UI;
+- dynamic end reasons for checkmate, timeout, resignation, stalemate,
+  insufficient material, repetition, and the 50-move rule;
+- redesigned settings and a native, scrollable How to Play screen;
+- automatic lifecycle pause and safe restart/resume behavior during AI turns;
+- pre-warmed PCM sound pools and a deliberately quiet game-start click;
+- responsive coverage at 320 x 568, 360 x 800, 390 x 844, and 430 x 932.
+
+Production artwork lives in `assets/images/games/chess/`. Playable pieces remain
+the deterministic SVG set in `assets/chess/images/`; generated piece-by-piece
+board sprites were intentionally avoided to preserve silhouette and alignment.

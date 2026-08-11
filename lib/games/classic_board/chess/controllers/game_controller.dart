@@ -14,6 +14,17 @@ enum ChessGameMode { local, ai, training }
 
 enum ChessGameState { initial, inProgress, check, checkmate, stalemate, draw }
 
+enum ChessEndReason {
+  none,
+  checkmate,
+  timeout,
+  resignation,
+  stalemate,
+  insufficientMaterial,
+  repetition,
+  fiftyMoveRule,
+}
+
 class ChessGameController extends GetxController {
   final ChessStorageService storageService;
   final ChessSoundService soundService;
@@ -28,6 +39,7 @@ class ChessGameController extends GetxController {
   final RxList<String> moveHistory = <String>[].obs;
   final RxList<String> capturedPieces = <String>[].obs;
   final RxBool isGamePaused = false.obs;
+  final Rx<ChessEndReason> endReason = ChessEndReason.none.obs;
   int _gameGeneration = 0;
   bool _isDisposed = false;
   bool _gameResultRecorded = false;
@@ -66,6 +78,7 @@ class ChessGameController extends GetxController {
 
   void _initializeGame() {
     _advanceGameGeneration();
+    _timer?.cancel();
     final savedState = storageService.loadSerializedGameState();
     if (savedState != null) {
       try {
@@ -82,6 +95,7 @@ class ChessGameController extends GetxController {
         clearSelection();
         lastMove.value = null;
         isGamePaused.value = false;
+        endReason.value = ChessEndReason.none;
         return;
       } catch (e) {
         dev.log('Failed to load saved chess state: $e', name: 'Chess');
@@ -97,6 +111,7 @@ class ChessGameController extends GetxController {
     capturedPieces.clear();
     isGamePaused.value = false;
     _gameResultRecorded = false;
+    endReason.value = ChessEndReason.none;
 
     // Initialize timer if enabled
     if (timerEnabled.value) {
@@ -147,6 +162,7 @@ class ChessGameController extends GetxController {
 
   void startNewGame(ChessGameMode mode) {
     _advanceGameGeneration();
+    _timer?.cancel();
     gameMode.value = mode;
     storageService.saveSerializedGameState('');
     board.initializeBoard();
@@ -158,6 +174,7 @@ class ChessGameController extends GetxController {
     gameState.value = ChessGameState.inProgress;
     isGamePaused.value = false;
     _gameResultRecorded = false;
+    endReason.value = ChessEndReason.none;
 
     // Initialize timer if enabled
     if (timerEnabled.value) {
@@ -199,6 +216,7 @@ class ChessGameController extends GetxController {
     _advanceGameGeneration();
     _timer?.cancel();
     soundService.playTimeUpSound();
+    endReason.value = ChessEndReason.timeout;
     gameState.value = ChessGameState.checkmate;
     _recordGameResultOnce(isWhiteTurn.value ? 'loss' : 'win');
   }
@@ -374,6 +392,7 @@ class ChessGameController extends GetxController {
     if (board.isCheckmate(currentColor)) {
       _advanceGameGeneration();
       gameState.value = ChessGameState.checkmate;
+      endReason.value = ChessEndReason.checkmate;
       soundService.playCheckmateSound();
       _recordGameResultOnce(isWhiteTurn.value ? 'loss' : 'win');
       _timer?.cancel();
@@ -386,6 +405,7 @@ class ChessGameController extends GetxController {
     } else if (board.isStalemate(currentColor)) {
       _advanceGameGeneration();
       gameState.value = ChessGameState.stalemate;
+      endReason.value = ChessEndReason.stalemate;
       soundService.playGameEndSound();
       _recordGameResultOnce('draw');
       _timer?.cancel();
@@ -393,6 +413,7 @@ class ChessGameController extends GetxController {
     } else if (board.isInsufficientMaterial()) {
       _advanceGameGeneration();
       gameState.value = ChessGameState.draw;
+      endReason.value = ChessEndReason.insufficientMaterial;
       soundService.playGameEndSound();
       _recordGameResultOnce('draw');
       _timer?.cancel();
@@ -400,6 +421,7 @@ class ChessGameController extends GetxController {
     } else if (board.isThreefoldRepetition()) {
       _advanceGameGeneration();
       gameState.value = ChessGameState.draw;
+      endReason.value = ChessEndReason.repetition;
       soundService.playGameEndSound();
       _recordGameResultOnce('draw');
       _timer?.cancel();
@@ -407,6 +429,7 @@ class ChessGameController extends GetxController {
     } else if (board.isFiftyMoveRuleDraw()) {
       _advanceGameGeneration();
       gameState.value = ChessGameState.draw;
+      endReason.value = ChessEndReason.fiftyMoveRule;
       soundService.playGameEndSound();
       _recordGameResultOnce('draw');
       _timer?.cancel();
@@ -426,12 +449,16 @@ class ChessGameController extends GetxController {
     if (timerEnabled.value) {
       _startTimer();
     }
+    if (gameMode.value == ChessGameMode.ai && !isWhiteTurn.value) {
+      unawaited(_makeAiMove());
+    }
   }
 
   void forfeitGame() {
     _advanceGameGeneration();
     _timer?.cancel();
     gameState.value = ChessGameState.checkmate;
+    endReason.value = ChessEndReason.resignation;
     soundService.playGameEndSound();
     _recordGameResultOnce('loss');
   }
@@ -469,6 +496,7 @@ class ChessGameController extends GetxController {
     lastMove.value = null;
     gameState.value = ChessGameState.inProgress;
     _gameResultRecorded = false;
+    endReason.value = ChessEndReason.none;
     storageService.saveSerializedGameState(board.toJson());
   }
 

@@ -58,16 +58,8 @@ flutter:
     - assets/chess/images/white_queen.svg
     - assets/chess/images/white_rook.svg
     
-    # Chess sounds
-    - assets/chess/sounds/board_start.mp3
-    - assets/chess/sounds/check.ogg
-    - assets/chess/sounds/checkmate.wav
-    - assets/chess/sounds/clock_tick.wav
-    - assets/chess/sounds/game_end.wav
-    - assets/chess/sounds/menu_selection.wav
-    - assets/chess/sounds/piece_move.wav
-    - assets/chess/sounds/promotion.wav
-    - assets/chess/sounds/time_up.mp3
+    # Chess low-latency PCM sound pack
+    - assets/chess/sounds_v2/
     
     # Other game assets
     - assets/sounds/drop.mp3
@@ -80,6 +72,7 @@ flutter:
     - assets/images/categories/
     - assets/images/games/
     - assets/images/games/memory_match/
+    - assets/images/games/chess/
     - assets/images/home/games/
     - assets/images/google_logo.png
 

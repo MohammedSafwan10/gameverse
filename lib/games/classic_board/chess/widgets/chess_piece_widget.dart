@@ -22,12 +22,10 @@ class ChessPieceWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWhitePiece = piece.color == PieceColor.white;
-    // Stronger, more visible colors
     final pieceColor =
-        isWhitePiece ? const Color(0xFFFFFFFF) : const Color(0xFF2C2C2E);
-    // Gold accent for black pieces to make them pop, dark blue/grey for white pieces
-    final accentColor =
-        isWhitePiece ? const Color(0xFF4A4A4A) : const Color(0xFFF4B860);
+        isWhitePiece ? const Color(0xFFFFF8E7) : const Color(0xFF172431);
+    final edgeColor =
+        isWhitePiece ? const Color(0xFF5F4B36) : const Color(0xFFFFD77A);
 
     Widget pieceWidget = GestureDetector(
       onTap: onTap,
@@ -53,7 +51,7 @@ class ChessPieceWidget extends StatelessWidget {
                 ),
               ),
             ),
-            // High-contrast outline - slightly larger to act as a proper border
+            // Crisp material edge.
             Center(
               child: SvgPicture.asset(
                 piece.imagePath,
@@ -61,7 +59,7 @@ class ChessPieceWidget extends StatelessWidget {
                 height: size * 0.98,
                 fit: BoxFit.contain,
                 colorFilter: ColorFilter.mode(
-                  isWhitePiece ? Colors.black : Colors.white,
+                  edgeColor,
                   BlendMode.srcIn,
                 ),
               ),
@@ -75,19 +73,6 @@ class ChessPieceWidget extends StatelessWidget {
                 fit: BoxFit.contain,
                 colorFilter: ColorFilter.mode(
                   pieceColor,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-            // Detail highlight/accent
-            Center(
-              child: SvgPicture.asset(
-                piece.imagePath,
-                width: size * 0.9,
-                height: size * 0.9,
-                fit: BoxFit.contain,
-                colorFilter: ColorFilter.mode(
-                  accentColor.withValues(alpha: 0.4),
                   BlendMode.srcIn,
                 ),
               ),

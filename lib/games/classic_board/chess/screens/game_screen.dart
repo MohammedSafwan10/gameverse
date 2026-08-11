@@ -1,807 +1,787 @@
-import 'dart:ui';
+import 'dart:async';
+
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../controllers/game_controller.dart';
-import '../widgets/chess_board_widget.dart';
-import '../widgets/countdown_timer.dart';
-import 'settings_screen.dart';
-import 'package:gameverse/theme/app_theme.dart';
-import 'package:gameverse/widgets/guarded_exit.dart';
+import 'package:get/get.dart';
 
-class ChessGameScreen extends StatelessWidget {
+import '../controllers/game_controller.dart';
+import '../theme/chess_design.dart';
+import '../widgets/chess_board_widget.dart';
+import 'settings_screen.dart';
+
+class ChessGameScreen extends StatefulWidget {
   const ChessGameScreen({super.key});
+  @override
+  State<ChessGameScreen> createState() => _ChessGameScreenState();
+}
+
+class _ChessGameScreenState extends State<ChessGameScreen>
+    with WidgetsBindingObserver {
+  late final ChessGameController controller;
+  late final ConfettiController confetti;
+  late final Worker resultWorker;
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<ChessGameController>();
-    final theme = Theme.of(context);
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          await popAfterConfirmation(
-            context,
-            confirmExit: () => _showExitConfirmationDialog(context, controller),
-          );
-        }
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18, color: Colors.white),
-            ),
-            onPressed: () => popAfterConfirmation(
-              context,
-              confirmExit: () =>
-                  _showExitConfirmationDialog(context, controller),
-            ),
-          ),
-          title: Obx(() => FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  _getGameTitle(controller.gameMode.value),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
-                    color: Colors.white,
-                  ),
-                ),
-              )),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.restart_alt_rounded,
-                    size: 16, color: Colors.white),
-              ),
-              onPressed: () =>
-                  _showRestartConfirmationDialog(context, controller),
-              tooltip: 'Restart Game',
-            ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.history_rounded,
-                    size: 16, color: Colors.white),
-              ),
-              onPressed: () => _showMoveHistoryDialog(context, controller),
-              tooltip: 'Move History',
-            ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.settings_outlined,
-                    size: 16, color: Colors.white),
-              ),
-              onPressed: () {
-                controller.soundService.playMenuSelectionSound();
-                Get.to(() => const ChessSettingsScreen(),
-                    transition: Transition.rightToLeft);
-              },
-            ),
-            const SizedBox(width: 4),
-          ],
-        ),
-        body: Stack(
-          children: [
-            // Chess specific animated/gradient background - more vibrant
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF0F172A),
-                    Color(0xFF1E3A8A), // Brighter blue
-                    Color(0xFF0F172A),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: -50,
-              right: -50,
-              child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFF4B860).withValues(alpha: 0.12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFF4B860).withValues(alpha: 0.2),
-                      blurRadius: 120,
-                      spreadRadius: 60,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 100,
-              left: -80,
-              child: Container(
-                width: 350,
-                height: 350,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.blueAccent.withValues(alpha: 0.1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blueAccent.withValues(alpha: 0.15),
-                      blurRadius: 100,
-                      spreadRadius: 50,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  _buildTopInfoBar(context, controller),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 8.0),
-                        child: Column(
-                          children: [
-                            _buildCapturedPieces(context, controller, false),
-                            // Black's pieces captured by White
-                            const SizedBox(height: 12),
-                            _buildMainBoard(context, controller),
-                            const SizedBox(height: 12),
-                            _buildCapturedPieces(context, controller, true),
-                            // White's pieces captured by Black
-                            const SizedBox(height: 20),
-                            _buildGameStatusMessage(context, controller),
-                            const SizedBox(height: 40),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Pause Overlay
-            Obx(() {
-              if (!controller.isGamePaused.value) {
-                return const SizedBox.shrink();
-              }
-              return _buildPauseOverlay(context, controller);
-            }),
-
-            // Countdown Timer Overlay
-            Obx(() {
-              if (controller.gameState.value == ChessGameState.initial) {
-                return CountdownTimer(
-                  message: 'Ready to Play?',
-                  onComplete: () {
-                    controller.gameState.value = ChessGameState.inProgress;
-                    controller.soundService.playGameStartSound();
-                  },
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-          ],
-        ),
-      ),
-    );
+  void initState() {
+    super.initState();
+    controller = Get.find<ChessGameController>();
+    confetti = ConfettiController(duration: const Duration(seconds: 2));
+    resultWorker = ever(controller.gameState, (state) {
+      if (state == ChessGameState.checkmate) confetti.play();
+    });
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  Widget _buildTopInfoBar(
-      BuildContext context, ChessGameController controller) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: AppTheme.glassmorphicDecoration(
-        backgroundColor: Colors.white.withValues(alpha: 0.05),
-        borderColor: Colors.white.withValues(alpha: 0.1),
-        borderRadius: 24,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Player Turn Info
-          Obx(() {
-            final isWhite = controller.isWhiteTurn.value;
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    resultWorker.dispose();
+    confetti.dispose();
+    super.dispose();
+  }
 
-            return Row(
-              children: [
-                AnimatedContainer(
-                  duration: 400.ms,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isWhite
-                        ? Colors.white.withValues(alpha: 0.9)
-                        : const Color(0xFF0F172A),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isWhite
-                          ? const Color(0xFFF4B860).withValues(alpha: 0.4)
-                          : Colors.white.withValues(alpha: 0.2),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            (isWhite ? const Color(0xFFF4B860) : Colors.white)
-                                .withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        spreadRadius: 2,
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if ((state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.paused) &&
+        !_isFinished &&
+        !controller.isGamePaused.value) {
+      controller.pauseGame();
+    }
+  }
+
+  bool get _isFinished =>
+      controller.gameState.value == ChessGameState.checkmate ||
+      controller.gameState.value == ChessGameState.stalemate ||
+      controller.gameState.value == ChessGameState.draw;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop) await _requestExit();
+        },
+        child: Scaffold(
+          body: DecoratedBox(
+            decoration: const BoxDecoration(gradient: ChessDesign.background),
+            child: SafeArea(
+              child: Stack(children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: LayoutBuilder(builder: (context, constraints) {
+                      final compact = constraints.maxHeight < 650;
+                      return Column(children: [
+                        _Header(
+                          controller: controller,
+                          compact: compact,
+                          onBack: _requestExit,
+                          onPause: _pause,
+                          onSettings: () => Get.to(
+                            () => const ChessSettingsScreen(),
+                          ),
+                        ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(
+                              compact ? 8 : 12,
+                              4,
+                              compact ? 8 : 12,
+                              18,
+                            ),
+                            child: Column(children: [
+                              _PlayerPanel(
+                                controller: controller,
+                                white: false,
+                              ),
+                              SizedBox(height: compact ? 7 : 10),
+                              const ChessBoardWidget(),
+                              SizedBox(height: compact ? 7 : 10),
+                              _PlayerPanel(
+                                controller: controller,
+                                white: true,
+                              ),
+                              const SizedBox(height: 10),
+                              _BottomActions(
+                                controller: controller,
+                                onHistory: _showHistory,
+                                onRestart: _restart,
+                              ),
+                            ]),
+                          ),
+                        ),
+                      ]);
+                    }),
+                  ),
+                ),
+                Obx(() => controller.isGamePaused.value
+                    ? _PauseOverlay(
+                        onResume: controller.resumeGame,
+                        onRestart: _restart,
+                        onLeave: _leaveNow,
                       )
+                    : const SizedBox.shrink()),
+                Obx(() => _isFinished
+                    ? _ResultOverlay(
+                        controller: controller,
+                        onAgain: () =>
+                            controller.startNewGame(controller.gameMode.value),
+                        onLeave: _leaveNow,
+                      )
+                    : const SizedBox.shrink()),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: confetti,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    emissionFrequency: .05,
+                    numberOfParticles: 14,
+                    gravity: .16,
+                    colors: const [
+                      ChessDesign.gold,
+                      ChessDesign.orange,
+                      ChessDesign.teal,
+                      Colors.white,
                     ],
                   ),
-                  child: Icon(
-                    Icons.person,
-                    size: 20,
-                    color: isWhite ? const Color(0xFF0F172A) : Colors.white,
-                  ),
                 ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      isWhite ? 'White\'s Turn' : 'Black\'s Turn',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      _getStateText(controller.gameState.value),
-                      style: TextStyle(
-                        color: _getStateColor(controller.gameState.value)
-                            .withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }),
-
-          // Timers (if enabled)
-          Obx(() {
-            if (!controller.timerEnabled.value) return const SizedBox.shrink();
-            return Row(
-              children: [
-                _buildCompactTimer(
-                    context,
-                    'W',
-                    controller.whiteTimeRemaining.value,
-                    controller.isWhiteTurn.value),
-                const SizedBox(width: 10),
-                _buildCompactTimer(
-                    context,
-                    'B',
-                    controller.blackTimeRemaining.value,
-                    !controller.isWhiteTurn.value),
-              ],
-            );
-          }),
-        ],
-      ),
-    ).animate().fadeIn().slideY(begin: -0.2);
-  }
-
-  Widget _buildCompactTimer(
-      BuildContext context, String label, int seconds, bool isActive) {
-    final timeStr = seconds ~/ 60 == 0 && seconds < 10
-        ? '0:${seconds.toString().padLeft(2, '0')}'
-        : '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
-
-    return AnimatedContainer(
-      duration: 300.ms,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive
-            ? const Color(0xFFF4B860).withValues(alpha: 0.2)
-            : Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isActive
-              ? Colors.white.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                    color: const Color(0xFFF4B860).withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2))
-              ]
-            : null,
-      ),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: isActive ? const Color(0xFF0F172A) : Colors.white60,
+              ]),
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            timeStr,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'monospace',
-              color: isActive ? const Color(0xFF0F172A) : Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCapturedPieces(
-      BuildContext context, ChessGameController controller, bool forWhite) {
-    return Obx(() {
-      final pieces = controller.capturedPieces
-          .where((p) => forWhite ? p.contains('white') : p.contains('black'))
-          .toList();
-
-      // Simple scoring for ordering
-      pieces.sort((a, b) {
-        int val(String s) => s.contains('queen')
-            ? 9
-            : s.contains('rook')
-                ? 5
-                : s.contains('bishop') || s.contains('knight')
-                    ? 3
-                    : 1;
-        return val(b).compareTo(val(a));
-      });
-
-      return Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: AppTheme.glassmorphicDecoration(
-          backgroundColor: Colors.white.withValues(alpha: 0.03),
-          borderColor: Colors.white.withValues(alpha: 0.08),
-          borderRadius: 20,
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.outbox_rounded,
-                size: 16, color: Colors.white.withValues(alpha: 0.4)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: pieces.isEmpty
-                  ? Center(
-                      child: Text('NO CAPTURES',
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1)))
-                  : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: pieces.length,
-                      itemBuilder: (context, index) {
-                        final isWhitePiece = pieces[index].contains('white');
-                        final pieceColor = isWhitePiece
-                            ? const Color(0xFFF7F7FA)
-                            : const Color(0xFF111111);
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/chess/images/${pieces[index]}.svg',
-                              width: 28,
-                              height: 28,
-                              colorFilter: ColorFilter.mode(
-                                isWhitePiece
-                                    ? pieceColor
-                                    : const Color(0xFF1E293B),
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                          ),
-                        )
-                            .animate()
-                            .scale(delay: (index * 50).ms, duration: 300.ms);
-                      },
-                    ),
-            ),
-          ],
         ),
       );
-    });
+
+  Future<void> _pause() async {
+    if (_isFinished) return;
+    controller.pauseGame();
+    controller.soundService.playMenuSelectionSound();
   }
 
-  Widget _buildMainBoard(BuildContext context, ChessGameController controller) {
-    // Made board bigger by reducing side margin padding
-    final size = MediaQuery.of(context).size.width - 16;
-
-    return Container(
-      width: size,
-      height: size,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFF4B860).withValues(alpha: 0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 40,
-            offset: const Offset(0, 20),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: const ChessBoardWidget(),
-      ),
-    ).animate().scale(duration: 500.ms, curve: Curves.easeOutBack);
-  }
-
-  Widget _buildGameStatusMessage(
-      BuildContext context, ChessGameController controller) {
-    return Obx(() {
-      final message = _getGameMessage(controller.gameState.value,
-          controller.isWhiteTurn.value, controller.gameMode.value);
-      if (message.isEmpty) return const SizedBox.shrink();
-
-      final statusColor = _getStateColor(controller.gameState.value);
-
-      return Container(
-        // Removed double.infinity to make it compact
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: statusColor.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: statusColor.withValues(alpha: 0.1),
-              blurRadius: 15,
-            )
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min, // Compact size
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(_getMessageIcon(controller.gameState.value),
-                color: statusColor, size: 20),
-            const SizedBox(width: 12),
-            Text(
-              message,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 16, // Slightly smaller font
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ).animate().fadeIn().slideY(begin: 0.3);
-    });
-  }
-
-  Widget _buildPauseOverlay(
-      BuildContext context, ChessGameController controller) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.6),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.all(32),
-            decoration: AppTheme.glassmorphicDecoration(
-              backgroundColor: Colors.white.withValues(alpha: 0.05),
-              borderColor: Colors.white.withValues(alpha: 0.1),
-              borderRadius: 32,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4B860).withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: const Color(0xFFF4B860).withValues(alpha: 0.4),
-                        width: 2),
-                  ),
-                  child: const Icon(Icons.pause_rounded,
-                      size: 48, color: Color(0xFFF4B860)),
-                ),
-                const SizedBox(height: 24),
-                const Text('Game Paused',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1)),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          controller.forfeitGame();
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('FORFEIT',
-                            style: TextStyle(
-                                color: Colors.redAccent,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2)),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: controller.resumeGame,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF4B860),
-                          foregroundColor: const Color(0xFF0F172A),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          elevation: 8,
-                          shadowColor:
-                              const Color(0xFFF4B860).withValues(alpha: 0.4),
-                        ),
-                        child: const Text('RESUME',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w900, letterSpacing: 1)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9));
-  }
-
-  String _getGameTitle(ChessGameMode mode) {
-    return switch (mode) {
-      ChessGameMode.local => 'Local PVP',
-      ChessGameMode.ai => 'vs AI',
-      ChessGameMode.training => 'Training',
-    };
-  }
-
-  String _getStateText(ChessGameState state) {
-    return switch (state) {
-      ChessGameState.initial => 'READY',
-      ChessGameState.inProgress => 'PLAYING',
-      ChessGameState.check => 'CHECK!',
-      ChessGameState.checkmate => 'FINISHED',
-      ChessGameState.stalemate => 'DRAW',
-      ChessGameState.draw => 'DRAW',
-    };
-  }
-
-  Color _getStateColor(ChessGameState state) {
-    return switch (state) {
-      ChessGameState.check => Colors.orangeAccent,
-      ChessGameState.checkmate => Colors.redAccent,
-      ChessGameState.stalemate => Colors.blueGrey.shade300,
-      ChessGameState.draw => Colors.blueGrey.shade300,
-      _ => Colors.greenAccent,
-    };
-  }
-
-  IconData _getMessageIcon(ChessGameState state) {
-    return switch (state) {
-      ChessGameState.check => Icons.warning_amber_rounded,
-      ChessGameState.checkmate => Icons.emoji_events_rounded,
-      ChessGameState.stalemate => Icons.block_rounded,
-      ChessGameState.draw => Icons.balance_rounded,
-      _ => Icons.info_outline_rounded,
-    };
-  }
-
-  String _getGameMessage(
-      ChessGameState state, bool isWhiteTurn, ChessGameMode mode) {
-    if (state == ChessGameState.initial) return '';
-    if (state == ChessGameState.inProgress) {
-      if (mode == ChessGameMode.ai) {
-        return isWhiteTurn ? 'Your Move' : 'Computer Thinking...';
-      }
-      return '${isWhiteTurn ? "White" : "Black"} to move';
+  Future<void> _requestExit() async {
+    final wasPaused = controller.isGamePaused.value;
+    if (!wasPaused && !_isFinished) controller.pauseGame();
+    final leave = await _confirm(
+      title: 'LEAVE THE BOARD?',
+      body: 'Your current match will stay saved so you can continue later.',
+      action: 'LEAVE GAME',
+    );
+    if (leave) {
+      _leaveNow();
+    } else if (!wasPaused && !_isFinished) {
+      controller.resumeGame();
     }
-
-    final winner = !isWhiteTurn ? "White" : "Black";
-    return switch (state) {
-      ChessGameState.check => '${isWhiteTurn ? "White" : "Black"} is in check!',
-      ChessGameState.checkmate => '$winner wins!',
-      ChessGameState.stalemate => 'Stalemate - Draw',
-      ChessGameState.draw => 'Game Draw',
-      _ => '',
-    };
   }
 
-  Future<bool> _showExitConfirmationDialog(
-      BuildContext context, ChessGameController controller) async {
-    if (controller.gameState.value == ChessGameState.initial) return true;
-
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1E293B),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            title: const Text('Exit Game?',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
-            content: const Text('Your current progress will be lost.',
-                style: TextStyle(color: Colors.white70)),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('CANCEL',
-                      style: TextStyle(color: Colors.white60))),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('EXIT',
-                    style: TextStyle(
-                        color: Colors.redAccent, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+  Future<void> _restart() async {
+    final wasPaused = controller.isGamePaused.value;
+    if (!wasPaused && !_isFinished) controller.pauseGame();
+    final restart = await _confirm(
+      title: 'START A NEW MATCH?',
+      body: 'The current board and move history will be reset.',
+      action: 'RESTART',
+    );
+    if (restart) {
+      controller.startNewGame(controller.gameMode.value);
+      controller.soundService.playGameStartSound();
+    } else if (!wasPaused && !_isFinished) {
+      controller.resumeGame();
+    }
   }
 
-  Future<void> _showMoveHistoryDialog(
-      BuildContext context, ChessGameController controller) async {
+  Future<bool> _confirm({
+    required String title,
+    required String body,
+    required String action,
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => _ChessConfirmDialog(
+          title: title,
+          body: body,
+          action: action,
+        ),
+      ) ??
+      false;
+
+  Future<void> _showHistory() async {
+    controller.soundService.playMenuSelectionSound();
     final moves = controller.formattedMovePairs();
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-        ),
-        title: const Text('Move History',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: SizedBox(
-          width: 320,
-          child: moves.isEmpty
-              ? const Text('No moves yet.',
-                  style: TextStyle(color: Colors.white70))
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: moves.length,
-                  itemBuilder: (context, index) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: SelectableText(moves[index],
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 380, maxHeight: 520),
+          padding: const EdgeInsets.all(22),
+          decoration: ChessDesign.ivoryPanel(radius: 28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.history_rounded,
+                color: ChessDesign.navy, size: 34),
+            const SizedBox(height: 8),
+            const Text('MOVE HISTORY',
+                style: TextStyle(
+                    color: ChessDesign.ink,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900)),
+            const SizedBox(height: 14),
+            Flexible(
+              child: moves.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text('No moves yet.'),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: moves.length,
+                      separatorBuilder: (_, __) => const Divider(),
+                      itemBuilder: (_, index) => SelectableText(
+                        moves[index],
                         style: const TextStyle(
-                            color: Colors.white, fontFamily: 'monospace')),
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w700),
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: moves.isEmpty
+                      ? null
+                      : () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: moves.join('\n')),
+                          );
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                  child: const Text('COPY'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  style:
+                      FilledButton.styleFrom(backgroundColor: ChessDesign.navy),
+                  child: const Text('DONE'),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _leaveNow() {
+    controller.pauseGame();
+    Get.back();
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.controller,
+    required this.compact,
+    required this.onBack,
+    required this.onPause,
+    required this.onSettings,
+  });
+  final ChessGameController controller;
+  final bool compact;
+  final VoidCallback onBack;
+  final VoidCallback onPause;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: EdgeInsets.fromLTRB(10, compact ? 5 : 10, 10, 8),
+        height: 68,
+        padding: const EdgeInsets.symmetric(horizontal: 7),
+        decoration: ChessDesign.ivoryPanel(radius: 24),
+        child: Row(children: [
+          _HeaderButton(icon: Icons.arrow_back_rounded, onTap: onBack),
+          _HeaderButton(icon: Icons.pause_rounded, onTap: onPause),
+          Expanded(
+            child: Obx(() => Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      switch (controller.gameMode.value) {
+                        ChessGameMode.ai => 'VS AI',
+                        ChessGameMode.local => 'LOCAL MATCH',
+                        ChessGameMode.training => 'TRAINING',
+                      },
+                      style: const TextStyle(
+                          color: ChessDesign.ink,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      '${ChessBoardPalette.fromId(controller.boardTheme.value).name.toUpperCase()} BOARD',
+                      style: const TextStyle(
+                          color: ChessDesign.orange,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1),
+                    ),
+                  ],
+                )),
+          ),
+          Obx(() => _HeaderButton(
+                icon: controller.soundService.isSoundEnabled.value
+                    ? Icons.volume_up_rounded
+                    : Icons.volume_off_rounded,
+                onTap: controller.soundService.toggleSound,
+              )),
+          _HeaderButton(icon: Icons.settings_rounded, onTap: onSettings),
+        ]),
+      );
+}
+
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => IconButton(
+        visualDensity: VisualDensity.compact,
+        onPressed: onTap,
+        icon: Icon(icon, color: ChessDesign.ink, size: 22),
+      );
+}
+
+class _PlayerPanel extends StatelessWidget {
+  const _PlayerPanel({required this.controller, required this.white});
+  final ChessGameController controller;
+  final bool white;
+
+  @override
+  Widget build(BuildContext context) => Obx(() {
+        final active = controller.isWhiteTurn.value == white;
+        final seconds = white
+            ? controller.whiteTimeRemaining.value
+            : controller.blackTimeRemaining.value;
+        final captured = controller.capturedPieces
+            .where((piece) => piece.contains(white ? 'black' : 'white'))
+            .toList();
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: active ? ChessDesign.orange : ChessDesign.ivory,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color: active ? Colors.white : ChessDesign.ivoryDeep, width: 2),
+            boxShadow: active ? ChessDesign.raisedShadow : null,
+          ),
+          child: Row(children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: white ? Colors.white : ChessDesign.ink,
+                shape: BoxShape.circle,
+                border: Border.all(color: ChessDesign.gold, width: 2),
+              ),
+              child: Icon(Icons.person_rounded,
+                  color: white ? ChessDesign.ink : Colors.white, size: 19),
+            ),
+            const SizedBox(width: 9),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  white ? 'WHITE' : 'BLACK',
+                  style: TextStyle(
+                      color: active ? Colors.white : ChessDesign.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  active ? _stateText(controller.gameState.value) : 'WAITING',
+                  style: TextStyle(
+                      color: active
+                          ? Colors.white.withValues(alpha: .82)
+                          : ChessDesign.ink.withValues(alpha: .5),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .8),
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ListView.builder(
+                reverse: true,
+                scrollDirection: Axis.horizontal,
+                itemCount: captured.length,
+                itemBuilder: (_, index) {
+                  final piece = captured[index];
+                  return Center(
+                    child: SvgPicture.asset(
+                      'assets/chess/images/$piece.svg',
+                      width: 19,
+                      height: 19,
+                      colorFilter: ColorFilter.mode(
+                        piece.contains('white')
+                            ? const Color(0xFFF7EBD4)
+                            : ChessDesign.ink,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (controller.timerEnabled.value)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                decoration: BoxDecoration(
+                    color: active
+                        ? Colors.white
+                        : ChessDesign.navy.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(10)),
+                child: Text(
+                  controller.formatTime(seconds),
+                  style: TextStyle(
+                      color: seconds <= 10 ? ChessDesign.red : ChessDesign.ink,
+                      fontFamily: 'monospace',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900),
+                ),
+              ),
+          ]),
+        );
+      });
+
+  static String _stateText(ChessGameState state) => switch (state) {
+        ChessGameState.check => 'IN CHECK',
+        ChessGameState.checkmate => 'GAME OVER',
+        ChessGameState.stalemate || ChessGameState.draw => 'DRAW',
+        _ => 'YOUR TURN',
+      };
+}
+
+class _BottomActions extends StatelessWidget {
+  const _BottomActions({
+    required this.controller,
+    required this.onHistory,
+    required this.onRestart,
+  });
+  final ChessGameController controller;
+  final VoidCallback onHistory;
+  final VoidCallback onRestart;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Expanded(
+          child: _ActionButton(
+              icon: Icons.history_rounded, label: 'MOVES', onTap: onHistory),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 2,
+          child: Obx(() => Container(
+                height: 46,
+                decoration: ChessDesign.ivoryPanel(radius: 18),
+                alignment: Alignment.center,
+                child: Text(
+                  controller.gameState.value == ChessGameState.check
+                      ? 'CHECK!'
+                      : controller.gameMode.value == ChessGameMode.ai &&
+                              !controller.isWhiteTurn.value
+                          ? 'AI IS THINKING…'
+                          : '${controller.isWhiteTurn.value ? "WHITE" : "BLACK"} TO MOVE',
+                  style: const TextStyle(
+                      color: ChessDesign.navy,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .5),
+                ),
+              )),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _ActionButton(
+              icon: Icons.restart_alt_rounded,
+              label: 'RESTART',
+              onTap: onRestart),
+        ),
+      ]);
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton(
+      {required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 46,
+        child: FilledButton(
+          onPressed: onTap,
+          style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              backgroundColor: ChessDesign.orange,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16))),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, size: 17),
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 8, fontWeight: FontWeight.w900)),
+          ]),
+        ),
+      );
+}
+
+class _PauseOverlay extends StatelessWidget {
+  const _PauseOverlay(
+      {required this.onResume, required this.onRestart, required this.onLeave});
+  final VoidCallback onResume;
+  final VoidCallback onRestart;
+  final VoidCallback onLeave;
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+        child: ColoredBox(
+          color: ChessDesign.navyDeep.withValues(alpha: .88),
+          child: Center(
+            child: Container(
+              width: MediaQuery.sizeOf(context).width.clamp(0, 390) - 32,
+              padding: const EdgeInsets.all(24),
+              decoration: ChessDesign.ivoryPanel(radius: 30),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.pause_circle_filled_rounded,
+                    size: 64, color: ChessDesign.orange),
+                const SizedBox(height: 10),
+                const Text('GAME PAUSED',
+                    style: TextStyle(
+                        color: ChessDesign.ink,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                Text('Take your time. The board is waiting.',
+                    style: TextStyle(
+                        color: ChessDesign.ink.withValues(alpha: .62),
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: FilledButton.icon(
+                    onPressed: onResume,
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('RESUME GAME'),
+                    style: FilledButton.styleFrom(
+                        backgroundColor: ChessDesign.orange,
+                        textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                        shape: const StadiumBorder()),
                   ),
                 ),
+                const SizedBox(height: 9),
+                Row(children: [
+                  Expanded(
+                      child: OutlinedButton.icon(
+                          onPressed: onRestart,
+                          icon: const Icon(Icons.restart_alt_rounded),
+                          label: const Text('RESTART'))),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: OutlinedButton.icon(
+                          onPressed: onLeave,
+                          icon: const Icon(Icons.logout_rounded),
+                          label: const Text('LEAVE'))),
+                ]),
+              ]),
+            ),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(
-                ClipboardData(text: moves.join('\n')),
-              );
-              if (context.mounted) {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Move history copied'),
-                    backgroundColor: const Color(0xFFF4B860),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+      );
+}
+
+class _ResultOverlay extends StatelessWidget {
+  const _ResultOverlay(
+      {required this.controller, required this.onAgain, required this.onLeave});
+  final ChessGameController controller;
+  final VoidCallback onAgain;
+  final VoidCallback onLeave;
+  @override
+  Widget build(BuildContext context) {
+    final draw = controller.gameState.value == ChessGameState.stalemate ||
+        controller.gameState.value == ChessGameState.draw;
+    final winner = controller.isWhiteTurn.value ? 'BLACK' : 'WHITE';
+    final reason = switch (controller.endReason.value) {
+      ChessEndReason.timeout => 'Won on time',
+      ChessEndReason.resignation => 'Won by resignation',
+      ChessEndReason.stalemate => 'Draw by stalemate',
+      ChessEndReason.insufficientMaterial => 'Draw by insufficient material',
+      ChessEndReason.repetition => 'Draw by repetition',
+      ChessEndReason.fiftyMoveRule => 'Draw by the 50-move rule',
+      ChessEndReason.checkmate => '$winner wins',
+      ChessEndReason.none => draw ? 'The match ends in a draw' : '$winner wins',
+    };
+    return Positioned.fill(
+      child: ColoredBox(
+        color: ChessDesign.navyDeep.withValues(alpha: .9),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(18),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 390),
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+              decoration: ChessDesign.ivoryPanel(radius: 34),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 86,
+                  height: 86,
+                  decoration: const BoxDecoration(
+                      color: ChessDesign.gold, shape: BoxShape.circle),
+                  child: Icon(
+                      draw ? Icons.balance_rounded : Icons.emoji_events_rounded,
+                      color: Colors.white,
+                      size: 51),
+                ),
+                const SizedBox(height: 14),
+                Text(draw ? 'GREAT BATTLE!' : 'CHECKMATE!',
+                    style: const TextStyle(
+                        color: ChessDesign.orange,
+                        fontSize: 34,
+                        height: 1,
+                        fontWeight: FontWeight.w900)),
+                const SizedBox(height: 8),
+                Text(reason,
+                    style: const TextStyle(
+                        color: ChessDesign.ink,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900)),
+                const SizedBox(height: 18),
+                Row(children: [
+                  _ResultStat(
+                      label: 'MOVES',
+                      value: '${controller.moveHistory.length}'),
+                  const SizedBox(width: 8),
+                  _ResultStat(
+                      label: 'CAPTURES',
+                      value: '${controller.capturedPieces.length}'),
+                ]),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: FilledButton(
+                    onPressed: onAgain,
+                    style: FilledButton.styleFrom(
+                        backgroundColor: ChessDesign.orange,
+                        shape: const StadiumBorder()),
+                    child: const Text('PLAY AGAIN',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w900, fontSize: 16)),
                   ),
-                );
-              }
-            },
-            child: const Text('COPY',
-                style: TextStyle(
-                    color: Color(0xFFF4B860), fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: onLeave,
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: ChessDesign.navy,
+                        side:
+                            const BorderSide(color: ChessDesign.navy, width: 2),
+                        shape: const StadiumBorder()),
+                    child: const Text('BACK TO GAMES',
+                        style: TextStyle(fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ]),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CLOSE', style: TextStyle(color: Colors.white60)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showRestartConfirmationDialog(
-      BuildContext context, ChessGameController controller) async {
-    final shouldRestart = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        title: const Text('Restart?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('This will reset the current match.',
-            style: TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('CANCEL',
-                  style: TextStyle(color: Colors.white60))),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('RESTART',
-                style: TextStyle(
-                    color: Color(0xFFF4B860), fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
-
-    if (shouldRestart == true) {
-      controller.startNewGame(controller.gameMode.value);
-    }
   }
+}
+
+class _ResultStat extends StatelessWidget {
+  const _ResultStat({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          decoration: BoxDecoration(
+              color: const Color(0xFFF0E8D7),
+              borderRadius: BorderRadius.circular(17)),
+          child: Column(children: [
+            Text(value,
+                style: const TextStyle(
+                    color: ChessDesign.navy,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900)),
+            Text(label,
+                style: const TextStyle(
+                    color: ChessDesign.ink,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1)),
+          ]),
+        ),
+      );
+}
+
+class _ChessConfirmDialog extends StatelessWidget {
+  const _ChessConfirmDialog(
+      {required this.title, required this.body, required this.action});
+  final String title;
+  final String body;
+  final String action;
+  @override
+  Widget build(BuildContext context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 380),
+          padding: const EdgeInsets.all(24),
+          decoration: ChessDesign.ivoryPanel(radius: 28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.sports_esports_rounded,
+                color: ChessDesign.orange, size: 48),
+            const SizedBox(height: 10),
+            Text(title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: ChessDesign.ink,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900)),
+            const SizedBox(height: 8),
+            Text(body,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: ChessDesign.ink.withValues(alpha: .65),
+                    fontWeight: FontWeight.w600,
+                    height: 1.35)),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(
+                  child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('KEEP PLAYING'))),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: FilledButton.styleFrom(
+                          backgroundColor: ChessDesign.orange),
+                      child: Text(action))),
+            ]),
+          ]),
+        ),
+      );
 }

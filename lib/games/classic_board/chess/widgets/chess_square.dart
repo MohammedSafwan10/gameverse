@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/chess_piece.dart';
 import 'chess_piece_widget.dart';
 import '../controllers/game_controller.dart';
+import '../theme/chess_design.dart';
 
 class ChessSquareWidget extends StatelessWidget {
   final bool isWhite;
@@ -27,25 +28,14 @@ class ChessSquareWidget extends StatelessWidget {
     required this.onTap,
   });
 
-  Color _getSquareColor(BuildContext context, String theme) {
-    return switch (theme) {
-      'classic' => isWhite ? const Color(0xFFF0D9B5) : const Color(0xFFB58863),
-      'modern' => isWhite ? const Color(0xFFE8EDF9) : const Color(0xFF4B7399),
-      'forest' => isWhite ? const Color(0xFFE2E2BD) : const Color(0xFF779556),
-      'royal' => isWhite ? const Color(0xFFFFE0B2) : const Color(0xFF7B1FA2),
-      'ocean' => isWhite ? const Color(0xFFE0F7FA) : const Color(0xFF006064),
-      'sunset' => isWhite ? const Color(0xFFFCE4EC) : const Color(0xFFE64A19),
-      _ => isWhite ? const Color(0xFFF0D9B5) : const Color(0xFFB58863),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ChessGameController>();
-    final accentColor = const Color(0xFFF4B860);
 
     return Obx(() {
-      final baseColor = _getSquareColor(context, controller.boardTheme.value);
+      final palette = ChessBoardPalette.fromId(controller.boardTheme.value);
+      final baseColor = isWhite ? palette.light : palette.dark;
+      final accentColor = palette.accent;
 
       return GestureDetector(
         onTap: onTap,
@@ -112,13 +102,17 @@ class ChessSquareWidget extends StatelessWidget {
 
               // Chess piece
               if (piece != null)
-                Center(
-                  child: ChessPieceWidget(
-                    piece: piece!,
-                    size: 42,
-                    isSelected: isSelected,
-                    isAnimated: true,
-                  ),
+                Positioned.fill(
+                  child: LayoutBuilder(builder: (context, constraints) {
+                    return Center(
+                      child: ChessPieceWidget(
+                        piece: piece!,
+                        size: constraints.maxWidth * .82,
+                        isSelected: isSelected,
+                        isAnimated: false,
+                      ),
+                    );
+                  }),
                 ),
 
               // Check indicator
