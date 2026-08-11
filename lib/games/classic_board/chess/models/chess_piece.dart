@@ -8,7 +8,8 @@ abstract class ChessPiece {
     required this.position,
   });
 
-  String get imagePath => 'assets/chess/images/${color.name}_${type.name}.svg';
+  String get imagePath =>
+      'assets/images/games/chess/pieces_v2/${color.name}_${type.name}.png';
   PieceType get type;
 
   static String coordinatesToNotation(int row, int col) {

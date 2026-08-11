@@ -15,7 +15,8 @@ abstract final class ChessDesign {
   static const background = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF0759BB), navyDeep],
+    colors: [Color(0xFF083A70), Color(0xFF021A38), Color(0xFF010D20)],
+    stops: [0, .58, 1],
   );
 
   static List<BoxShadow> get raisedShadow => const [
@@ -54,6 +55,9 @@ class ChessBoardPalette {
   final Color accent;
   final Color coordinate;
 
+  String get textureAsset =>
+      'assets/images/games/chess/board_textures/${name.toLowerCase()}.webp';
+
   static ChessBoardPalette fromId(String id) => switch (id) {
         'modern' => const ChessBoardPalette(
             name: 'Modern',
@@ -81,12 +85,12 @@ class ChessBoardPalette {
             coordinate: Color(0xFFFFE39A)),
         'ocean' => const ChessBoardPalette(
             name: 'Ocean',
-            light: Color(0xFFE2FAF5),
-            dark: Color(0xFF168A91),
-            frame: Color(0xFF07555F),
-            frameEdge: Color(0xFF56D8CC),
+            light: Color(0xFFF2E8D2),
+            dark: Color(0xFF0A4664),
+            frame: Color(0xFF021D3F),
+            frameEdge: ChessDesign.gold,
             accent: Color(0xFFFFC857),
-            coordinate: Color(0xFFD9FFFA)),
+            coordinate: Color(0xFFFFD779)),
         'sunset' => const ChessBoardPalette(
             name: 'Sunset',
             light: Color(0xFFFFE7CA),

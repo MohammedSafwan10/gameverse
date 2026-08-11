@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -14,75 +16,23 @@ class ChessHowToPlayScreen extends StatelessWidget {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
-                child: Column(children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                    child: Row(children: [
-                      IconButton.filled(
-                        onPressed: Get.back,
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        style: IconButton.styleFrom(
-                            backgroundColor: ChessDesign.ivory,
-                            foregroundColor: ChessDesign.ink),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text('HOW TO PLAY',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 22,
-                                  letterSpacing: 1.2)),
-                        ),
-                      ),
-                    ]),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                      children: const [
-                        _GuideCard(
-                            number: '1',
-                            title: 'Protect your king',
-                            body:
-                                'Your goal is checkmate: attack the rival king so it has no legal escape.',
-                            icon: Icons.shield_rounded,
-                            color: ChessDesign.orange),
-                        _GuideCard(
-                            number: '2',
-                            title: 'Tap, then move',
-                            body:
-                                'Tap one of your pieces. Highlighted squares show every legal move you can make.',
-                            icon: Icons.touch_app_rounded,
-                            color: ChessDesign.teal),
-                        _GuideCard(
-                            number: '3',
-                            title: 'Know the pieces',
-                            body:
-                                'Rooks move straight, bishops diagonally, queens both ways, knights jump, and pawns move forward.',
-                            icon: Icons.grid_view_rounded,
-                            color: ChessDesign.gold),
-                        _GuideCard(
-                            number: '4',
-                            title: 'Special moves',
-                            body:
-                                'Castle to protect your king. Reach the far rank with a pawn to promote it.',
-                            icon: Icons.auto_awesome_rounded,
-                            color: Color(0xFF7C5CE7)),
-                        _GuideCard(
-                            number: '5',
-                            title: 'Watch the clock',
-                            body:
-                                'In timed games, each move starts your opponent’s clock. Running out of time loses the match.',
-                            icon: Icons.timer_rounded,
-                            color: ChessDesign.red),
-                      ],
+                child: CustomScrollView(
+                  slivers: [
+                    const SliverToBoxAdapter(child: _GuideHeader()),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+                      sliver: SliverList.list(children: const [
+                        _WinCard(),
+                        SizedBox(height: 12),
+                        _MoveCard(),
+                        SizedBox(height: 12),
+                        _SpecialMovesCard(),
+                        SizedBox(height: 16),
+                        _StartButton(),
+                      ]),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
             ),
           ),
@@ -90,48 +40,363 @@ class ChessHowToPlayScreen extends StatelessWidget {
       );
 }
 
-class _GuideCard extends StatelessWidget {
-  const _GuideCard(
-      {required this.number,
-      required this.title,
-      required this.body,
-      required this.icon,
-      required this.color});
-  final String number;
-  final String title;
-  final String body;
-  final IconData icon;
-  final Color color;
+class _GuideHeader extends StatelessWidget {
+  const _GuideHeader();
+
   @override
   Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(18),
-        decoration: ChessDesign.ivoryPanel(radius: 24),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                  color: color, borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, color: Colors.white, size: 27)),
-          const SizedBox(width: 15),
-          Expanded(
+        margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+        padding: const EdgeInsets.fromLTRB(10, 11, 16, 11),
+        decoration: BoxDecoration(
+          color: ChessDesign.ivory,
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: ChessDesign.gold, width: 2),
+          boxShadow: ChessDesign.raisedShadow,
+        ),
+        child: Row(children: [
+          IconButton.filled(
+            onPressed: Get.back,
+            icon: const Icon(Icons.arrow_back_rounded),
+            style: IconButton.styleFrom(
+              backgroundColor: ChessDesign.navy,
+              foregroundColor: ChessDesign.ivory,
+              minimumSize: const Size(48, 48),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text('HOW TO PLAY',
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: ChessDesign.navy,
+                    fontFamily: 'BarlowCondensed',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 31,
+                    height: .95,
+                    letterSpacing: .6,
+                  )),
+            ),
+          ),
+          const Icon(Icons.workspace_premium_rounded,
+              color: ChessDesign.gold, size: 30),
+        ]),
+      );
+}
+
+class _WinCard extends StatelessWidget {
+  const _WinCard();
+
+  @override
+  Widget build(BuildContext context) => _IvoryCard(
+        child: SizedBox(
+          height: 130,
+          child: Row(children: [
+            Expanded(
+              flex: 5,
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                Text('$number  $title',
-                    style: const TextStyle(
-                        color: ChessDesign.ink,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900)),
-                const SizedBox(height: 5),
-                Text(body,
+                    const _Eyebrow('THE GOAL'),
+                    const SizedBox(height: 4),
+                    const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text('WIN THE GAME',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: ChessDesign.navy,
+                            fontFamily: 'BarlowCondensed',
+                            fontSize: 27,
+                            height: 1,
+                            fontWeight: FontWeight.w900,
+                          )),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Checkmate the rival king so it has no legal escape.',
+                        style: TextStyle(
+                          color: ChessDesign.ink.withValues(alpha: .72),
+                          fontSize: 11.5,
+                          height: 1.3,
+                          fontWeight: FontWeight.w700,
+                        )),
+                  ]),
+            ),
+            Expanded(
+              flex: 4,
+              child: Stack(alignment: Alignment.bottomCenter, children: [
+                Positioned(
+                  right: 0,
+                  bottom: 1,
+                  child: Transform.rotate(
+                    angle: math.pi / 2.7,
+                    child: SizedBox(
+                      width: 76,
+                      height: 76,
+                      child: Image.asset(
+                          'assets/images/games/chess/pieces_v2/black_king.png',
+                          fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  bottom: 0,
+                  child: SizedBox(
+                    width: 92,
+                    height: 118,
+                    child: Image.asset(
+                        'assets/images/games/chess/pieces_v2/white_king.png',
+                        fit: BoxFit.contain),
+                  ),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+      );
+}
+
+class _MoveCard extends StatelessWidget {
+  const _MoveCard();
+
+  @override
+  Widget build(BuildContext context) => _IvoryCard(
+        child: Row(children: [
+          Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const _Eyebrow('YOUR TURN'),
+              const SizedBox(height: 4),
+              const FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text('MAKE A MOVE',
+                    maxLines: 1,
                     style: TextStyle(
-                        color: ChessDesign.ink.withValues(alpha: .72),
-                        fontSize: 13,
-                        height: 1.4,
-                        fontWeight: FontWeight.w600)),
-              ])),
+                      color: ChessDesign.navy,
+                      fontFamily: 'BarlowCondensed',
+                      fontSize: 24,
+                      height: 1,
+                      fontWeight: FontWeight.w900,
+                    )),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                  'Tap a piece, then tap one of its highlighted legal squares.',
+                  style: TextStyle(
+                    color: ChessDesign.ink.withValues(alpha: .72),
+                    fontSize: 11,
+                    height: 1.3,
+                    fontWeight: FontWeight.w700,
+                  )),
+            ]),
+          ),
+          const SizedBox(width: 12),
+          const _MiniBoard(),
         ]),
+      );
+}
+
+class _MiniBoard extends StatelessWidget {
+  const _MiniBoard();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 116,
+        height: 116,
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: ChessDesign.navyDeep,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: ChessDesign.gold, width: 2),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4),
+            itemCount: 16,
+            itemBuilder: (context, index) {
+              final row = index ~/ 4;
+              final col = index % 4;
+              final highlighted = index == 6 || index == 9 || index == 14;
+              return ColoredBox(
+                color: highlighted
+                    ? ChessDesign.orange
+                    : (row + col).isEven
+                        ? const Color(0xFFFFE6B4)
+                        : ChessDesign.navy,
+                child: index == 10
+                    ? Padding(
+                        padding: const EdgeInsets.all(1),
+                        child: Image.asset(
+                            'assets/images/games/chess/pieces_v2/white_knight.png'),
+                      )
+                    : null,
+              );
+            },
+          ),
+        ),
+      );
+}
+
+class _SpecialMovesCard extends StatelessWidget {
+  const _SpecialMovesCard();
+
+  @override
+  Widget build(BuildContext context) => _IvoryCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const _Eyebrow('POWER PLAYS'),
+          const SizedBox(height: 4),
+          const Text('SPECIAL MOVES',
+              style: TextStyle(
+                color: ChessDesign.navy,
+                fontFamily: 'BarlowCondensed',
+                fontSize: 25,
+                height: 1,
+                fontWeight: FontWeight.w900,
+              )),
+          const SizedBox(height: 10),
+          const Row(children: [
+            _MoveTile(
+              label: 'CASTLING',
+              detail: 'King + rook',
+              first: 'white_king',
+              second: 'white_rook',
+            ),
+            SizedBox(width: 7),
+            _MoveTile(
+              label: 'EN PASSANT',
+              detail: 'Pawn capture',
+              first: 'white_pawn',
+              second: 'black_pawn',
+            ),
+            SizedBox(width: 7),
+            _MoveTile(
+              label: 'PROMOTION',
+              detail: 'Pawn to queen',
+              first: 'white_pawn',
+              second: 'white_queen',
+            ),
+          ]),
+        ]),
+      );
+}
+
+class _MoveTile extends StatelessWidget {
+  const _MoveTile(
+      {required this.label,
+      required this.detail,
+      required this.first,
+      required this.second});
+  final String label;
+  final String detail;
+  final String first;
+  final String second;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(3, 6, 3, 7),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFD7C8AA)),
+          ),
+          child: Column(children: [
+            SizedBox(
+              height: 52,
+              child: Stack(alignment: Alignment.center, children: [
+                Positioned(
+                  left: 2,
+                  child: Image.asset(
+                      'assets/images/games/chess/pieces_v2/$first.png',
+                      width: 45,
+                      height: 52),
+                ),
+                Positioned(
+                  right: 1,
+                  child: Image.asset(
+                      'assets/images/games/chess/pieces_v2/$second.png',
+                      width: 45,
+                      height: 52),
+                ),
+              ]),
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label,
+                  style: const TextStyle(
+                      color: ChessDesign.navy,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900)),
+            ),
+            Text(detail,
+                maxLines: 1,
+                style: TextStyle(
+                    color: ChessDesign.ink.withValues(alpha: .58),
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      );
+}
+
+class _StartButton extends StatelessWidget {
+  const _StartButton();
+
+  @override
+  Widget build(BuildContext context) => FilledButton.icon(
+        onPressed: Get.back,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(double.infinity, 56),
+          backgroundColor: ChessDesign.orange,
+          foregroundColor: Colors.white,
+          shape: const StadiumBorder(),
+          elevation: 7,
+          shadowColor: ChessDesign.orange.withValues(alpha: .5),
+        ),
+        icon: const Icon(Icons.play_arrow_rounded, size: 26),
+        label: const Text('START PLAYING',
+            style: TextStyle(
+                fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1)),
+      );
+}
+
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(text,
+      style: const TextStyle(
+        color: ChessDesign.orange,
+        fontSize: 10,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 1.2,
+      ));
+}
+
+class _IvoryCard extends StatelessWidget {
+  const _IvoryCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ChessDesign.ivory,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+              color: ChessDesign.gold.withValues(alpha: .82), width: 1.5),
+          boxShadow: ChessDesign.raisedShadow,
+        ),
+        child: child,
       );
 }

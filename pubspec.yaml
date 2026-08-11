@@ -44,20 +44,17 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: BarlowCondensed
+      fonts:
+        - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BarlowCondensed-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
+          weight: 800
   assets:
     # Chess pieces (SVG)
-    - assets/chess/images/black_bishop.svg
-    - assets/chess/images/black_king.svg
-    - assets/chess/images/black_knight.svg
-    - assets/chess/images/black_pawn.svg
-    - assets/chess/images/black_queen.svg
-    - assets/chess/images/black_rook.svg
-    - assets/chess/images/white_bishop.svg
-    - assets/chess/images/white_king.svg
-    - assets/chess/images/white_knight.svg
-    - assets/chess/images/white_pawn.svg
-    - assets/chess/images/white_queen.svg
-    - assets/chess/images/white_rook.svg
     
     # Chess low-latency PCM sound pack
     - assets/chess/sounds_v2/
@@ -74,6 +71,8 @@ flutter:
     - assets/images/games/
     - assets/images/games/memory_match/
     - assets/images/games/chess/
+    - assets/images/games/chess/pieces_v2/
+    - assets/images/games/chess/board_textures/
     - assets/images/home/games/
     - assets/images/google_logo.png
 

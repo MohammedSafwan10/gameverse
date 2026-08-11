@@ -15,24 +15,35 @@ class ChessBoardWidget extends GetView<ChessGameController> {
       return AspectRatio(
         aspectRatio: 1,
         child: Container(
-          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
             color: palette.frame,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: palette.frameEdge, width: 3),
+            image: DecorationImage(
+              image: AssetImage(palette.textureAsset),
+              fit: BoxFit.cover,
+              opacity: .68,
+              colorFilter: const ColorFilter.mode(
+                Color(0x66001432),
+                BlendMode.srcATop,
+              ),
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: palette.frameEdge, width: 2),
             boxShadow: const [
               BoxShadow(
-                  color: Color(0x77001736),
-                  blurRadius: 16,
-                  offset: Offset(0, 9))
+                  color: Color(0xAA000A1C),
+                  blurRadius: 18,
+                  offset: Offset(0, 10))
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Stack(
-              children: [
-                // Board squares
-                GridView.builder(
+          child: Stack(children: [
+            Positioned(
+              left: 18,
+              top: 18,
+              right: 18,
+              bottom: 18,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 8,
@@ -77,63 +88,13 @@ class ChessBoardWidget extends GetView<ChessGameController> {
                     });
                   },
                 ),
-
-                // Rank labels (1-8)
-                IgnorePointer(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 4, top: 4),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(8, (index) {
-                        return Expanded(
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              '${8 - index}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                color:
-                                    palette.coordinate.withValues(alpha: 0.72),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-
-                // File labels (a-h)
-                IgnorePointer(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 6, bottom: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(8, (index) {
-                        return Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              String.fromCharCode('a'.codeUnitAt(0) + index),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                color:
-                                    palette.coordinate.withValues(alpha: 0.72),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            _FileCoordinates(palette: palette, top: true),
+            _FileCoordinates(palette: palette, top: false),
+            _RankCoordinates(palette: palette, left: true),
+            _RankCoordinates(palette: palette, left: false),
+          ]),
         ),
       );
     });
@@ -182,4 +143,76 @@ class ChessBoardWidget extends GetView<ChessGameController> {
       }
     }
   }
+}
+
+class _FileCoordinates extends StatelessWidget {
+  const _FileCoordinates({required this.palette, required this.top});
+  final ChessBoardPalette palette;
+  final bool top;
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+        left: 18,
+        right: 18,
+        top: top ? 1 : null,
+        bottom: top ? null : 1,
+        height: 16,
+        child: IgnorePointer(
+          child: Row(
+            children: List.generate(
+              8,
+              (index) => Expanded(
+                child: Center(
+                  child: Text(
+                    String.fromCharCode('a'.codeUnitAt(0) + index),
+                    style: TextStyle(
+                      fontFamily: 'BarlowCondensed',
+                      fontSize: 11,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                      color: palette.coordinate,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+class _RankCoordinates extends StatelessWidget {
+  const _RankCoordinates({required this.palette, required this.left});
+  final ChessBoardPalette palette;
+  final bool left;
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+        top: 18,
+        bottom: 18,
+        left: left ? 1 : null,
+        right: left ? null : 1,
+        width: 16,
+        child: IgnorePointer(
+          child: Column(
+            children: List.generate(
+              8,
+              (index) => Expanded(
+                child: Center(
+                  child: Text(
+                    '${8 - index}',
+                    style: TextStyle(
+                      fontFamily: 'BarlowCondensed',
+                      fontSize: 11,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                      color: palette.coordinate,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }

@@ -40,8 +40,8 @@ void main() {
       await tester
           .pumpWidget(const GetMaterialApp(home: ChessModeSelectionScreen()));
       await tester.pump();
-      expect(find.text('PLAY VS AI'), findsOneWidget);
-      expect(find.text('TWO PLAYERS'), findsOneWidget);
+      expect(find.text('VS AI'), findsOneWidget);
+      expect(find.text('TWO PLAYER'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 1));
@@ -71,10 +71,28 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.text('PICK A DIFFICULTY'), findsOneWidget);
+      expect(find.text('MATCH SETUP'), findsOneWidget);
+      expect(find.text('AI DIFFICULTY'), findsOneWidget);
       expect(find.text('EASY'), findsOneWidget);
       expect(find.text('MEDIUM'), findsOneWidget);
       expect(find.text('HARD'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'local setup dialog fits at ${size.width.toInt()}x${size.height.toInt()}',
+        (tester) async {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        const GetMaterialApp(
+          home: Scaffold(body: GameOptionsDialog(mode: ChessGameMode.local)),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('MATCH SETUP'), findsOneWidget);
+      expect(find.text('PASS & PLAY'), findsOneWidget);
+      expect(find.text('START MATCH'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -93,6 +111,33 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1));
     });
   }
+
+  testWidgets('premium history dialog fits the smallest phone', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    _registerGame();
+    await tester.pumpWidget(const GetMaterialApp(home: ChessGameScreen()));
+    await tester.ensureVisible(find.text('HISTORY'));
+    await tester.tap(find.text('HISTORY'));
+    await tester.pumpAndSettle();
+    expect(find.text('MOVE HISTORY'), findsOneWidget);
+    expect(find.text('COPY'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('premium pause overlay fits the smallest phone', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    _registerGame();
+    await tester.pumpWidget(const GetMaterialApp(home: ChessGameScreen()));
+    await tester.tap(find.byIcon(Icons.pause_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('GAME PAUSED'), findsOneWidget);
+    expect(find.text('RESUME GAME'), findsOneWidget);
+    expect(find.text('SETTINGS'), findsOneWidget);
+    expect(find.text('LEAVE MATCH'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   test('every Chess board theme has a distinct palette', () {
     const ids = ['classic', 'modern', 'forest', 'royal', 'ocean', 'sunset'];
@@ -119,6 +164,40 @@ void main() {
           reason: '$file must ship with the app');
     }
     expect(Directory('assets/chess/sounds').existsSync(), isFalse);
+    expect(
+      File('assets/images/games/chess/ai_robot_knight_v2.png').existsSync(),
+      isTrue,
+    );
+    for (final color in ['white', 'black']) {
+      for (final piece in [
+        'pawn',
+        'rook',
+        'knight',
+        'bishop',
+        'queen',
+        'king'
+      ]) {
+        expect(
+          File('assets/images/games/chess/pieces_v2/${color}_$piece.png')
+              .existsSync(),
+          isTrue,
+        );
+      }
+    }
+    for (final theme in [
+      'classic',
+      'modern',
+      'forest',
+      'royal',
+      'ocean',
+      'sunset'
+    ]) {
+      expect(
+        File('assets/images/games/chess/board_textures/$theme.webp')
+            .existsSync(),
+        isTrue,
+      );
+    }
   });
 }
 

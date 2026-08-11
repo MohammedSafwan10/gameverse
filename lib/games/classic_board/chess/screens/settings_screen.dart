@@ -24,24 +24,52 @@ class ChessSettingsScreen extends GetView<ChessGameController> {
               child: Column(children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-                  child: Row(children: [
-                    IconButton.filled(
-                      onPressed: Get.back,
-                      style: IconButton.styleFrom(
-                          backgroundColor: ChessDesign.ivory,
-                          foregroundColor: ChessDesign.ink),
-                      icon: const Icon(Icons.arrow_back_rounded),
+                  child: Container(
+                    height: 76,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: ChessDesign.ivory,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: ChessDesign.gold, width: 1.5),
+                      boxShadow: ChessDesign.raisedShadow,
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text('CHESS SETTINGS',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1)),
-                    ),
-                  ]),
+                    child: Row(children: [
+                      IconButton.filled(
+                        onPressed: Get.back,
+                        style: IconButton.styleFrom(
+                          backgroundColor: ChessDesign.navyDeep,
+                          foregroundColor: const Color(0xFFFFE7AD),
+                          side: const BorderSide(color: ChessDesign.gold),
+                        ),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('SETTINGS',
+                              maxLines: 1,
+                              style: TextStyle(
+                                  fontFamily: 'BarlowCondensed',
+                                  color: ChessDesign.navyDeep,
+                                  fontSize: 36,
+                                  height: 1,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1)),
+                        ),
+                      ),
+                      const Icon(Icons.settings_rounded,
+                          color: ChessDesign.gold, size: 34),
+                      SizedBox(
+                        width: 42,
+                        height: 52,
+                        child: Image.asset(
+                          'assets/images/games/chess/pieces_v2/black_knight.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ]),
+                  ),
                 ),
                 Expanded(
                   child: ListView(
@@ -265,10 +293,12 @@ class _Panel extends StatelessWidget {
             const SizedBox(width: 9),
             Text(title,
                 style: const TextStyle(
-                    color: ChessDesign.ink,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1)),
+                    fontFamily: 'BarlowCondensed',
+                    color: ChessDesign.navyDeep,
+                    fontSize: 21,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .8)),
           ]),
           const SizedBox(height: 8),
           ...children,
@@ -342,10 +372,10 @@ class _ThemeGrid extends StatelessWidget {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(9),
-                    child: Row(children: [
-                      Expanded(child: ColoredBox(color: palette.light)),
-                      Expanded(child: ColoredBox(color: palette.dark)),
-                    ]),
+                    child: _BoardThemePreview(
+                      palette: palette,
+                      selected: active,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -358,6 +388,61 @@ class _ThemeGrid extends StatelessWidget {
             ),
           );
         }).toList(),
+      );
+}
+
+class _BoardThemePreview extends StatelessWidget {
+  const _BoardThemePreview({required this.palette, required this.selected});
+
+  final ChessBoardPalette palette;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        fit: StackFit.expand,
+        children: [
+          ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              Colors.white.withValues(alpha: .20),
+              BlendMode.screen,
+            ),
+            child: Image.asset(palette.textureAsset, fit: BoxFit.cover),
+          ),
+          GridView.builder(
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 8,
+              childAspectRatio: 1,
+            ),
+            itemCount: 32,
+            itemBuilder: (context, index) {
+              final row = index ~/ 8;
+              final column = index % 8;
+              final lightSquare = (row + column).isEven;
+              return ColoredBox(
+                color: lightSquare
+                    ? palette.light.withValues(alpha: .78)
+                    : palette.dark.withValues(alpha: .38),
+              );
+            },
+          ),
+          if (selected)
+            Align(
+              alignment: Alignment.topRight,
+              child: Container(
+                width: 20,
+                height: 20,
+                margin: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: ChessDesign.orange,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded,
+                    color: Colors.white, size: 14),
+              ),
+            ),
+        ],
       );
 }
 

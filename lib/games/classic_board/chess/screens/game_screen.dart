@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../controllers/game_controller.dart';
@@ -95,7 +94,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                                 controller: controller,
                                 white: false,
                               ),
-                              SizedBox(height: compact ? 7 : 10),
+                              SizedBox(height: compact ? 6 : 8),
+                              _TurnBanner(controller: controller),
+                              SizedBox(height: compact ? 6 : 8),
                               const ChessBoardWidget(),
                               SizedBox(height: compact ? 7 : 10),
                               _PlayerPanel(
@@ -104,9 +105,9 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                               ),
                               const SizedBox(height: 10),
                               _BottomActions(
-                                controller: controller,
                                 onHistory: _showHistory,
                                 onRestart: _restart,
+                                onSettings: _openSettings,
                               ),
                             ]),
                           ),
@@ -119,6 +120,7 @@ class _ChessGameScreenState extends State<ChessGameScreen>
                     ? _PauseOverlay(
                         onResume: controller.resumeGame,
                         onRestart: _restart,
+                        onSettings: _openSettings,
                         onLeave: _leaveNow,
                       )
                     : const SizedBox.shrink()),
@@ -220,74 +222,212 @@ class _ChessGameScreenState extends State<ChessGameScreen>
     final moves = controller.formattedMovePairs();
     await showDialog<void>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 380, maxHeight: 520),
-          padding: const EdgeInsets.all(22),
-          decoration: ChessDesign.ivoryPanel(radius: 28),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.history_rounded,
-                color: ChessDesign.navy, size: 34),
-            const SizedBox(height: 8),
-            const Text('MOVE HISTORY',
-                style: TextStyle(
-                    color: ChessDesign.ink,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900)),
-            const SizedBox(height: 14),
-            Flexible(
-              child: moves.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text('No moves yet.'),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: moves.length,
-                      separatorBuilder: (_, __) => const Divider(),
-                      itemBuilder: (_, index) => SelectableText(
-                        moves[index],
-                        style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w700),
-                      ),
-                    ),
-            ),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: moves.isEmpty
-                      ? null
-                      : () async {
-                          await Clipboard.setData(
-                            ClipboardData(text: moves.join('\n')),
-                          );
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                  child: const Text('COPY'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  style:
-                      FilledButton.styleFrom(backgroundColor: ChessDesign.navy),
-                  child: const Text('DONE'),
-                ),
-              ),
-            ]),
-          ]),
-        ),
-      ),
+      builder: (context) => _MoveHistoryDialog(moves: moves),
     );
   }
 
   void _leaveNow() {
     controller.pauseGame();
     Get.back();
+  }
+}
+
+class _MoveHistoryDialog extends StatelessWidget {
+  const _MoveHistoryDialog({required this.moves});
+  final List<String> moves;
+
+  @override
+  Widget build(BuildContext context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 350, maxHeight: 570),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          decoration: BoxDecoration(
+            color: ChessDesign.ivory,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: ChessDesign.gold, width: 2),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0xAA000511),
+                  blurRadius: 28,
+                  offset: Offset(0, 14))
+            ],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: ChessDesign.navyDeep,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: ChessDesign.gold, width: 1.5),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Image.asset(
+                  'assets/images/games/chess/pieces_v2/black_knight.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'MOVE HISTORY',
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: 'BarlowCondensed',
+                    color: ChessDesign.navyDeep,
+                    fontSize: 29,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton.filled(
+                onPressed: () => Navigator.pop(context),
+                style: IconButton.styleFrom(
+                  backgroundColor: ChessDesign.navyDeep,
+                  foregroundColor: const Color(0xFFFFE7AD),
+                  side: const BorderSide(color: ChessDesign.gold),
+                ),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ]),
+            const SizedBox(height: 14),
+            Container(
+              height: 36,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE9D9B9),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              ),
+              child: const Row(children: [
+                SizedBox(width: 44),
+                Expanded(
+                    child: Center(
+                        child: Text('WHITE',
+                            style: TextStyle(
+                                color: ChessDesign.navyDeep,
+                                fontWeight: FontWeight.w900)))),
+                Expanded(
+                    child: Center(
+                        child: Text('BLACK',
+                            style: TextStyle(
+                                color: ChessDesign.navyDeep,
+                                fontWeight: FontWeight.w900)))),
+              ]),
+            ),
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBF1),
+                  border: Border.all(color: const Color(0xFFD8C49E)),
+                  borderRadius:
+                      const BorderRadius.vertical(bottom: Radius.circular(12)),
+                ),
+                child: moves.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(28),
+                          child: Text('Your moves will appear here.',
+                              style: TextStyle(
+                                  color: ChessDesign.ink,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: moves.length,
+                        itemBuilder: (_, index) =>
+                            _HistoryRow(index: index, value: moves[index]),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: moves.isEmpty
+                      ? null
+                      : () async {
+                          await Clipboard.setData(
+                              ClipboardData(text: moves.join('\n')));
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ChessDesign.navyDeep,
+                    side:
+                        const BorderSide(color: ChessDesign.navyDeep, width: 2),
+                    minimumSize: const Size.fromHeight(48),
+                    shape: const StadiumBorder(),
+                  ),
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  label: const Text('COPY'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ChessDesign.orange,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: const Text('CLOSE'),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      );
+}
+
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({required this.index, required this.value});
+  final int index;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final prefix = '${index + 1}. ';
+    final notation =
+        value.startsWith(prefix) ? value.substring(prefix.length) : value;
+    final pair = notation.split(RegExp(r'\s{2,}'));
+    return Container(
+      height: 43,
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFE4D8C1))),
+      ),
+      child: Row(children: [
+        SizedBox(
+          width: 44,
+          child: Center(
+            child: Text('${index + 1}.',
+                style: const TextStyle(
+                    color: ChessDesign.ink, fontWeight: FontWeight.w800)),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Text(pair.first,
+                style: const TextStyle(
+                    color: ChessDesign.ink,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w800)),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: Text(pair.length > 1 ? pair[1] : '',
+                style: const TextStyle(
+                    color: ChessDesign.ink,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w800)),
+          ),
+        ),
+      ]),
+    );
   }
 }
 
@@ -308,9 +448,14 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         margin: EdgeInsets.fromLTRB(10, compact ? 5 : 10, 10, 8),
-        height: 68,
+        height: compact ? 62 : 72,
         padding: const EdgeInsets.symmetric(horizontal: 7),
-        decoration: ChessDesign.ivoryPanel(radius: 24),
+        decoration: BoxDecoration(
+          color: ChessDesign.ivory,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: ChessDesign.gold, width: 1.5),
+          boxShadow: ChessDesign.raisedShadow,
+        ),
         child: Row(children: [
           _HeaderButton(icon: Icons.arrow_back_rounded, onTap: onBack),
           _HeaderButton(icon: Icons.pause_rounded, onTap: onPause),
@@ -318,24 +463,40 @@ class _Header extends StatelessWidget {
             child: Obx(() => Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      switch (controller.gameMode.value) {
-                        ChessGameMode.ai => 'VS AI',
-                        ChessGameMode.local => 'LOCAL MATCH',
-                        ChessGameMode.training => 'TRAINING',
-                      },
-                      style: const TextStyle(
-                          color: ChessDesign.ink,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900),
+                    SizedBox(
+                      height: 28,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          switch (controller.gameMode.value) {
+                            ChessGameMode.ai => 'VS AI',
+                            ChessGameMode.local => 'LOCAL MATCH',
+                            ChessGameMode.training => 'TRAINING',
+                          },
+                          maxLines: 1,
+                          style: const TextStyle(
+                              fontFamily: 'BarlowCondensed',
+                              color: ChessDesign.navyDeep,
+                              fontSize: 24,
+                              height: .95,
+                              fontWeight: FontWeight.w800),
+                        ),
+                      ),
                     ),
-                    Text(
-                      '${ChessBoardPalette.fromId(controller.boardTheme.value).name.toUpperCase()} BOARD',
-                      style: const TextStyle(
-                          color: ChessDesign.orange,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1),
+                    SizedBox(
+                      height: 12,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${ChessBoardPalette.fromId(controller.boardTheme.value).name.toUpperCase()} BOARD',
+                          maxLines: 1,
+                          style: const TextStyle(
+                              color: ChessDesign.orange,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1),
+                        ),
+                      ),
                     ),
                   ],
                 )),
@@ -356,10 +517,28 @@ class _HeaderButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => IconButton(
-        visualDensity: VisualDensity.compact,
-        onPressed: onTap,
-        icon: Icon(icon, color: ChessDesign.ink, size: 22),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(40),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: ChessDesign.navyDeep,
+              border: Border.all(color: ChessDesign.gold, width: 1.5),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x55000000),
+                    blurRadius: 5,
+                    offset: Offset(0, 3))
+              ],
+            ),
+            child: Icon(icon, color: const Color(0xFFFFE7AD), size: 21),
+          ),
+        ),
       );
 }
 
@@ -379,26 +558,36 @@ class _PlayerPanel extends StatelessWidget {
             .toList();
         return AnimatedContainer(
           duration: const Duration(milliseconds: 220),
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            color: active ? ChessDesign.orange : ChessDesign.ivory,
+            gradient: LinearGradient(
+              colors: active
+                  ? const [Color(0xFF124D89), Color(0xFF062B59)]
+                  : const [Color(0xFF0A386A), Color(0xFF031E43)],
+            ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-                color: active ? Colors.white : ChessDesign.ivoryDeep, width: 2),
-            boxShadow: active ? ChessDesign.raisedShadow : null,
+                color: active ? ChessDesign.gold : const Color(0xFF285987),
+                width: active ? 2 : 1.5),
+            boxShadow: ChessDesign.raisedShadow,
           ),
           child: Row(children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: white ? Colors.white : ChessDesign.ink,
+                color: const Color(0xFF061D3B),
                 shape: BoxShape.circle,
                 border: Border.all(color: ChessDesign.gold, width: 2),
               ),
-              child: Icon(Icons.person_rounded,
-                  color: white ? ChessDesign.ink : Colors.white, size: 19),
+              padding: const EdgeInsets.all(3),
+              child: Image.asset(
+                white
+                    ? 'assets/images/games/chess/pieces_v2/white_king.png'
+                    : 'assets/images/games/chess/pieces_v2/black_knight.png',
+                fit: BoxFit.contain,
+              ),
             ),
             const SizedBox(width: 9),
             Column(
@@ -408,16 +597,16 @@ class _PlayerPanel extends StatelessWidget {
                 Text(
                   white ? 'WHITE' : 'BLACK',
                   style: TextStyle(
-                      color: active ? Colors.white : ChessDesign.ink,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900),
+                      fontFamily: 'BarlowCondensed',
+                      color: const Color(0xFFFFE7AD),
+                      fontSize: 20,
+                      height: .95,
+                      fontWeight: FontWeight.w800),
                 ),
                 Text(
                   active ? _stateText(controller.gameState.value) : 'WAITING',
                   style: TextStyle(
-                      color: active
-                          ? Colors.white.withValues(alpha: .82)
-                          : ChessDesign.ink.withValues(alpha: .5),
+                      color: Colors.white.withValues(alpha: .65),
                       fontSize: 8,
                       fontWeight: FontWeight.w800,
                       letterSpacing: .8),
@@ -433,16 +622,11 @@ class _PlayerPanel extends StatelessWidget {
                 itemBuilder: (_, index) {
                   final piece = captured[index];
                   return Center(
-                    child: SvgPicture.asset(
-                      'assets/chess/images/$piece.svg',
-                      width: 19,
-                      height: 19,
-                      colorFilter: ColorFilter.mode(
-                        piece.contains('white')
-                            ? const Color(0xFFF7EBD4)
-                            : ChessDesign.ink,
-                        BlendMode.srcIn,
-                      ),
+                    child: Image.asset(
+                      'assets/images/games/chess/pieces_v2/$piece.png',
+                      width: 23,
+                      height: 27,
+                      fit: BoxFit.contain,
                     ),
                   );
                 },
@@ -452,14 +636,15 @@ class _PlayerPanel extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                 decoration: BoxDecoration(
-                    color: active
-                        ? Colors.white
-                        : ChessDesign.navy.withValues(alpha: .08),
+                    color: const Color(0xFF061D3B),
+                    border: Border.all(color: ChessDesign.gold),
                     borderRadius: BorderRadius.circular(10)),
                 child: Text(
                   controller.formatTime(seconds),
                   style: TextStyle(
-                      color: seconds <= 10 ? ChessDesign.red : ChessDesign.ink,
+                      color: seconds <= 10
+                          ? const Color(0xFFFF7C69)
+                          : const Color(0xFFFFE7AD),
                       fontFamily: 'monospace',
                       fontSize: 14,
                       fontWeight: FontWeight.w900),
@@ -479,40 +664,20 @@ class _PlayerPanel extends StatelessWidget {
 
 class _BottomActions extends StatelessWidget {
   const _BottomActions({
-    required this.controller,
     required this.onHistory,
     required this.onRestart,
+    required this.onSettings,
   });
-  final ChessGameController controller;
   final VoidCallback onHistory;
   final VoidCallback onRestart;
+  final VoidCallback onSettings;
   @override
   Widget build(BuildContext context) => Row(children: [
         Expanded(
           child: _ActionButton(
-              icon: Icons.history_rounded, label: 'MOVES', onTap: onHistory),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: Obx(() => Container(
-                height: 46,
-                decoration: ChessDesign.ivoryPanel(radius: 18),
-                alignment: Alignment.center,
-                child: Text(
-                  controller.gameState.value == ChessGameState.check
-                      ? 'CHECK!'
-                      : controller.gameMode.value == ChessGameMode.ai &&
-                              !controller.isWhiteTurn.value
-                          ? 'AI IS THINKING…'
-                          : '${controller.isWhiteTurn.value ? "WHITE" : "BLACK"} TO MOVE',
-                  style: const TextStyle(
-                      color: ChessDesign.navy,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: .5),
-                ),
-              )),
+              icon: Icons.format_list_bulleted_rounded,
+              label: 'HISTORY',
+              onTap: onHistory),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -521,7 +686,65 @@ class _BottomActions extends StatelessWidget {
               label: 'RESTART',
               onTap: onRestart),
         ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _ActionButton(
+              icon: Icons.settings_rounded,
+              label: 'OPTIONS',
+              onTap: onSettings),
+        ),
       ]);
+}
+
+class _TurnBanner extends StatelessWidget {
+  const _TurnBanner({required this.controller});
+  final ChessGameController controller;
+
+  @override
+  Widget build(BuildContext context) => Obx(() {
+        final check = controller.gameState.value == ChessGameState.check;
+        final thinking = controller.gameMode.value == ChessGameMode.ai &&
+            !controller.isWhiteTurn.value;
+        final text = check
+            ? 'CHECK — YOUR MOVE'
+            : thinking
+                ? 'COMPUTER IS THINKING…'
+                : '${controller.isWhiteTurn.value ? "WHITE" : "BLACK"} TO MOVE';
+        return Center(
+          child: Container(
+            height: 34,
+            constraints: const BoxConstraints(maxWidth: 260),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                  colors: [Color(0xFF0C427D), Color(0xFF031E43)]),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: ChessDesign.gold, width: 1.5),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x77000000),
+                    blurRadius: 7,
+                    offset: Offset(0, 4))
+              ],
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  fontFamily: 'BarlowCondensed',
+                  color: check ? ChessDesign.orange : const Color(0xFFFFE7AD),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: .6,
+                ),
+              ),
+            ),
+          ),
+        );
+      });
 }
 
 class _ActionButton extends StatelessWidget {
@@ -532,84 +755,178 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 46,
+        height: 50,
         child: FilledButton(
           onPressed: onTap,
           style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 5),
-              backgroundColor: ChessDesign.orange,
-              foregroundColor: Colors.white,
+              backgroundColor: ChessDesign.navyDeep,
+              foregroundColor: const Color(0xFFFFE7AD),
+              side: const BorderSide(color: ChessDesign.gold, width: 1.5),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16))),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 17),
+            Icon(icon, size: 19),
             Text(label,
                 style:
-                    const TextStyle(fontSize: 8, fontWeight: FontWeight.w900)),
+                    const TextStyle(fontSize: 9, fontWeight: FontWeight.w900)),
           ]),
         ),
       );
 }
 
 class _PauseOverlay extends StatelessWidget {
-  const _PauseOverlay(
-      {required this.onResume, required this.onRestart, required this.onLeave});
+  const _PauseOverlay({
+    required this.onResume,
+    required this.onRestart,
+    required this.onSettings,
+    required this.onLeave,
+  });
   final VoidCallback onResume;
   final VoidCallback onRestart;
+  final VoidCallback onSettings;
   final VoidCallback onLeave;
   @override
   Widget build(BuildContext context) => Positioned.fill(
         child: ColoredBox(
           color: ChessDesign.navyDeep.withValues(alpha: .88),
           child: Center(
-            child: Container(
-              width: MediaQuery.sizeOf(context).width.clamp(0, 390) - 32,
-              padding: const EdgeInsets.all(24),
-              decoration: ChessDesign.ivoryPanel(radius: 30),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.pause_circle_filled_rounded,
-                    size: 64, color: ChessDesign.orange),
-                const SizedBox(height: 10),
-                const Text('GAME PAUSED',
-                    style: TextStyle(
-                        color: ChessDesign.ink,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900)),
-                const SizedBox(height: 5),
-                Text('Take your time. The board is waiting.',
-                    style: TextStyle(
-                        color: ChessDesign.ink.withValues(alpha: .62),
-                        fontWeight: FontWeight.w600)),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: FilledButton.icon(
-                    onPressed: onResume,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('RESUME GAME'),
-                    style: FilledButton.styleFrom(
-                        backgroundColor: ChessDesign.orange,
-                        textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                        shape: const StadiumBorder()),
-                  ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              child: Container(
+                width: MediaQuery.sizeOf(context).width.clamp(0, 390) - 32,
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 17),
+                decoration: BoxDecoration(
+                  color: ChessDesign.ivory,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: ChessDesign.gold, width: 2),
+                  boxShadow: ChessDesign.raisedShadow,
                 ),
-                const SizedBox(height: 9),
-                Row(children: [
-                  Expanded(
-                      child: OutlinedButton.icon(
-                          onPressed: onRestart,
-                          icon: const Icon(Icons.restart_alt_rounded),
-                          label: const Text('RESTART'))),
-                  const SizedBox(width: 8),
-                  Expanded(
-                      child: OutlinedButton.icon(
-                          onPressed: onLeave,
-                          icon: const Icon(Icons.logout_rounded),
-                          label: const Text('LEAVE'))),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('GAME PAUSED',
+                        maxLines: 1,
+                        style: TextStyle(
+                            fontFamily: 'BarlowCondensed',
+                            color: ChessDesign.navyDeep,
+                            fontSize: 34,
+                            height: 1,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                  const SizedBox(height: 5),
+                  Text('Take your time. The board is waiting.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: ChessDesign.ink.withValues(alpha: .62),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
+                  SizedBox(
+                    height: 96,
+                    child: Image.asset(
+                      'assets/images/games/chess/pause_pieces_v2.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: onResume,
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('RESUME GAME'),
+                      style: FilledButton.styleFrom(
+                          backgroundColor: ChessDesign.orange,
+                          textStyle:
+                              const TextStyle(fontWeight: FontWeight.w900),
+                          shape: const StadiumBorder()),
+                    ),
+                  ),
+                  const SizedBox(height: 9),
+                  Row(children: [
+                    Expanded(
+                      child: _PauseSecondaryAction(
+                        onPressed: onRestart,
+                        icon: Icons.restart_alt_rounded,
+                        label: 'RESTART',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _PauseSecondaryAction(
+                        onPressed: onSettings,
+                        icon: Icons.settings_rounded,
+                        label: 'SETTINGS',
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 9),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onLeave,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ChessDesign.red,
+                        side:
+                            const BorderSide(color: ChessDesign.red, width: 2),
+                        minimumSize: const Size.fromHeight(48),
+                        shape: const StadiumBorder(),
+                      ),
+                      icon: const Icon(Icons.logout_rounded),
+                      label: const Text('LEAVE MATCH'),
+                    ),
+                  ),
                 ]),
-              ]),
+              ),
             ),
+          ),
+        ),
+      );
+}
+
+class _PauseSecondaryAction extends StatelessWidget {
+  const _PauseSecondaryAction({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 9),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: ChessDesign.navy, width: 1.5),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(icon, color: ChessDesign.gold, size: 20),
+              const SizedBox(width: 6),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(label,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: ChessDesign.navy,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: .4,
+                      )),
+                ),
+              ),
+            ]),
           ),
         ),
       );
@@ -645,31 +962,52 @@ class _ResultOverlay extends StatelessWidget {
             child: Container(
               constraints: const BoxConstraints(maxWidth: 390),
               padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
-              decoration: ChessDesign.ivoryPanel(radius: 34),
+              decoration: BoxDecoration(
+                color: ChessDesign.ivory,
+                borderRadius: BorderRadius.circular(34),
+                border: Border.all(color: ChessDesign.gold, width: 2),
+                boxShadow: ChessDesign.raisedShadow,
+              ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Container(
-                  width: 86,
-                  height: 86,
-                  decoration: const BoxDecoration(
-                      color: ChessDesign.gold, shape: BoxShape.circle),
-                  child: Icon(
-                      draw ? Icons.balance_rounded : Icons.emoji_events_rounded,
-                      color: Colors.white,
-                      size: 51),
+                  width: 116,
+                  height: 116,
+                  decoration: BoxDecoration(
+                    color: ChessDesign.navyDeep,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: ChessDesign.gold, width: 2),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Image.asset(
+                    draw
+                        ? 'assets/images/games/chess/local_kings_v1.png'
+                        : 'assets/images/games/chess/pieces_v2/${winner.toLowerCase()}_king.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Text(draw ? 'GREAT BATTLE!' : 'CHECKMATE!',
                     style: const TextStyle(
+                        fontFamily: 'BarlowCondensed',
                         color: ChessDesign.orange,
-                        fontSize: 34,
+                        fontSize: 42,
                         height: 1,
-                        fontWeight: FontWeight.w900)),
+                        fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                Text(reason,
-                    style: const TextStyle(
-                        color: ChessDesign.ink,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900)),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: ChessDesign.navyDeep,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: ChessDesign.gold),
+                  ),
+                  child: Text(reason,
+                      style: const TextStyle(
+                          color: Color(0xFFFFE7AD),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900)),
+                ),
                 const SizedBox(height: 18),
                 Row(children: [
                   _ResultStat(
@@ -679,6 +1017,24 @@ class _ResultOverlay extends StatelessWidget {
                   _ResultStat(
                       label: 'CAPTURES',
                       value: '${controller.capturedPieces.length}'),
+                ]),
+                const SizedBox(height: 8),
+                Row(children: [
+                  _ResultStat(
+                      label: 'MODE',
+                      value: controller.gameMode.value == ChessGameMode.ai
+                          ? 'VS AI'
+                          : 'LOCAL'),
+                  const SizedBox(width: 8),
+                  _ResultStat(
+                      label: 'LEVEL',
+                      value: controller.gameMode.value == ChessGameMode.ai
+                          ? const [
+                              'EASY',
+                              'MEDIUM',
+                              'HARD'
+                            ][controller.aiDifficulty.value - 1]
+                          : 'CLASSIC'),
                 ]),
                 const SizedBox(height: 18),
                 SizedBox(
@@ -755,41 +1111,109 @@ class _ChessConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Dialog(
         backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 380),
-          padding: const EdgeInsets.all(24),
-          decoration: ChessDesign.ivoryPanel(radius: 28),
+          constraints: const BoxConstraints(maxWidth: 340),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: ChessDesign.gold, width: 2),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF0D4683), Color(0xFF031E43)],
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0xAA000714),
+                blurRadius: 28,
+                offset: Offset(0, 14),
+              ),
+            ],
+          ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.sports_esports_rounded,
-                color: ChessDesign.orange, size: 48),
-            const SizedBox(height: 10),
-            Text(title,
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFFF3D8),
+                border: Border.all(color: ChessDesign.gold, width: 2),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x66000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.arrow_back_rounded,
+                  color: ChessDesign.navyDeep, size: 30),
+            ),
+            const SizedBox(height: 14),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
                 textAlign: TextAlign.center,
+                maxLines: 1,
                 style: const TextStyle(
-                    color: ChessDesign.ink,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            Text(body,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: ChessDesign.ink.withValues(alpha: .65),
-                    fontWeight: FontWeight.w600,
-                    height: 1.35)),
-            const SizedBox(height: 20),
-            Row(children: [
-              Expanded(
-                  child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('KEEP PLAYING'))),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: FilledButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: FilledButton.styleFrom(
-                          backgroundColor: ChessDesign.orange),
-                      child: Text(action))),
-            ]),
+                  fontFamily: 'BarlowCondensed',
+                  color: Color(0xFFFFE9B9),
+                  fontSize: 30,
+                  height: 1,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: .4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: .82),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context, false),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFC34D),
+                  foregroundColor: ChessDesign.navyDeep,
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text(
+                  'KEEP PLAYING',
+                  maxLines: 1,
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFFFE9B9),
+                  side: const BorderSide(color: ChessDesign.orange, width: 2),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(
+                  action,
+                  maxLines: 1,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
           ]),
         ),
       );

@@ -107,7 +107,7 @@ class ChessSquareWidget extends StatelessWidget {
                     return Center(
                       child: ChessPieceWidget(
                         piece: piece!,
-                        size: constraints.maxWidth * .82,
+                        size: constraints.maxWidth * 1.08,
                         isSelected: isSelected,
                         isAnimated: false,
                       ),
