@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import '../controllers/game_controller.dart';
@@ -15,10 +17,11 @@ class MemoryMatchBinding implements Bindings {
     try {
       // Initialize services first
       if (!Get.isRegistered<MemoryMatchSoundService>()) {
-        Get.put<MemoryMatchSoundService>(
+        final soundService = Get.put<MemoryMatchSoundService>(
           MemoryMatchSoundService(),
           permanent: true,
         );
+        if (!Get.testMode) unawaited(soundService.preload());
       }
 
       // Then initialize controllers

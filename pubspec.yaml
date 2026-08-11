@@ -72,6 +72,10 @@ flutter:
     # Other game assets
     - assets/sounds/drop.mp3
     - assets/sounds/win.mp3
+    - assets/sounds/memory_flip.wav
+    - assets/sounds/memory_match.wav
+    - assets/sounds/memory_miss.wav
+    - assets/sounds/memory_win.wav
     - assets/images/
     - assets/images/categories/
     - assets/images/games/
