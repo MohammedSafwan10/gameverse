@@ -10,6 +10,8 @@ import '../services/sound_service.dart';
 import '../theme/memory_match_theme.dart';
 import '../widgets/flip_card.dart';
 
+const _assetRoot = 'assets/images/games/memory_match';
+
 class MemoryMatchGameScreen extends StatefulWidget {
   const MemoryMatchGameScreen({
     super.key,
@@ -127,38 +129,96 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen>
     return await showDialog<bool>(
           context: context,
           barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            backgroundColor: MemoryMatchTheme.cream,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(26),
-            ),
-            icon: const CircleAvatar(
-              radius: 27,
-              backgroundColor: MemoryMatchTheme.pinkPale,
-              child: Icon(Icons.flag_rounded, color: MemoryMatchTheme.pink),
-            ),
-            title: Text('LEAVE THIS GAME?',
-                textAlign: TextAlign.center,
-                style: MemoryMatchTheme.display(size: 22)),
-            content: Text(
-              'This board and its score will be lost.',
-              textAlign: TextAlign.center,
-              style: MemoryMatchTheme.body(color: MemoryMatchTheme.muted),
-            ),
-            actionsAlignment: MainAxisAlignment.center,
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('KEEP PLAYING'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: MemoryMatchTheme.orange,
+          builder: (dialogContext) => Dialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 22),
+            backgroundColor: Colors.transparent,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 390),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                decoration: BoxDecoration(
+                  color: MemoryMatchTheme.cream,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: MemoryMatchTheme.softShadow,
                 ),
-                child: const Text('LEAVE'),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 100,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned(
+                            left: 48,
+                            child: Transform.rotate(
+                              angle: -.12,
+                              child: Image.asset(
+                                '$_assetRoot/blue_card_back_v1.png',
+                                width: 78,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 48,
+                            child: Transform.rotate(
+                              angle: .12,
+                              child: Image.asset(
+                                '$_assetRoot/flower_card_v1.png',
+                                width: 78,
+                              ),
+                            ),
+                          ),
+                          const CircleAvatar(
+                            radius: 27,
+                            backgroundColor: MemoryMatchTheme.orange,
+                            child: Icon(Icons.flag_rounded,
+                                color: Colors.white, size: 28),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text('LEAVE THIS GAME?',
+                        textAlign: TextAlign.center,
+                        style: MemoryMatchTheme.display(size: 24)),
+                    const SizedBox(height: 7),
+                    Text(
+                      'Your current board, score, and combo will be lost.',
+                      textAlign: TextAlign.center,
+                      style:
+                          MemoryMatchTheme.body(color: MemoryMatchTheme.muted),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: MemoryMatchPrimaryButton(
+                        label: 'KEEP PLAYING',
+                        icon: Icons.play_arrow_rounded,
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: TextButton.icon(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        icon: const Icon(Icons.logout_rounded),
+                        label: const Text('LEAVE GAME'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: MemoryMatchTheme.pink,
+                          textStyle: MemoryMatchTheme.body(
+                            color: MemoryMatchTheme.pink,
+                            weight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ) ??
         false;
@@ -166,8 +226,10 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen>
 
   Future<void> _showPauseSheet() async {
     controller.pauseGame();
+    final pausedState = controller.state;
     final action = await showModalBottomSheet<_PauseAction>(
       context: context,
+      isScrollControlled: true,
       isDismissible: false,
       enableDrag: false,
       backgroundColor: Colors.transparent,
@@ -182,17 +244,74 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircleAvatar(
-                radius: 30,
-                backgroundColor: MemoryMatchTheme.mintPale,
-                child: Icon(Icons.pause_rounded,
-                    size: 34, color: MemoryMatchTheme.cobalt),
+              Container(
+                height: 116,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: MemoryMatchTheme.cobalt,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      left: 28,
+                      top: 18,
+                      bottom: 18,
+                      child: Transform.rotate(
+                        angle: -.1,
+                        child: Image.asset('$_assetRoot/rocket_card_v1.png'),
+                      ),
+                    ),
+                    Positioned(
+                      right: 28,
+                      top: 18,
+                      bottom: 18,
+                      child: Transform.rotate(
+                        angle: .1,
+                        child: Image.asset('$_assetRoot/flower_card_v1.png'),
+                      ),
+                    ),
+                    Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        color: MemoryMatchTheme.cream,
+                        shape: BoxShape.circle,
+                        boxShadow: MemoryMatchTheme.softShadow,
+                      ),
+                      child: const Icon(Icons.pause_rounded,
+                          size: 36, color: MemoryMatchTheme.orange),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
-              Text('GAME PAUSED', style: MemoryMatchTheme.display(size: 25)),
+              Text('GAME PAUSED', style: MemoryMatchTheme.display(size: 27)),
               const SizedBox(height: 6),
-              Text('Your board is waiting for you.',
+              Text('Take a breath—your board is safe.',
                   style: MemoryMatchTheme.body(color: MemoryMatchTheme.muted)),
+              if (pausedState != null) ...[
+                const SizedBox(height: 15),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: MemoryMatchTheme.paper,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      _PauseStat('SCORE', '${pausedState.score}',
+                          MemoryMatchTheme.cobalt),
+                      _PauseStat('MOVES', '${pausedState.moves}',
+                          MemoryMatchTheme.orange),
+                      _PauseStat('PAIRS', '${pausedState.remainingPairs} left',
+                          MemoryMatchTheme.mint),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -245,6 +364,33 @@ class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen>
 }
 
 enum _PauseAction { resume, restart, exit }
+
+class _PauseStat extends StatelessWidget {
+  const _PauseStat(this.label, this.value, this.color);
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(value,
+                maxLines: 1,
+                style: MemoryMatchTheme.display(size: 15, color: color)),
+            const SizedBox(height: 2),
+            Text(label,
+                style: MemoryMatchTheme.body(
+                  size: 8,
+                  color: MemoryMatchTheme.muted,
+                  weight: FontWeight.w900,
+                )),
+          ],
+        ),
+      );
+}
 
 class _GameHeader extends StatelessWidget {
   const _GameHeader({

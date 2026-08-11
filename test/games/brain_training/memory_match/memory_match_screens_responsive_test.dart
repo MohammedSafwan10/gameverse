@@ -110,14 +110,15 @@ void main() {
             ),
           ),
         );
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(const Duration(seconds: 3));
 
         expect(find.text('BRILLIANT!'), findsOneWidget);
         expect(find.text('PLAY AGAIN'), findsOneWidget);
         expect(tester.takeException(), isNull);
         if (size == const Size(390, 844)) {
           await expectLater(
-            find.byType(GameCompletionScreen),
+            find.byKey(const ValueKey('memory-completion-content')),
             matchesGoldenFile('goldens/completion_390x844.png'),
           );
         }
@@ -133,7 +134,8 @@ void main() {
     );
 
     await tester.tap(find.text('CLASSIC'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 3));
 
     expect(find.text('PICK A DIFFICULTY'), findsOneWidget);
     expect(find.text('HARD'), findsOneWidget);
@@ -160,10 +162,65 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     expect(find.text('TIME’S UP!'), findsOneWidget);
     expect(find.text('PLAY AGAIN'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('pause sheet stays polished and usable on a compact phone',
+      (tester) async {
+    _setSize(tester, const Size(320, 568));
+    await tester.pumpWidget(
+      const GetMaterialApp(
+        home: MemoryMatchGameScreen(
+          mode: MemoryMatchMode.classic,
+          difficulty: GameDifficulty.medium,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Pause'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('GAME PAUSED'), findsOneWidget);
+    expect(find.text('Take a breath—your board is safe.'), findsOneWidget);
+    expect(find.text('RESUME GAME'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('RESUME GAME'));
+    await tester.pumpAndSettle();
+    Get.find<MemoryMatchGameController>().cleanupGame();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('leave-game dialog stays usable on a compact phone',
+      (tester) async {
+    _setSize(tester, const Size(320, 568));
+    await tester.pumpWidget(
+      const GetMaterialApp(
+        home: MemoryMatchGameScreen(
+          mode: MemoryMatchMode.classic,
+          difficulty: GameDifficulty.medium,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Exit game'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('LEAVE THIS GAME?'), findsOneWidget);
+    expect(find.text('KEEP PLAYING'), findsOneWidget);
+    expect(find.text('LEAVE GAME'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('KEEP PLAYING'));
+    await tester.pumpAndSettle();
+    Get.find<MemoryMatchGameController>().cleanupGame();
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
 
