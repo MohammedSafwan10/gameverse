@@ -43,11 +43,28 @@ abstract final class MemoryMatchTheme {
         color: color,
       );
 
+  static TextStyle modeTitle({
+    double size = 30,
+    Color color = ink,
+  }) =>
+      GoogleFonts.barlowCondensed(
+        fontSize: size,
+        fontWeight: FontWeight.w900,
+        height: .9,
+        letterSpacing: .1,
+        color: color,
+      );
+
   static List<BoxShadow> get softShadow => [
         BoxShadow(
-          color: const Color(0xFF082762).withValues(alpha: 0.16),
-          blurRadius: 18,
-          offset: const Offset(0, 8),
+          color: Colors.white.withValues(alpha: .32),
+          blurRadius: 1,
+          offset: const Offset(0, -1),
+        ),
+        BoxShadow(
+          color: const Color(0xFF062B73).withValues(alpha: 0.24),
+          blurRadius: 20,
+          offset: const Offset(0, 10),
         ),
       ];
 }
@@ -115,6 +132,53 @@ class _PatternPainter extends CustomPainter {
         canvas.drawLine(Offset(x + 10, y - 5), Offset(x + 18, y + 3), paint);
       }
     }
+
+    final sparklePaint = Paint()
+      ..color = const Color(0xFFB8D1FF).withValues(alpha: .22)
+      ..style = PaintingStyle.fill;
+    _drawSparkle(
+        canvas, Offset(size.width * .27, size.height * .07), 13, sparklePaint);
+    _drawSparkle(
+        canvas, Offset(size.width * .88, size.height * .91), 10, sparklePaint);
+    _drawSparkle(
+        canvas, Offset(size.width * .10, size.height * .86), 7, sparklePaint);
+
+    final burstPaint = Paint()
+      ..color = const Color(0xFFB8D1FF).withValues(alpha: .28)
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    final burstCenter = Offset(size.width * .83, size.height * .065);
+    for (final segment in const [
+      (Offset(-15, -5), Offset(-21, -17)),
+      (Offset(0, -10), Offset(1, -25)),
+      (Offset(14, -4), Offset(23, -15)),
+    ]) {
+      canvas.drawLine(
+        burstCenter + segment.$1,
+        burstCenter + segment.$2,
+        burstPaint,
+      );
+    }
+  }
+
+  void _drawSparkle(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    Paint paint,
+  ) {
+    final notch = radius * .24;
+    final path = Path()
+      ..moveTo(center.dx, center.dy - radius)
+      ..lineTo(center.dx + notch, center.dy - notch)
+      ..lineTo(center.dx + radius, center.dy)
+      ..lineTo(center.dx + notch, center.dy + notch)
+      ..lineTo(center.dx, center.dy + radius)
+      ..lineTo(center.dx - notch, center.dy + notch)
+      ..lineTo(center.dx - radius, center.dy)
+      ..lineTo(center.dx - notch, center.dy - notch)
+      ..close();
+    canvas.drawPath(path, paint);
   }
 
   @override

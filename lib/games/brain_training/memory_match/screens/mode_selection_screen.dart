@@ -35,7 +35,12 @@ class _MemoryMatchModeSelectionScreenState
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+                padding: EdgeInsets.fromLTRB(
+                  14,
+                  compact ? 10 : 18,
+                  14,
+                  compact ? 4 : 8,
+                ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: MemoryMatchIconButton(
@@ -47,7 +52,7 @@ class _MemoryMatchModeSelectionScreenState
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(14, compact ? 5 : 10, 14, 18),
+                  padding: EdgeInsets.fromLTRB(14, compact ? 5 : 6, 14, 22),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 520),
@@ -285,11 +290,12 @@ class _HeroPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: compact ? 140 : 155,
-        padding: EdgeInsets.all(compact ? 15 : 20),
+        height: compact ? 140 : 182,
+        padding: EdgeInsets.all(compact ? 15 : 22),
         decoration: BoxDecoration(
           color: MemoryMatchTheme.cream,
           borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: Colors.white.withValues(alpha: .72)),
           boxShadow: MemoryMatchTheme.softShadow,
         ),
         child: Row(
@@ -308,8 +314,8 @@ class _HeroPanel extends StatelessWidget {
                       children: [
                         Text(
                           'MEMORY\nMATCH',
-                          style: MemoryMatchTheme.display(
-                            size: compact ? 28 : 35,
+                          style: MemoryMatchTheme.modeTitle(
+                            size: compact ? 31 : 43,
                             color: MemoryMatchTheme.orange,
                           ),
                         ),
@@ -317,7 +323,7 @@ class _HeroPanel extends StatelessWidget {
                         Text('Choose your challenge',
                             maxLines: 1,
                             style: MemoryMatchTheme.body(
-                              size: compact ? 11 : 13,
+                              size: compact ? 11 : 14,
                               weight: FontWeight.w800,
                             )),
                       ],
@@ -332,21 +338,29 @@ class _HeroPanel extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Positioned(
-                    left: 0,
-                    top: 4,
-                    bottom: 10,
+                    left: -7,
+                    top: -2,
+                    bottom: 8,
                     child: Transform.rotate(
                       angle: -.08,
                       child: Image.asset('$_assetRoot/rocket_card_v1.png'),
                     ),
                   ),
                   Positioned(
-                    right: 0,
-                    top: 20,
-                    bottom: -2,
+                    right: -9,
+                    top: 24,
+                    bottom: -10,
                     child: Transform.rotate(
                       angle: .10,
                       child: Image.asset('$_assetRoot/flower_card_v1.png'),
+                    ),
+                  ),
+                  Positioned(
+                    right: 2,
+                    top: -7,
+                    child: _Sparkle(
+                      size: compact ? 19 : 25,
+                      color: const Color(0xFF9DBCEB),
                     ),
                   ),
                 ],
@@ -371,11 +385,11 @@ class _ClassicCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(30),
           child: SizedBox(
-            height: compact ? 200 : 180,
+            height: compact ? 190 : 238,
             child: Padding(
-              padding: EdgeInsets.all(compact ? 14 : 18),
+              padding: EdgeInsets.all(compact ? 14 : 20),
               child: Row(
                 children: [
                   Expanded(
@@ -391,19 +405,20 @@ class _ClassicCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('CLASSIC',
-                                  style: MemoryMatchTheme.display(
-                                    size: compact ? 25 : 32,
+                                  style: MemoryMatchTheme.modeTitle(
+                                    size: compact ? 29 : 42,
                                     color: Colors.white,
                                   )),
                               Container(
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                height: 3,
-                                width: 74,
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                height: 4,
+                                width: compact ? 72 : 100,
                                 color: MemoryMatchTheme.orangeDark,
                               ),
                               Text('Find every pair\nat your own pace',
                                   style: MemoryMatchTheme.body(
-                                    size: compact ? 11 : 13,
+                                    size: compact ? 11 : 15,
                                     color: Colors.white,
                                     weight: FontWeight.w700,
                                   )),
@@ -415,22 +430,7 @@ class _ClassicCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Expanded(
-                    flex: 6,
-                    child: GridView.count(
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 4,
-                      crossAxisSpacing: 4,
-                      children: [
-                        Image.asset('$_assetRoot/rocket_card_v1.png'),
-                        Image.asset('$_assetRoot/flower_card_v1.png'),
-                        Image.asset('$_assetRoot/flower_card_v1.png'),
-                        Image.asset('$_assetRoot/rocket_card_v1.png'),
-                      ],
-                    ),
-                  ),
+                  const Expanded(flex: 6, child: _ClassicArtGrid()),
                 ],
               ),
             ),
@@ -457,30 +457,41 @@ class _SmallModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
         color: MemoryMatchTheme.cream,
-        elevation: 6,
+        elevation: 8,
         shadowColor: Colors.black26,
         borderRadius: BorderRadius.circular(25),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(25),
           child: SizedBox(
-            height: compact ? 178 : 172,
+            height: compact ? 168 : 208,
             child: Padding(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(compact ? 9 : 13),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(child: Image.asset(image, fit: BoxFit.contain)),
-                  const SizedBox(height: 4),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: compact ? 8 : 12,
+                      ),
+                      child: Image.asset(image, fit: BoxFit.contain),
+                    ),
+                  ),
+                  SizedBox(height: compact ? 3 : 7),
                   FittedBox(
-                    child: Text(mode.displayName.toUpperCase(),
-                        style: MemoryMatchTheme.display(size: 18)),
+                    child: Text(
+                      mode.displayName.toUpperCase(),
+                      style: MemoryMatchTheme.modeTitle(
+                        size: compact ? 19 : 25,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(subtitle,
                       maxLines: 1,
                       style: MemoryMatchTheme.body(
-                        size: 10,
+                        size: compact ? 9 : 11,
                         weight: FontWeight.w700,
                       )),
                   const SizedBox(height: 5),
@@ -499,14 +510,64 @@ class _RoundArrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: small ? 30 : 36,
-        height: small ? 30 : 36,
-        decoration: const BoxDecoration(
+        width: small ? 36 : 48,
+        height: small ? 36 : 48,
+        decoration: BoxDecoration(
           color: MemoryMatchTheme.cream,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: MemoryMatchTheme.orangeDark.withValues(alpha: .25),
+              blurRadius: 7,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Icon(Icons.arrow_forward_rounded,
-            size: small ? 18 : 22, color: MemoryMatchTheme.orange),
+            size: small ? 20 : 27, color: MemoryMatchTheme.orange),
+      );
+}
+
+class _ClassicArtGrid extends StatelessWidget {
+  const _ClassicArtGrid();
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: Image.asset('$_assetRoot/rocket_card_v1.png')),
+                const SizedBox(width: 5),
+                Expanded(child: Image.asset('$_assetRoot/flower_card_v1.png')),
+              ],
+            ),
+          ),
+          const SizedBox(height: 5),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: Image.asset('$_assetRoot/flower_card_v1.png')),
+                const SizedBox(width: 5),
+                Expanded(child: Image.asset('$_assetRoot/rocket_card_v1.png')),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+class _Sparkle extends StatelessWidget {
+  const _Sparkle({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Icon(
+        Icons.auto_awesome_rounded,
+        color: color,
+        size: size,
       );
 }
 
