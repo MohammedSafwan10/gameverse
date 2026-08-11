@@ -103,6 +103,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('profile is available only from the header avatar',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        home: const HomeScreen(),
+        getPages: [
+          GetPage(
+            name: '/profile',
+            page: () => const Scaffold(body: Text('Profile destination')),
+          ),
+          GetPage(
+            name: '/achievements',
+            page: () => const Scaffold(body: Text('Achievements destination')),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('PROFILE'), findsNothing);
+    expect(find.text('ACHIEVEMENTS'), findsOneWidget);
+    expect(find.byKey(const Key('home-profile-avatar')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('home-profile-avatar')));
+    await tester.pumpAndSettle();
+    expect(find.text('Profile destination'), findsOneWidget);
+  });
+
   testWidgets('featured carousel auto-advances and opens the active game',
       (tester) async {
     tester.view.devicePixelRatio = 1;

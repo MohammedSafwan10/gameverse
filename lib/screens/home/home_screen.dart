@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         bottomNavigationBar: _HomeNavigation(
           onGamesTap: _scrollToGames,
-          onProfileTap: () => Get.toNamed('/profile'),
+          onAchievementsTap: () => Get.toNamed('/achievements'),
         ),
       ),
     );
@@ -363,6 +363,7 @@ class _HomeHeader extends StatelessWidget {
           button: true,
           label: 'Open profile',
           child: InkWell(
+            key: const Key('home-profile-avatar'),
             onTap: () => Get.toNamed('/profile'),
             customBorder: const CircleBorder(),
             child: Container(
@@ -984,10 +985,13 @@ class _GameCard extends StatelessWidget {
 }
 
 class _HomeNavigation extends StatelessWidget {
-  const _HomeNavigation({required this.onGamesTap, required this.onProfileTap});
+  const _HomeNavigation({
+    required this.onGamesTap,
+    required this.onAchievementsTap,
+  });
 
   final VoidCallback onGamesTap;
-  final VoidCallback onProfileTap;
+  final VoidCallback onAchievementsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1034,9 +1038,9 @@ class _HomeNavigation extends StatelessWidget {
                 ),
                 Expanded(
                   child: _NavItem(
-                    label: 'Profile',
-                    icon: Icons.person_rounded,
-                    onTap: onProfileTap,
+                    label: 'Achievements',
+                    icon: Icons.emoji_events_rounded,
+                    onTap: onAchievementsTap,
                   ),
                 ),
               ],
@@ -1084,13 +1088,20 @@ class _NavItem extends StatelessWidget {
                   size: denseMobile ? 21 : 25,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  label.toUpperCase(),
-                  style: TextStyle(
-                    color: selected ? Colors.white : _ink,
-                    fontSize: denseMobile ? 9 : 10,
-                    letterSpacing: .35,
-                    fontWeight: FontWeight.w900,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label.toUpperCase(),
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: selected ? Colors.white : _ink,
+                        fontSize: denseMobile ? 9 : 10,
+                        height: 1,
+                        letterSpacing: .35,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                 ),
               ],
