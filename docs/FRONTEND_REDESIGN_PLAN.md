@@ -25,8 +25,8 @@ data, sounds, scoring, and AI behavior should be preserved.
   pause/exit states, completion, Time's Up, and the three-level Challenge flow.
 - Memory Match production artwork is under `assets/images/games/memory_match/`.
 - Total real screens in the repository: **28**.
-- Completed: **4**.
-- Remaining: **24**.
+- Completed: **7**.
+- Remaining: **21**.
 
 Primary reference:
 
@@ -107,10 +107,10 @@ Complete one polished journey from Home to result before broadening the redesign
 ### Phase 2: shared application surfaces
 
 - [ ] 5. Games/category catalogue
-- [ ] 6. Profile
-- [ ] 7. Achievements
+- [x] 6. Profile
+- [x] 7. Achievements
 - [ ] 8. Leaderboard
-- [ ] 9. Application settings
+- [x] 9. Application settings
 
 The Games catalogue should become a proper browse/discovery destination. The Home
 Games navigation item currently scrolls to the Home game grid; revisit this only

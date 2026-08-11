@@ -1,63 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../widgets/soft_utility_background.dart';
+
+import '../../widgets/gameverse_utility_widgets.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.height < 700 || size.width <= 330;
+    final horizontal = size.width <= 330 ? 14.0 : 20.0;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: GameVerseUtilityColors.cream,
       body: Stack(
         children: [
-          const SoftUtilityBackground(),
+          const GameVerseUtilityBackground(),
           SafeArea(
             child: CustomScrollView(
+              key: const Key('profile-scroll-view'),
               physics: const BouncingScrollPhysics(),
               slivers: [
-                SliverAppBar(
-                  floating: true,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  automaticallyImplyLeading: false,
-                  title: Text(
-                    'Profile',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ).animate().fadeIn().slideX(begin: -0.2),
-                  leading: IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.black87,
-                    ),
-                    tooltip: 'Back',
-                  ).animate().fadeIn().scale(),
-                  actions: [
-                    IconButton(
-                      onPressed: () => Get.toNamed('/settings'),
-                      icon: const Icon(Icons.settings_rounded,
-                          color: Colors.black54),
-                    ).animate().fadeIn().scale(),
-                    const SizedBox(width: 16),
-                  ],
-                ),
                 SliverPadding(
-                  padding: const EdgeInsets.all(24),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildProfileCard(context),
-                      const SizedBox(height: 32),
-                      _buildStatsGrid(context),
-                      const SizedBox(height: 32),
-                      _buildMenuSection(context),
-                      const SizedBox(height: 120),
-                    ]),
+                  padding: EdgeInsets.fromLTRB(horizontal, 8, horizontal, 32),
+                  sliver: SliverList.list(
+                    children: [
+                      GameVerseUtilityHeader(
+                        title: 'PROFILE',
+                        trailing: GameVerseRoundButton(
+                          key: const Key('profile-settings-button'),
+                          icon: Icons.settings_rounded,
+                          tooltip: 'Open settings',
+                          onTap: () => Get.toNamed('/settings'),
+                        ),
+                      ),
+                      SizedBox(height: compact ? 12 : 18),
+                      _ProfileHero(compact: compact),
+                      SizedBox(height: compact ? 14 : 18),
+                      _StatsRow(compact: compact),
+                      SizedBox(height: compact ? 20 : 26),
+                      const _SectionTitle('YOUR GAMEVERSE'),
+                      const SizedBox(height: 10),
+                      _ProfileMenu(compact: compact),
+                      SizedBox(height: compact ? 16 : 22),
+                      _LevelProgress(compact: compact),
+                    ],
                   ),
                 ),
               ],
@@ -67,284 +56,410 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildProfileCard(BuildContext context) {
+class _ProfileHero extends StatelessWidget {
+  const _ProfileHero({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      key: const Key('profile-hero'),
+      constraints: BoxConstraints(minHeight: compact ? 142 : 174),
+      padding: EdgeInsets.all(compact ? 16 : 22),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
+              color: Color(0x28624821), blurRadius: 22, offset: Offset(0, 10)),
         ],
       ),
-      child: Column(
+      child: Row(
         children: [
           Stack(
+            clipBehavior: Clip.none,
             children: [
               Container(
-                padding: const EdgeInsets.all(4),
+                width: compact ? 92 : 120,
+                height: compact ? 92 : 120,
                 decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      GameVerseUtilityColors.cobalt,
+                      GameVerseUtilityColors.cobaltDark
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 2,
-                  ),
+                  border: Border.all(color: Colors.white, width: 5),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x3A063B8E),
+                        blurRadius: 14,
+                        offset: Offset(0, 7)),
+                  ],
                 ),
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: const Color(0xFFFFF4DE),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    size: 55,
-                    color: Color(0xFF6A5C48),
-                  ),
+                child: Icon(
+                  Icons.face_rounded,
+                  color: Colors.white,
+                  size: compact ? 58 : 74,
                 ),
               ),
               Positioned(
-                bottom: 4,
-                right: 4,
+                right: -2,
+                bottom: 2,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  width: compact ? 28 : 34,
+                  height: compact ? 28 : 34,
                   decoration: BoxDecoration(
-                    color: Colors.green,
+                    color: const Color(0xFF39C85A),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 3),
                   ),
-                  child: const Icon(Icons.check, size: 12, color: Colors.white),
+                  child: Icon(Icons.check_rounded,
+                      size: compact ? 16 : 20, color: Colors.white),
                 ),
               ),
             ],
-          )
-              .animate()
-              .fadeIn()
-              .scale(curve: Curves.easeOutBack, duration: 800.ms),
-          const SizedBox(height: 20),
-          Text(
-            'Guest Player',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+          ),
+          SizedBox(width: compact ? 14 : 20),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Guest Player',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: GameVerseUtilityColors.ink,
+                        fontSize: compact ? 22 : 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -.5,
+                      ),
                 ),
-          ).animate().fadeIn().slideY(begin: 0.2),
-          const SizedBox(height: 8),
-          Text(
-            'Member since Feb 2026',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Inter',
+                const SizedBox(height: 5),
+                Text(
+                  'Member since Feb 2026',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color:
+                            GameVerseUtilityColors.ink.withValues(alpha: 0.58),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
-          ).animate().fadeIn(delay: 200.ms),
+                SizedBox(height: compact ? 10 : 14),
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: GameVerseUtilityColors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    'CASUAL EXPLORER',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: GameVerseUtilityColors.orange,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .7,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildStatsGrid(BuildContext context) {
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
-        _buildStatItem(context, 'Wins', '12', Icons.emoji_events_rounded,
-            const Color(0xFFF4B860)),
-        const SizedBox(width: 16),
-        _buildStatItem(context, 'Rank', '#42', Icons.leaderboard_rounded,
-            const Color(0xFF7CC6D9)),
-        const SizedBox(width: 16),
-        _buildStatItem(context, 'Level', '05', Icons.bolt_rounded,
-            const Color(0xFFE58F7A)),
+        Expanded(
+            child: _StatTile('12', 'WINS', Icons.emoji_events_rounded,
+                GameVerseUtilityColors.gold, compact)),
+        SizedBox(width: compact ? 8 : 12),
+        Expanded(
+            child: _StatTile('#42', 'RANK', Icons.leaderboard_rounded,
+                GameVerseUtilityColors.mint, compact)),
+        SizedBox(width: compact ? 8 : 12),
+        Expanded(
+            child: _StatTile('05', 'LEVEL', Icons.bolt_rounded,
+                GameVerseUtilityColors.orange, compact)),
       ],
     );
   }
+}
 
-  Widget _buildStatItem(BuildContext context, String label, String value,
-      IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color.withValues(alpha: 0.8), size: 26),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-            ),
-          ],
-        ),
-      ).animate().fadeIn().slideY(begin: 0.2),
-    );
-  }
+class _StatTile extends StatelessWidget {
+  const _StatTile(this.value, this.label, this.icon, this.color, this.compact);
 
-  Widget _buildMenuSection(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+  final String value;
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameVerseSurface(
+      padding: EdgeInsets.symmetric(vertical: compact ? 12 : 16, horizontal: 4),
+      radius: compact ? 18 : 22,
       child: Column(
         children: [
-          _buildMenuTile(
-            context,
-            'My Achievements',
-            Icons.workspace_premium_outlined,
-            const Color(0xFF7CC6D9),
-            onTap: () => Get.toNamed('/achievements'),
+          Icon(icon, color: color, size: compact ? 24 : 30),
+          SizedBox(height: compact ? 5 : 8),
+          FittedBox(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: GameVerseUtilityColors.cobalt,
+                    fontSize: compact ? 20 : 25,
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
           ),
-          _buildDivider(),
-          _buildMenuTile(
-            context,
-            'Game History',
-            Icons.history_rounded,
-            const Color(0xFF5E7CB6),
-            onTap: () => Get.toNamed('/leaderboard'),
-          ),
-          _buildDivider(),
-          _buildMenuTile(
-            context,
-            'Support Center',
-            Icons.help_outline_rounded,
-            const Color(0xFFE58F7A),
-            onTap: () => _showHelpSupportDialog(context),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: GameVerseUtilityColors.ink,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .6,
+                ),
           ),
         ],
       ),
-    ).animate().fadeIn().slideY(begin: 0.3);
+    );
   }
+}
 
-  Widget _buildMenuTile(
-      BuildContext context, String title, IconData icon, Color color,
-      {required VoidCallback onTap}) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.star_rounded,
+            color: GameVerseUtilityColors.cobalt, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: GameVerseUtilityColors.ink,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: .5,
+                ),
+          ),
         ),
-        child: Icon(icon, color: color.withValues(alpha: 0.8), size: 22),
+      ],
+    );
+  }
+}
+
+class _ProfileMenu extends StatelessWidget {
+  const _ProfileMenu({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return GameVerseSurface(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _MenuRow(
+            key: const Key('profile-achievements-row'),
+            title: 'My Achievements',
+            icon: Icons.workspace_premium_rounded,
+            color: GameVerseUtilityColors.cobalt,
+            compact: compact,
+            onTap: () => Get.toNamed('/achievements'),
+          ),
+          const Divider(
+              height: 1, indent: 76, endIndent: 18, color: Color(0x1A071A3D)),
+          _MenuRow(
+            title: 'Game History',
+            icon: Icons.history_rounded,
+            color: GameVerseUtilityColors.mint,
+            compact: compact,
+            onTap: () => Get.toNamed('/leaderboard'),
+          ),
+          const Divider(
+              height: 1, indent: 76, endIndent: 18, color: Color(0x1A071A3D)),
+          _MenuRow(
+            key: const Key('profile-support-row'),
+            title: 'Support Center',
+            icon: Icons.headset_mic_rounded,
+            color: GameVerseUtilityColors.pink,
+            compact: compact,
+            onTap: () => _showSupport(context),
+          ),
+        ],
       ),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-      ),
-      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black26),
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      indent: 72,
-      endIndent: 24,
-      color: Colors.black.withValues(alpha: 0.06),
-    );
-  }
-
-  Future<void> _showHelpSupportDialog(BuildContext context) async {
-    await showDialog(
+  Future<void> _showSupport(BuildContext context) {
+    return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: GameVerseUtilityColors.cream,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        title: Text(
-          'Support',
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w800),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        icon: const GameVerseIconTile(
+          icon: Icons.headset_mic_rounded,
+          color: GameVerseUtilityColors.pink,
+          size: 58,
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildSupportOption(
-              context,
-              icon: Icons.email_rounded,
-              title: 'itzmesafwan1@gmail.com',
-              color: const Color(0xFF7CC6D9),
-              onTap: () =>
-                  launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
+        title: const Text('How can we help?'),
+        content: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.email_rounded, color: GameVerseUtilityColors.cobalt),
+                SizedBox(width: 12),
+                Expanded(child: Text('itzmesafwan1@gmail.com')),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close')),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSupportOption(BuildContext context,
-      {required IconData icon,
-      required String title,
-      required Color color,
-      required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.12)),
+class _MenuRow extends StatelessWidget {
+  const _MenuRow(
+      {super.key,
+      required this.title,
+      required this.icon,
+      required this.color,
+      required this.compact,
+      required this.onTap});
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final bool compact;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: compact ? 12 : 16, vertical: compact ? 10 : 13),
+          child: Row(
+            children: [
+              GameVerseIconTile(
+                  icon: icon, color: color, size: compact ? 44 : 50),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: GameVerseUtilityColors.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: GameVerseUtilityColors.ink),
+            ],
+          ),
         ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.black87,
-                    ),
+      ),
+    );
+  }
+}
+
+class _LevelProgress extends StatelessWidget {
+  const _LevelProgress({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: compact ? 12 : 14, vertical: compact ? 12 : 15),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [
+          GameVerseUtilityColors.cobalt,
+          GameVerseUtilityColors.cobaltDark
+        ]),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x33063B8E), blurRadius: 14, offset: Offset(0, 7))
+        ],
+      ),
+      child: Row(
+        children: [
+          Text(
+            'LEVEL 05',
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: const LinearProgressIndicator(
+                value: .62,
+                minHeight: 9,
+                backgroundColor: Color(0x44071A3D),
+                valueColor: AlwaysStoppedAnimation(Color(0xFF29C8F5)),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '620 / 1000 XP',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
       ),
     );
   }
