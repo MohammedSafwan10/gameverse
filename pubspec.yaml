@@ -67,6 +67,7 @@ flutter:
     - assets/images/
     - assets/images/categories/
     - assets/images/games/
+    - assets/images/games/flappy_bird/
     - assets/images/games/memory_match/
     - assets/images/games/chess/
     - assets/images/games/chess/pieces_v2/

@@ -8,8 +8,8 @@ class Bird {
   double rotation = 0;
   double flapAnimationValue = 0.0; // 0.0 to 1.0 for flap animation
   int flapDirection = -1; // -1 for up, 1 for down
-  static const double maxVelocity = 600; // Cap maximum velocity
-  static const double minVelocity = -450; // Cap minimum velocity
+  static const double maxVelocity = 520; // Cap maximum velocity
+  static const double minVelocity = -340; // Cap minimum velocity
   static const double rotationFactor =
       0.0015; // How much rotation to apply based on velocity
 
@@ -18,14 +18,14 @@ class Bird {
     required this.size,
   });
 
-  void update(double gravity) {
+  void update(double gravity, double deltaSeconds) {
     // Apply gravity with velocity clamping
-    velocity = (velocity + gravity).clamp(minVelocity, maxVelocity);
+    velocity =
+        (velocity + gravity * deltaSeconds).clamp(minVelocity, maxVelocity);
 
-    // Update position with smoother movement
-    position = Offset(position.dx,
-        position.dy + velocity * 0.016 // Assuming 60 FPS (1/60 ≈ 0.016)
-        );
+    // Integrate against real elapsed time so 60/90/120 Hz devices behave the
+    // same and a slow frame cannot change the flight arc.
+    position = Offset(position.dx, position.dy + velocity * deltaSeconds);
 
     // Update rotation based on velocity with softer movements
     final targetRotation = (velocity * rotationFactor).clamp(-0.8, 0.8);
@@ -73,32 +73,26 @@ class Bird {
   }
 
   Rect get hitbox {
-    // Create a smaller hitbox than the actual bird size for more forgiving collisions
-    const shrinkFactor = 0.3;
-    final shrinkAmount = size.width * shrinkFactor;
-
+    // The sprite deliberately overhangs this logical box. Keep a fair hitbox,
+    // but not the previous near-point-sized box that let visible pipe hits pass.
     return Rect.fromLTWH(
-      position.dx + shrinkAmount,
-      position.dy + shrinkAmount,
-      size.width - (shrinkAmount * 2),
-      size.height - (shrinkAmount * 2),
+      position.dx + size.width * .14,
+      position.dy + size.height * .2,
+      size.width * .7,
+      size.height * .6,
     );
   }
 
   bool collidesWith(Pipe pipe) {
-    final birdHitbox = hitbox;
-    final pipeHitbox = pipe.rect;
-
-    // Add a small tolerance for more forgiving collisions
-    const tolerance = 5.0; // Fixed tolerance in pixels
-
-    final adjustedBirdHitbox = Rect.fromLTWH(
-      birdHitbox.left + tolerance,
-      birdHitbox.top + tolerance,
-      birdHitbox.width - (tolerance * 2),
-      birdHitbox.height - (tolerance * 2),
-    );
-
-    return adjustedBirdHitbox.overlaps(pipeHitbox);
+    // Test the round visible body as an ellipse against the pipe. A rectangle
+    // falsely reports its transparent corners and makes near misses feel wrong.
+    final body = hitbox;
+    final obstacle = pipe.rect.deflate(3);
+    final center = body.center;
+    final nearestX = center.dx.clamp(obstacle.left, obstacle.right);
+    final nearestY = center.dy.clamp(obstacle.top, obstacle.bottom);
+    final normalizedX = (center.dx - nearestX) / (body.width / 2);
+    final normalizedY = (center.dy - nearestY) / (body.height / 2);
+    return normalizedX * normalizedX + normalizedY * normalizedY <= 1;
   }
 }

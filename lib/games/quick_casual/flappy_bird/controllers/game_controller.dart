@@ -38,6 +38,8 @@ class FlappyBirdGameController extends GetxController {
   final fps = GameConstants.fps.obs;
   bool _audioAssetsAvailable = false;
   late final Random _random;
+  bool _collisionPending = false;
+  int _roundId = 0;
 
   FlappyBirdGameController({required this.scoreService}) {
     developer.log('Initializing FlappyBirdGameController');
@@ -57,6 +59,8 @@ class FlappyBirdGameController extends GetxController {
   void onClose() {
     developer.log('onClose called');
     gameTimer?.cancel();
+    _roundId++;
+    _collisionPending = false;
     _musicPlayer.dispose();
     _effectsPlayer.dispose();
     super.onClose();
@@ -74,6 +78,7 @@ class FlappyBirdGameController extends GetxController {
 
   void initGame() {
     developer.log('Initializing game');
+    gameTimer?.cancel();
     bird = Bird(
       position: Offset(Get.width * 0.3, Get.height * 0.45),
       size: const Size(GameConstants.birdSize, GameConstants.birdSize),
@@ -119,7 +124,9 @@ class FlappyBirdGameController extends GetxController {
   }
 
   Future<void> _startBackgroundAudio() async {
-    if (!_audioAssetsAvailable || !settingsController.musicEnabled.value) return;
+    if (!_audioAssetsAvailable || !settingsController.musicEnabled.value) {
+      return;
+    }
     try {
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
       await _musicPlayer.play(AssetSource('sounds/drop.mp3'), volume: 0.12);
@@ -160,7 +167,7 @@ class FlappyBirdGameController extends GetxController {
       return;
     }
 
-    if (!gameOver.value && !isPaused.value) {
+    if (!gameOver.value && !isPaused.value && !_collisionPending) {
       developer.log('Bird jump');
       bird.flap();
       if (settingsController.vibrationEnabled.value) {
@@ -174,7 +181,7 @@ class FlappyBirdGameController extends GetxController {
   }
 
   void updateGame() {
-    if (gameOver.value || isPaused.value) return;
+    if (gameOver.value || isPaused.value || _collisionPending) return;
 
     final now = DateTime.now();
     if (lastFrameTime == null) {
@@ -188,23 +195,23 @@ class FlappyBirdGameController extends GetxController {
         .clamp(0, 0.05);
     lastFrameTime = now;
 
-    // Update bird physics with scaled delta time based on difficulty
-    final gravityToUse = settingsController.gravity;
-    bird.update(gravityToUse * dt);
-
     // Generate pipes with proper timing
     if (pipes.isEmpty ||
         pipes.last.position.dx < Get.width - GameConstants.pipeSpacing) {
       addPipe();
     }
 
-    // Update pipes with consistent speed
-    final frameSpeed = settingsController.pipeSpeed * dt;
-    for (var pipe in pipes) {
-      pipe.position = Offset(
-        pipe.position.dx - frameSpeed,
-        pipe.position.dy,
-      );
+    // Split slow frames into small deterministic steps. This keeps collisions
+    // reliable and prevents tunnelling through a pipe after a brief UI stall.
+    var remaining = dt;
+    while (remaining > 0) {
+      final step = min(remaining, 1 / 120).toDouble();
+      bird.update(GameConstants.gravity, step);
+      final frameSpeed = GameConstants.pipeSpeed * step;
+      for (final pipe in pipes) {
+        pipe.position = Offset(pipe.position.dx - frameSpeed, pipe.position.dy);
+      }
+      remaining -= step;
     }
 
     // Remove off-screen pipes
@@ -214,18 +221,37 @@ class FlappyBirdGameController extends GetxController {
     if (score.value > 0 || now.difference(startTime.value).inSeconds > 1.5) {
       if (checkCollision()) {
         developer.log('Collision detected - ending game');
-        endGame();
+        _showImpactThenEnd();
         return;
       }
     }
 
     // Update score
     updateScore();
+    // Bird and pipe coordinates are mutable model fields, so explicitly notify
+    // the gameplay canvas every frame instead of relying on Rx list mutations.
+    update();
+  }
+
+  void _showImpactThenEnd() {
+    if (_collisionPending) return;
+    _collisionPending = true;
+    gameTimer?.cancel();
+    final impactedRound = _roundId;
+    update();
+    Future<void>.delayed(const Duration(milliseconds: 85), () {
+      if (_roundId == impactedRound &&
+          _collisionPending &&
+          gameRunning.value &&
+          !gameOver.value) {
+        endGame();
+      }
+    });
   }
 
   void addPipe() {
     developer.log('Adding new pipe');
-    final gapHeight = settingsController.pipeGap;
+    const gapHeight = GameConstants.pipeGap;
     final minY = gapHeight;
     final maxY = Get.height - gapHeight - 100; // Leave some space at bottom
 
@@ -260,8 +286,7 @@ class FlappyBirdGameController extends GetxController {
 
   bool checkCollision() {
     // Check if bird hits the ground or ceiling with some padding
-    if (bird.position.dy <= 10 ||
-        bird.position.dy >= Get.height - bird.size.height - 10) {
+    if (bird.hitbox.top <= 0 || bird.hitbox.bottom >= Get.height) {
       developer.log('Bird hit boundary - y: ${bird.position.dy}');
       return true;
     }
@@ -280,7 +305,9 @@ class FlappyBirdGameController extends GetxController {
 
   void updateScore() {
     for (var pipe in pipes) {
-      if (!pipe.isTop && !pipe.passed && pipe.position.dx < bird.position.dx) {
+      if (!pipe.isTop &&
+          !pipe.passed &&
+          pipe.position.dx + pipe.width < bird.hitbox.left) {
         pipe.passed = true;
         score.value++;
         developer.log('Score updated: ${score.value}');
@@ -313,6 +340,7 @@ class FlappyBirdGameController extends GetxController {
     developer.log('Ending game');
     gameRunning.value = false;
     gameOver.value = true;
+    _collisionPending = false;
     gameTimer?.cancel();
 
     if (settingsController.soundEnabled.value) {
@@ -335,13 +363,15 @@ class FlappyBirdGameController extends GetxController {
         'Game played for ${playTime.inSeconds} seconds (excluding pauses)');
 
     try {
-      final finalHighScore =
-          score.value > gameStats.value.highScore ? score.value : gameStats.value.highScore;
+      final finalHighScore = score.value > gameStats.value.highScore
+          ? score.value
+          : gameStats.value.highScore;
       final newTotalPlayTime = Duration(
           milliseconds: gameStats.value.totalPlayTime.inMilliseconds +
               playTime.inMilliseconds);
 
-      developer.log('Updating stats - Games played: ${gameStats.value.gamesPlayed + 1}, '
+      developer.log(
+          'Updating stats - Games played: ${gameStats.value.gamesPlayed + 1}, '
           'Adding playtime: ${playTime.inSeconds}s, '
           'New total play time: ${newTotalPlayTime.inSeconds}s');
 
@@ -376,7 +406,8 @@ class FlappyBirdGameController extends GetxController {
 
   void restartGame() {
     developer.log('Restarting game');
-    initGame();
+    gameTimer?.cancel();
+    gameRunning.value = false;
     startGame();
   }
 
@@ -389,6 +420,7 @@ class FlappyBirdGameController extends GetxController {
       if (settingsController.musicEnabled.value) {
         _musicPlayer.pause();
       }
+      update();
     }
   }
 
@@ -414,6 +446,7 @@ class FlappyBirdGameController extends GetxController {
       if (settingsController.musicEnabled.value) {
         _musicPlayer.resume();
       }
+      update();
     }
   }
 
