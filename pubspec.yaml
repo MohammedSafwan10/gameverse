@@ -29,13 +29,13 @@ dependencies:
   audioplayers: ^6.1.0
   confetti: ^0.8.0
   permission_handler: ^11.3.1
-  flutter_launcher_icons: ^0.14.3
   url_launcher: ^6.2.0
   flutter_vector_icons: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
   flutter_lints: ^5.0.0
   fake_async: ^1.3.3
   # JSON serialization generators
@@ -54,8 +54,6 @@ flutter:
         - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
           weight: 800
   assets:
-    # Chess pieces (SVG)
-    
     # Chess low-latency PCM sound pack
     - assets/chess/sounds_v2/
     
@@ -76,9 +74,25 @@ flutter:
     - assets/images/home/games/
     - assets/images/google_logo.png
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/icon.png"
-  adaptive_icon_foreground: "assets/icon/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0A2D78"
+  adaptive_icon_foreground: "assets/icon/adaptive_foreground.png"
+  adaptive_icon_foreground_inset: 8
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#071A42"
+    theme_color: "#0A2D78"
+  windows:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/icon/icon.png"
 
