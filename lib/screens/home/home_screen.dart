@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,56 @@ const _orange = Color(0xFFFF5A16);
 const _cobalt = Color(0xFF1455D9);
 
 enum _GameMood { quick, smart, classic }
+
+class _FeaturedGame {
+  const _FeaturedGame({
+    required this.title,
+    required this.displayTitle,
+    required this.tagline,
+    required this.route,
+    required this.image,
+    required this.panelColor,
+    required this.buttonColor,
+  });
+
+  final String title;
+  final String displayTitle;
+  final String tagline;
+  final String route;
+  final String image;
+  final Color panelColor;
+  final Color buttonColor;
+}
+
+const _featuredGames = <_FeaturedGame>[
+  _FeaturedGame(
+    title: 'Memory Match',
+    displayTitle: 'MEMORY\nMATCH',
+    tagline: 'Train your brain',
+    route: '/memory-match',
+    image: 'assets/images/games/memory_match_home_hero_v2.png',
+    panelColor: _orange,
+    buttonColor: _orange,
+  ),
+  _FeaturedGame(
+    title: 'Chess',
+    displayTitle: 'CHESS',
+    tagline: 'Plan your victory',
+    route: '/chess',
+    image: 'assets/images/games/chess_home_hero.png',
+    panelColor: Color(0xFF6F42C1),
+    buttonColor: Color(0xFF6F42C1),
+  ),
+  _FeaturedGame(
+    title: 'Quiz Master',
+    displayTitle: 'QUIZ\nMASTER',
+    tagline: 'Challenge your mind',
+    route: '/quiz-master',
+    image: 'assets/images/games/quiz_master_home_hero.png',
+    panelColor: Color(0xFF7A3FC1),
+    buttonColor: Color(0xFF7A3FC1),
+  ),
+];
 
 class _HomeGame {
   const _HomeGame({
@@ -172,8 +223,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                         ).animate().fadeIn(duration: 350.ms).slideY(begin: .08),
                         SizedBox(height: denseMobile ? 14 : 22),
-                        _MemoryHero(
-                          onPlay: () => Get.toNamed('/memory-match'),
+                        _FeaturedCarousel(
+                          onPlay: (route) => Get.toNamed(route),
                         ),
                         SizedBox(height: denseMobile ? 14 : 30),
                         _SectionTitle(
@@ -382,10 +433,74 @@ class _RoundAction extends StatelessWidget {
   }
 }
 
-class _MemoryHero extends StatelessWidget {
-  const _MemoryHero({required this.onPlay});
+class _FeaturedCarousel extends StatefulWidget {
+  const _FeaturedCarousel({required this.onPlay});
 
-  final VoidCallback onPlay;
+  final ValueChanged<String> onPlay;
+
+  @override
+  State<_FeaturedCarousel> createState() => _FeaturedCarouselState();
+}
+
+class _FeaturedCarouselState extends State<_FeaturedCarousel> {
+  final PageController _pageController = PageController();
+  Timer? _advanceTimer;
+  int _currentPage = 0;
+  bool _isTouching = false;
+  bool _reduceMotion = false;
+  bool _didPrecacheArtwork = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    _reduceMotion = reduceMotion;
+
+    if (!_didPrecacheArtwork) {
+      _didPrecacheArtwork = true;
+      Future.wait(
+        _featuredGames.map(
+          (game) => precacheImage(AssetImage(game.image), context),
+        ),
+      ).whenComplete(() {
+        if (mounted) _scheduleAdvance();
+      });
+      return;
+    }
+
+    _scheduleAdvance();
+  }
+
+  @override
+  void dispose() {
+    _advanceTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _scheduleAdvance() {
+    _advanceTimer?.cancel();
+    if (_reduceMotion || _isTouching) return;
+    _advanceTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted || !_pageController.hasClients || _isTouching) return;
+      final nextPage = (_currentPage + 1) % _featuredGames.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 520),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  void _setTouching(bool value) {
+    if (_isTouching == value) return;
+    _isTouching = value;
+    if (value) {
+      _advanceTimer?.cancel();
+    } else {
+      _scheduleAdvance();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -395,120 +510,215 @@ class _MemoryHero extends StatelessWidget {
         final height = math.max(218.0, math.min(300.0, width * .72));
         final compact = width < 350;
 
-        return Container(
-          key: const Key('memory-match-hero'),
-          height: height,
-          decoration: BoxDecoration(
-            color: _cobalt,
-            borderRadius: BorderRadius.circular(compact ? 34 : 44),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1F1749B4),
-                blurRadius: 24,
-                offset: Offset(0, 12),
+        return Semantics(
+          container: true,
+          label:
+              'Featured game ${_currentPage + 1} of ${_featuredGames.length}: ${_featuredGames[_currentPage].title}',
+          child: Listener(
+            onPointerDown: (_) => _setTouching(true),
+            onPointerUp: (_) => _setTouching(false),
+            onPointerCancel: (_) => _setTouching(false),
+            child: Container(
+              key: const Key('featured-game-carousel'),
+              height: height,
+              decoration: BoxDecoration(
+                color: _cobalt,
+                borderRadius: BorderRadius.circular(compact ? 34 : 44),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1F1749B4),
+                    blurRadius: 24,
+                    offset: Offset(0, 12),
+                  ),
+                ],
               ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(
-                'assets/images/games/memory_match_home_hero_v2.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                filterQuality: FilterQuality.medium,
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: compact ? .46 : .48,
-                  heightFactor: 1,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: _orange,
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(compact ? 82 : 120),
-                        bottomRight: Radius.circular(compact ? 44 : 72),
-                      ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    key: const Key('featured-game-pages'),
+                    controller: _pageController,
+                    itemCount: _featuredGames.length,
+                    onPageChanged: (page) {
+                      setState(() => _currentPage = page);
+                      _scheduleAdvance();
+                    },
+                    itemBuilder: (context, index) => _FeaturedSlide(
+                      key: Key('featured-slide-$index'),
+                      game: _featuredGames[index],
+                      compact: compact,
+                      width: width,
+                      onPlay: () => widget.onPlay(_featuredGames[index].route),
                     ),
                   ),
-                ),
-              ),
-              Positioned.fill(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    compact ? 20 : 28,
-                    compact ? 24 : 30,
-                    width * (compact ? .54 : .55),
-                    compact ? 22 : 28,
+                  Positioned(
+                    top: compact ? 10 : 14,
+                    right: compact ? 12 : 16,
+                    child: _CarouselDots(
+                      count: _featuredGames.length,
+                      selectedIndex: _currentPage,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Spacer(),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'MEMORY\nMATCH',
-                          style: Theme.of(context)
-                              .textTheme
-                              .displayLarge
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontSize: compact ? 31 : 42,
-                                height: .9,
-                                letterSpacing: -1.8,
-                                fontWeight: FontWeight.w900,
-                              ),
-                        ),
-                      ),
-                      SizedBox(height: compact ? 10 : 14),
-                      Text(
-                        'Train your brain',
-                        maxLines: 1,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.white,
-                              fontSize: compact ? 13 : 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      SizedBox(height: compact ? 14 : 20),
-                      FilledButton.icon(
-                        key: const Key('memory-match-play-button'),
-                        onPressed: onPlay,
-                        iconAlignment: IconAlignment.end,
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                        label: const Text('PLAY'),
-                        style: FilledButton.styleFrom(
-                          minimumSize: Size(compact ? 108 : 132, 48),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: compact ? 14 : 18,
-                          ),
-                          backgroundColor: Colors.white,
-                          foregroundColor: _orange,
-                          elevation: 3,
-                          shadowColor: const Color(0x33000000),
-                          textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: .3,
-                          ),
-                          shape: const StadiumBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ).animate().fadeIn(duration: 500.ms).scale(
               begin: const Offset(.985, .985),
               curve: Curves.easeOutCubic,
             );
       },
+    );
+  }
+}
+
+class _FeaturedSlide extends StatelessWidget {
+  const _FeaturedSlide({
+    super.key,
+    required this.game,
+    required this.compact,
+    required this.width,
+    required this.onPlay,
+  });
+
+  final _FeaturedGame game;
+  final bool compact;
+  final double width;
+  final VoidCallback onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      key: Key('featured-${game.route}'),
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          game.image,
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.medium,
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FractionallySizedBox(
+            widthFactor: compact ? .46 : .48,
+            heightFactor: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: game.panelColor,
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(compact ? 82 : 120),
+                  bottomRight: Radius.circular(compact ? 44 : 72),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              compact ? 20 : 28,
+              compact ? 24 : 30,
+              width * (compact ? .54 : .55),
+              compact ? 22 : 28,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Spacer(),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    game.displayTitle,
+                    key: Key('featured-title-${game.route}'),
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          color: Colors.white,
+                          fontSize: compact ? 31 : 42,
+                          height: .9,
+                          letterSpacing: -1.8,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+                SizedBox(height: compact ? 10 : 14),
+                Text(
+                  game.tagline,
+                  maxLines: 1,
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.white,
+                        fontSize: compact ? 13 : 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                SizedBox(height: compact ? 14 : 20),
+                FilledButton.icon(
+                  key: Key('featured-play-${game.route}'),
+                  onPressed: onPlay,
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                  label: const Text('PLAY'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: Size(compact ? 108 : 132, 48),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 14 : 18,
+                    ),
+                    backgroundColor: Colors.white,
+                    foregroundColor: game.buttonColor,
+                    elevation: 3,
+                    shadowColor: const Color(0x33000000),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: .3,
+                    ),
+                    shape: const StadiumBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CarouselDots extends StatelessWidget {
+  const _CarouselDots({required this.count, required this.selectedIndex});
+
+  final int count;
+  final int selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0x33000000),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(count, (index) {
+            final selected = index == selectedIndex;
+            return AnimatedContainer(
+              key: Key('featured-dot-$index-${selected ? 'selected' : 'idle'}'),
+              duration: const Duration(milliseconds: 220),
+              width: selected ? 18 : 6,
+              height: 6,
+              margin: EdgeInsets.only(right: index == count - 1 ? 0 : 5),
+              decoration: BoxDecoration(
+                color: selected ? Colors.white : Colors.white60,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 }

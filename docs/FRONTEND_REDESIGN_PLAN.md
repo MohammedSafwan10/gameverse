@@ -14,6 +14,7 @@ data, sounds, scoring, and AI behavior should be preserved.
 
 - Visual direction selected: **Material Expressive gaming**, based on Concept 2.
 - Home screen: **redesigned and verified**.
+- Home featured carousel: **implemented** with Memory Match, Chess, and Quiz Master.
 - Android toolchain: upgraded and building successfully.
 - Next flow: **Memory Match**, beginning with mode selection.
 - Total real screens in the repository: **32**.
@@ -61,6 +62,9 @@ Home-specific rules that must not regress:
 - Three mood chips remain on one row on compact phones.
 - Game cards remain a two-column grid below 620 logical pixels.
 - The Memory Match hero shows all four tiles without zooming or edge clipping.
+- The featured carousel keeps a fixed height, supports manual swiping, advances
+  every five seconds, pauses during touch interaction, and shows three page dots.
+- Memory Match remains the first featured slide, followed by Chess and Quiz Master.
 - Compact screens use reduced spacing, typography, card height, and navigation
   height rather than switching to oversized one-column cards.
 - Bottom navigation respects safe areas.

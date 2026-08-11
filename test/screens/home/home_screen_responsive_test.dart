@@ -42,7 +42,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byKey(const Key('gameverse-wordmark')), findsOneWidget);
-      expect(find.byKey(const Key('memory-match-hero')), findsOneWidget);
+      expect(find.byKey(const Key('featured-game-carousel')), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.scrollUntilVisible(
@@ -74,6 +74,50 @@ void main() {
     expect(find.text('SMART GAMES'), findsOneWidget);
     expect(find.text('Flappy Bird'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('featured carousel auto-advances and opens the active game',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        home: const HomeScreen(),
+        getPages: [
+          GetPage(
+            name: '/chess',
+            page: () => const Scaffold(body: Text('Chess destination')),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('featured-dot-0-selected')),
+      findsOneWidget,
+    );
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('featured-dot-1-selected')),
+      findsOneWidget,
+    );
+
+    await expectLater(
+      find.byType(HomeScreen),
+      matchesGoldenFile('goldens/home_chess_390x844.png'),
+    );
+
+    await tester.tap(find.byKey(const Key('featured-play-/chess')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chess destination'), findsOneWidget);
   });
 
   testWidgets('home matches the selected visual direction at 390x844',
