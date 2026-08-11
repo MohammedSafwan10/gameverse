@@ -73,14 +73,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   _buildDivider(),
                   _buildSettingTile(
-                    'Developer',
-                    'NEXDARK TEAM',
-                    Icons.code_rounded,
-                    Colors.indigo,
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildSettingTile(
                     'Rate Game',
                     'Enjoying GameVerse?',
                     Icons.star_outline_rounded,
@@ -111,32 +103,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ]),
 
-                const SizedBox(height: 48),
-
-                // App Footer
-                Center(
-                  child: Column(
-                    children: [
-                      const Text(
-                        'GameVerse',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Built with ❤️ by NEXDARK',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 40),
               ],
             ),

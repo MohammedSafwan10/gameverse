@@ -41,7 +41,8 @@ class ProfileScreen extends StatelessWidget {
                   actions: [
                     IconButton(
                       onPressed: () => Get.toNamed('/settings'),
-                      icon: const Icon(Icons.settings_rounded, color: Colors.black54),
+                      icon: const Icon(Icons.settings_rounded,
+                          color: Colors.black54),
                     ).animate().fadeIn().scale(),
                     const SizedBox(width: 16),
                   ],
@@ -118,7 +119,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ).animate().fadeIn().scale(curve: Curves.easeOutBack, duration: 800.ms),
+          )
+              .animate()
+              .fadeIn()
+              .scale(curve: Curves.easeOutBack, duration: 800.ms),
           const SizedBox(height: 20),
           Text(
             'Guest Player',
@@ -156,7 +160,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(BuildContext context, String label, String value,
+      IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -283,7 +288,10 @@ class ProfileScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         title: Text(
           'Support',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -293,15 +301,8 @@ class ProfileScreen extends StatelessWidget {
               icon: Icons.email_rounded,
               title: 'itzmesafwan1@gmail.com',
               color: const Color(0xFF7CC6D9),
-              onTap: () => launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
-            ),
-            const SizedBox(height: 12),
-            _buildSupportOption(
-              context,
-              icon: Icons.code_rounded,
-              title: 'Developer: NEXDARK',
-              color: const Color(0xFF5E7CB6),
-              onTap: () {},
+              onTap: () =>
+                  launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
             ),
           ],
         ),
@@ -316,7 +317,10 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildSupportOption(BuildContext context,
-      {required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
+      {required IconData icon,
+      required String title,
+      required Color color,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
