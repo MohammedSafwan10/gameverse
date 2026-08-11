@@ -34,18 +34,30 @@ class CategoryScreen extends StatelessWidget {
 
   String _getBackgroundImage(String categoryTitle) {
     switch (categoryTitle) {
-      case 'Arcade': return 'assets/images/categories/arcade.png';
-      case 'Classic Board': return 'assets/images/categories/classic_board.png';
-      case 'Word Games': return 'assets/images/categories/word_games.png';
-      case 'Brain Training': return 'assets/images/categories/brain_training.png';
-      case 'Puzzle': return 'assets/images/categories/puzzle.png';
-      case 'Quick Casual': return 'assets/images/categories/quick_casual.png';
-      case 'Strategy': return 'assets/images/categories/strategy.png';
-      case 'Simulation': return 'assets/images/categories/simulation.png';
-      case 'Sports': return 'assets/images/categories/sports.png';
-      case 'Reaction': return 'assets/images/categories/reaction.png';
-      case 'Educational': return 'assets/images/categories/educational.png';
-      default: return '';
+      case 'Arcade':
+        return 'assets/images/categories/arcade.png';
+      case 'Classic Board':
+        return 'assets/images/categories/classic_board.png';
+      case 'Word Games':
+        return 'assets/images/categories/word_games.png';
+      case 'Brain Training':
+        return 'assets/images/categories/brain_training.png';
+      case 'Puzzle':
+        return 'assets/images/categories/puzzle.png';
+      case 'Quick Casual':
+        return 'assets/images/categories/quick_casual.png';
+      case 'Strategy':
+        return 'assets/images/categories/strategy.png';
+      case 'Simulation':
+        return 'assets/images/categories/simulation.png';
+      case 'Sports':
+        return 'assets/images/categories/sports.png';
+      case 'Reaction':
+        return 'assets/images/categories/reaction.png';
+      case 'Educational':
+        return 'assets/images/categories/educational.png';
+      default:
+        return '';
     }
   }
 
@@ -57,8 +69,6 @@ class CategoryScreen extends StatelessWidget {
         return 'assets/images/games/connect_four.png';
       case 'Chess':
         return 'assets/images/games/chess.png';
-      case 'Hangman':
-        return 'assets/images/games/hangman.png';
       case 'Memory Match':
         return 'assets/images/games/memory_match.png';
       case 'Block Merge':
@@ -143,7 +153,8 @@ class CategoryScreen extends StatelessWidget {
               ],
             ),
             child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.white),
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  size: 18, color: Colors.white),
               onPressed: () => Get.back(),
             ),
           ),
@@ -280,97 +291,99 @@ class CategoryScreen extends StatelessWidget {
             highlightColor: themeColor.withValues(alpha: 0.1),
             child: Stack(
               children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Positioned.fill(
-                          child: gameImage != null
-                              ? Image.asset(gameImage, fit: BoxFit.cover)
-                              : Container(color: themeColor.withValues(alpha: 0.25)),
-                        ),
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.08),
-                                  Colors.black.withValues(alpha: 0.58),
-                                ],
-                              ),
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Positioned.fill(
+                        child: gameImage != null
+                            ? Image.asset(gameImage, fit: BoxFit.cover)
+                            : Container(
+                                color: themeColor.withValues(alpha: 0.25)),
+                      ),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.08),
+                                Colors.black.withValues(alpha: 0.58),
+                              ],
                             ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Spacer(),
-                                  if (!isAvailable)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.28),
-                                        borderRadius: BorderRadius.circular(999),
-                                      ),
-                                      child: const Text(
-                                        'SOON',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.8,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                game.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  height: 1.1,
-                                ),
-                              ),
-                              const Spacer(),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Spacer(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Spacer(),
+                                if (!isAvailable)
                                   Container(
-                                    padding: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.18),
-                                      shape: BoxShape.circle,
+                                      color:
+                                          Colors.black.withValues(alpha: 0.28),
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
-                                    child: Icon(
-                                      isAvailable
-                                          ? Icons.play_arrow_rounded
-                                          : Icons.lock_outline_rounded,
-                                      color: Colors.white,
-                                      size: 22,
+                                    child: const Text(
+                                      'SOON',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.8,
+                                      ),
                                     ),
                                   ),
-                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              game.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                height: 1.1,
                               ),
-                            ],
-                          ),
+                            ),
+                            const Spacer(),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isAvailable
+                                        ? Icons.play_arrow_rounded
+                                        : Icons.lock_outline_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
               ],
             ),
           ),

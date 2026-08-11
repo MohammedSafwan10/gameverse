@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/category/category_screen.dart';
-import '../games/word_games/hangman/screens/mode_selection_screen.dart';
 import '../games/classic_board/connect_four/screens/mode_selection_screen.dart'
     as connect_four;
 import '../games/classic_board/tic_tac_toe/screens/mode_selection_screen.dart'
@@ -86,16 +85,8 @@ class HomeController extends GetxController {
       title: 'Word Games',
       icon: Icons.text_fields,
       color: Colors.red,
-      gamesCount: 4,
+      gamesCount: 3,
       games: [
-        GameInfo(
-          name: 'Hangman',
-          description:
-              'Classic word guessing game with multiple categories and daily challenges.',
-          icon: Icons.psychology,
-          isAvailable: true,
-          screen: () => const HangmanModeSelectionScreen(),
-        ),
         GameInfo(
           name: 'Word Search',
           description: 'Find hidden words in a grid of letters.',

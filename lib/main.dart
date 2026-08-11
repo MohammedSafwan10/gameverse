@@ -9,10 +9,12 @@ import 'screens/leaderboard/leaderboard_screen.dart';
 import 'theme/app_theme.dart';
 import 'controllers/theme_controller.dart';
 import 'controllers/home_controller.dart';
-import 'games/classic_board/tic_tac_toe/screens/game_screen.dart' as tic_tac_toe;
+import 'games/classic_board/tic_tac_toe/screens/game_screen.dart'
+    as tic_tac_toe;
 import 'games/classic_board/tic_tac_toe/screens/mode_selection_screen.dart'
     as tic_tac_toe;
-import 'games/classic_board/tic_tac_toe/screens/stats_screen.dart' as tic_tac_toe;
+import 'games/classic_board/tic_tac_toe/screens/stats_screen.dart'
+    as tic_tac_toe;
 import 'games/classic_board/tic_tac_toe/screens/settings_screen.dart'
     as tic_tac_toe;
 import 'games/classic_board/tic_tac_toe/bindings/game_binding.dart'
@@ -25,8 +27,6 @@ import 'games/classic_board/connect_four/controllers/game_controller.dart'
     as connect_four;
 import 'games/classic_board/connect_four/screens/mode_selection_screen.dart'
     as connect_four;
-import 'games/word_games/hangman/bindings/game_binding.dart';
-import 'games/word_games/hangman/screens/mode_selection_screen.dart' as hangman;
 import 'games/brain_training/memory_match/bindings/game_binding.dart';
 import 'games/brain_training/memory_match/screens/mode_selection_screen.dart'
     as memory_match;
@@ -117,11 +117,6 @@ class MyApp extends StatelessWidget {
           binding: const connect_four.ConnectFourBinding(
             gameMode: connect_four.GameMode.vsAI,
           ),
-        ),
-        GetPage(
-          name: '/hangman',
-          page: () => const hangman.HangmanModeSelectionScreen(),
-          binding: HangmanBinding(),
         ),
         GetPage(
           name: '/memory-match',

@@ -95,13 +95,6 @@ const _homeGames = <_HomeGame>[
     moods: {_GameMood.smart, _GameMood.classic},
   ),
   _HomeGame(
-    name: 'Hangman',
-    route: '/hangman',
-    image: 'assets/images/home/games/hangman.png',
-    tint: Color(0xFFFFF0C9),
-    moods: {_GameMood.quick, _GameMood.smart, _GameMood.classic},
-  ),
-  _HomeGame(
     name: 'Flappy Bird',
     route: '/flappy-bird',
     image: 'assets/images/home/games/flappy_bird.png',

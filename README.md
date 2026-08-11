@@ -41,10 +41,9 @@ A beautifully crafted Flutter game collection featuring classic board games, bra
 | **❌ Tic Tac Toe** | Classic X and O game with AI opponents and multiplayer mode | ✅ Available |
 | **🔴 Connect Four** | Strategic disc-dropping game with smooth animations | ✅ Available |
 
-### 📝 Word Games (4 Games)
+### 📝 Word Games (3 Games)
 | Game | Description | Status |
 |------|-------------|--------|
-| **🎯 Hangman** | Word guessing with multiple categories and daily challenges | ✅ Available |
 | **🔍 Word Search** | Find hidden words in letter grids | 🔜 Coming Soon |
 | **📋 Crossword** | Classic crossword puzzles with various themes | 🔜 Coming Soon |
 | **🔄 Anagrams** | Rearrange letters to form words | 🔜 Coming Soon |
@@ -162,7 +161,7 @@ lib/
 │   └── category/               # Category screens
 ├── games/                       # Individual game modules
 │   ├── classic_board/          # Chess, Tic Tac Toe, Connect Four
-│   ├── word_games/             # Hangman, Word Search, etc.
+│   ├── word_games/             # Word Search, Crossword, etc.
 │   ├── brain_training/         # Memory Match
 │   ├── puzzle/                 # Block Merge (2048)
 │   ├── quick_casual/           # Flappy Bird
@@ -211,13 +210,6 @@ game_name/
 - Gravity-based disc dropping
 - Win detection in all directions
 - Smooth drop animations
-
-### 🎯 Hangman
-- Multiple word categories
-- Daily challenges
-- Progressive difficulty
-- Hint system
-- Lives tracking
 
 ### 🃏 Memory Match
 - Multiple difficulty levels

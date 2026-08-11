@@ -24,9 +24,9 @@ data, sounds, scoring, and AI behavior should be preserved.
 - Memory Match: **Direction B implemented** across mode selection, gameplay,
   pause/exit states, completion, Time's Up, and the three-level Challenge flow.
 - Memory Match production artwork is under `assets/images/games/memory_match/`.
-- Total real screens in the repository: **32**.
+- Total real screens in the repository: **28**.
 - Completed: **4**.
-- Remaining: **28**.
+- Remaining: **24**.
 
 Primary reference:
 
@@ -140,31 +140,24 @@ Connect Four:
 
 ### Phase 4: word and puzzle games
 
-Hangman:
-
-- [ ] 21. Mode selection
-- [ ] 22. Category selection
-- [ ] 23. Word input
-- [ ] 24. Gameplay
-
 Block Merge:
 
-- [ ] 25. Mode selection
-- [ ] 26. Gameplay
-- [ ] 27. Settings
+- [ ] 21. Mode selection
+- [ ] 22. Gameplay
+- [ ] 23. Settings
 
 ### Phase 5: casual and educational games
 
 Flappy Bird:
 
-- [ ] 28. Mode selection
-- [ ] 29. Gameplay
-- [ ] 30. Settings
+- [ ] 24. Mode selection
+- [ ] 25. Gameplay
+- [ ] 26. Settings
 
 Quiz Master:
 
-- [ ] 31. Mode/category selection
-- [ ] 32. Quiz gameplay
+- [ ] 27. Mode/category selection
+- [ ] 28. Quiz gameplay
 
 ## Workflow for each screen
 
