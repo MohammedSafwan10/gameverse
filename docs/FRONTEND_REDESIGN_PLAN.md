@@ -6,6 +6,11 @@ This document is the source of truth for the GameVerse frontend redesign. Future
 agents should read it before changing any screen so the application develops as
 one coherent product instead of a collection of unrelated game interfaces.
 
+Execution and verification details—including mockup comparison, artwork
+preparation, FFmpeg sound cleanup, low-latency audio pools, licensing, and the
+definition of done—are in `docs/GAME_POLISH_PLAYBOOK.md`. Future agents should
+read both documents before beginning a game polish pass.
+
 The redesign is frontend-only unless a screen cannot function without a small,
 clearly scoped controller or navigation correction. Existing game logic, saved
 data, sounds, scoring, and AI behavior should be preserved.
