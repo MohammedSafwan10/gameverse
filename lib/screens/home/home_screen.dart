@@ -1103,7 +1103,14 @@ class _NavItem extends StatelessWidget {
 }
 
 class _GameSearchDelegate extends SearchDelegate<void> {
-  _GameSearchDelegate({required this.games, required this.onSelected});
+  _GameSearchDelegate({required this.games, required this.onSelected})
+      : super(
+          searchFieldStyle: const TextStyle(
+            color: _ink,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        );
 
   final List<_HomeGame> games;
   final ValueChanged<_HomeGame> onSelected;
@@ -1113,8 +1120,15 @@ class _GameSearchDelegate extends SearchDelegate<void> {
 
   @override
   ThemeData appBarTheme(BuildContext context) {
-    return Theme.of(context).copyWith(
+    final base = Theme.of(context);
+    final readableText = base.textTheme.apply(
+      bodyColor: _ink,
+      displayColor: _ink,
+    );
+    return base.copyWith(
       scaffoldBackgroundColor: _cream,
+      textTheme: readableText,
+      primaryTextTheme: readableText,
       appBarTheme: const AppBarTheme(
         backgroundColor: _cream,
         foregroundColor: _ink,
@@ -1123,6 +1137,11 @@ class _GameSearchDelegate extends SearchDelegate<void> {
       ),
       inputDecorationTheme:
           const InputDecorationTheme(border: InputBorder.none),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: _orange,
+        selectionColor: Color(0x33FF5A16),
+        selectionHandleColor: _orange,
+      ),
     );
   }
 

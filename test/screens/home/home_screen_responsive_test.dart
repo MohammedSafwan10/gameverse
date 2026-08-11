@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gameverse/screens/home/home_screen.dart';
+import 'package:gameverse/theme/app_theme.dart';
 import 'package:get/get.dart';
 
 void main() {
@@ -73,6 +74,32 @@ void main() {
 
     expect(find.text('SMART GAMES'), findsOneWidget);
     expect(find.text('Flappy Bird'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('search query stays readable on the cream search surface',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const HomeScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('home-search-button')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Chess');
+    await tester.pump();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.style.color, const Color(0xFF191919));
+    expect(find.text('Chess'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
