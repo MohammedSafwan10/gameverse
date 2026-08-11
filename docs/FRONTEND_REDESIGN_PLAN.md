@@ -17,6 +17,8 @@ data, sounds, scoring, and AI behavior should be preserved.
 - Home featured carousel: **implemented** with Memory Match, Chess, and Quiz Master.
 - Android toolchain: upgraded and building successfully.
 - Next flow: **Memory Match**, beginning with mode selection.
+- Memory Match primary-screen mockups: **Directions A and B ready for selection**
+  under `docs/mockups/memory_match/`.
 - Total real screens in the repository: **32**.
 - Completed: **1**.
 - Remaining: **31**.
