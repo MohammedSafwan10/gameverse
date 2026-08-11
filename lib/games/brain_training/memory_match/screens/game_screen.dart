@@ -1,452 +1,580 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import '../controllers/game_controller.dart';
 import '../models/game_mode.dart';
 import '../models/game_state.dart';
-import '../widgets/flip_card.dart';
 import '../services/sound_service.dart';
-import 'package:gameverse/widgets/guarded_exit.dart';
+import '../theme/memory_match_theme.dart';
+import '../widgets/flip_card.dart';
 
 class MemoryMatchGameScreen extends StatefulWidget {
-  final MemoryMatchMode mode;
-  final GameDifficulty difficulty;
-
   const MemoryMatchGameScreen({
     super.key,
     required this.mode,
     required this.difficulty,
   });
 
+  final MemoryMatchMode mode;
+  final GameDifficulty difficulty;
+
   @override
   State<MemoryMatchGameScreen> createState() => _MemoryMatchGameScreenState();
 }
 
-class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen> {
+class _MemoryMatchGameScreenState extends State<MemoryMatchGameScreen>
+    with WidgetsBindingObserver {
   late final MemoryMatchGameController controller;
   late final MemoryMatchSoundService soundService;
-
-  static const _bgDark = Color(0xFF0F0F1A);
-  static const _surfaceDark = Color(0xFF1A1A2E);
-  static const _surfaceLight = Color(0xFF22223A);
+  bool _pausedForLifecycle = false;
 
   @override
   void initState() {
     super.initState();
     controller = Get.find<MemoryMatchGameController>();
     soundService = Get.find<MemoryMatchSoundService>();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.initGame(widget.mode, widget.difficulty);
+      if (mounted) controller.initGame(widget.mode, widget.difficulty);
     });
   }
 
   @override
   void dispose() {
-    // Only cleanup if we're actually leaving the game (not just pushing completion)
-    // cleanupGame is called explicitly by exit buttons
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  Color get _accent => widget.mode.color;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      if (controller.state?.status == GameStatus.playing) {
+        _pausedForLifecycle = true;
+        controller.pauseGame();
+      }
+      return;
+    }
+    if (state == AppLifecycleState.resumed && _pausedForLifecycle) {
+      _pausedForLifecycle = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+          _showPauseSheet();
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, dynamic result) async {
-        if (!didPop) {
-          controller.pauseGame();
-          final shouldPop = await _showExitConfirmation();
-          if (!shouldPop) {
-            controller.resumeGame();
-            return;
-          }
-          if (!context.mounted) return;
-          controller.cleanupGame();
-          await popAfterConfirmation(
-            context,
-            confirmExit: () async => true,
-          );
-        }
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) await _requestExit();
       },
       child: Scaffold(
-        backgroundColor: _bgDark,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              _buildStatsBar(),
-              Expanded(child: _buildGameBoard()),
-            ],
+        body: MemoryMatchBackdrop(
+          child: SafeArea(
+            child: Obx(() {
+              final state = controller.state;
+              if (state == null) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
+              }
+              return Column(
+                children: [
+                  _GameHeader(
+                    state: state,
+                    challengeLevel: controller.challengeLevel,
+                    muted: soundService.isMuted,
+                    onBack: _requestExit,
+                    onPause: _showPauseSheet,
+                    onSound: soundService.toggleMute,
+                  ),
+                  _StatsStrip(state: state),
+                  Expanded(
+                    child: _GameBoard(
+                      state: state,
+                      onCardTap: controller.flipCard,
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         ),
       ),
     );
   }
 
-  Future<bool> _showExitConfirmation() async {
-    return await Get.dialog<bool>(
-          Dialog(
-            backgroundColor: _surfaceDark,
+  Future<void> _requestExit() async {
+    controller.pauseGame();
+    final exit = await _showExitDialog();
+    if (!mounted) return;
+    if (!exit) {
+      controller.resumeGame();
+      return;
+    }
+    controller.cleanupGame();
+    Navigator.of(context).pop();
+  }
+
+  Future<bool> _showExitDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: MemoryMatchTheme.cream,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(26),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.pause_circle_outline, size: 48, color: _accent),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Exit Game?',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your progress will be lost.',
-                    textAlign: TextAlign.center,
-                    style:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Get.back(result: false),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _accent,
-                            side: BorderSide(
-                                color: _accent.withValues(alpha: 0.5)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: const Text('Continue'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Get.back(result: true);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _accent,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: const Text('Exit'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            icon: const CircleAvatar(
+              radius: 27,
+              backgroundColor: MemoryMatchTheme.pinkPale,
+              child: Icon(Icons.flag_rounded, color: MemoryMatchTheme.pink),
+            ),
+            title: Text('LEAVE THIS GAME?',
+                textAlign: TextAlign.center,
+                style: MemoryMatchTheme.display(size: 22)),
+            content: Text(
+              'This board and its score will be lost.',
+              textAlign: TextAlign.center,
+              style: MemoryMatchTheme.body(color: MemoryMatchTheme.muted),
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('KEEP PLAYING'),
               ),
-            ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: MemoryMatchTheme.orange,
+                ),
+                child: const Text('LEAVE'),
+              ),
+            ],
           ),
         ) ??
         false;
   }
 
-  // ---------- HEADER ----------
-
-  Widget _buildHeader() {
-    return Obx(() {
-      final s = controller.state;
-      if (s == null) return const SizedBox.shrink();
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        child: Row(
-          children: [
-            // Back button
-            _backButton(),
-            const SizedBox(width: 12),
-
-            // Title
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  Future<void> _showPauseSheet() async {
+    controller.pauseGame();
+    final action = await showModalBottomSheet<_PauseAction>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          decoration: const BoxDecoration(
+            color: MemoryMatchTheme.cream,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircleAvatar(
+                radius: 30,
+                backgroundColor: MemoryMatchTheme.mintPale,
+                child: Icon(Icons.pause_rounded,
+                    size: 34, color: MemoryMatchTheme.cobalt),
+              ),
+              const SizedBox(height: 14),
+              Text('GAME PAUSED', style: MemoryMatchTheme.display(size: 25)),
+              const SizedBox(height: 6),
+              Text('Your board is waiting for you.',
+                  style: MemoryMatchTheme.body(color: MemoryMatchTheme.muted)),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: MemoryMatchPrimaryButton(
+                  label: 'RESUME GAME',
+                  icon: Icons.play_arrow_rounded,
+                  onPressed: () =>
+                      Navigator.pop(sheetContext, _PauseAction.resume),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
                 children: [
-                  Text(
-                    widget.mode.displayName,
-                    style: TextStyle(
-                      color: _accent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          Navigator.pop(sheetContext, _PauseAction.restart),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('RESTART'),
                     ),
                   ),
-                  Text(
-                    '${s.remainingPairs} pairs left',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          Navigator.pop(sheetContext, _PauseAction.exit),
+                      icon: const Icon(Icons.flag_rounded),
+                      label: const Text('EXIT'),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (action) {
+      case _PauseAction.restart:
+        controller.restartGame();
+      case _PauseAction.exit:
+        controller.cleanupGame();
+        Navigator.of(context).pop();
+      case _PauseAction.resume:
+      case null:
+        controller.resumeGame();
+    }
+  }
+}
 
-            // Combo badge
-            if (s.combo > 1)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orangeAccent, Colors.deepOrange],
+enum _PauseAction { resume, restart, exit }
+
+class _GameHeader extends StatelessWidget {
+  const _GameHeader({
+    required this.state,
+    required this.challengeLevel,
+    required this.muted,
+    required this.onBack,
+    required this.onPause,
+    required this.onSound,
+  });
+
+  final MemoryMatchState state;
+  final int challengeLevel;
+  final bool muted;
+  final VoidCallback onBack;
+  final VoidCallback onPause;
+  final VoidCallback onSound;
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 350;
+    final subtitle = state.mode == MemoryMatchMode.challenge
+        ? 'Level $challengeLevel · ${state.difficulty.name}'
+        : '${state.mode.displayName} · ${state.difficulty.name}';
+    return Container(
+      margin: EdgeInsets.fromLTRB(compact ? 9 : 14, 10, compact ? 9 : 14, 9),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 12,
+        vertical: compact ? 7 : 9,
+      ),
+      decoration: BoxDecoration(
+        color: MemoryMatchTheme.cream,
+        borderRadius: BorderRadius.circular(27),
+        boxShadow: MemoryMatchTheme.softShadow,
+      ),
+      child: Row(
+        children: [
+          MemoryMatchIconButton(
+            icon: Icons.arrow_back_rounded,
+            onPressed: onBack,
+            tooltip: 'Exit game',
+          ),
+          SizedBox(width: compact ? 6 : 8),
+          MemoryMatchIconButton(
+            icon: Icons.pause_rounded,
+            onPressed: onPause,
+            tooltip: 'Pause',
+          ),
+          SizedBox(width: compact ? 7 : 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(state.mode.displayName.toUpperCase(),
+                    maxLines: 1,
+                    style: MemoryMatchTheme.display(
+                      size: compact ? 18 : 22,
+                    )),
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: MemoryMatchTheme.orange,
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.local_fire_department,
-                        size: 16, color: Colors.white),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${s.combo}x',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
+                  child: Text(
+                    subtitle.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: MemoryMatchTheme.body(
+                      size: 9,
+                      color: Colors.white,
+                      weight: FontWeight.w900,
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          MemoryMatchIconButton(
+            icon: muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+            onPressed: onSound,
+            tooltip: muted ? 'Turn sound on' : 'Mute sound',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatsStrip extends StatelessWidget {
+  const _StatsStrip({required this.state});
+
+  final MemoryMatchState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final timeTrial = state.mode == MemoryMatchMode.timeTrial;
+    final seconds = timeTrial ? state.timeRemaining : state.timeElapsed;
+    final urgent = timeTrial && seconds <= 10;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _Stat(
+                icon: Icons.star_rounded,
+                value: '${state.score}',
+                label: 'SCORE',
+                color: MemoryMatchTheme.yellow,
+              ),
+              const SizedBox(width: 7),
+              _Stat(
+                icon: Icons.touch_app_rounded,
+                value: '${state.moves}',
+                label: 'MOVES',
+                color: MemoryMatchTheme.cobalt,
+              ),
+              const SizedBox(width: 7),
+              _Stat(
+                icon: Icons.timer_rounded,
+                value: _formatTime(seconds),
+                label: timeTrial ? 'LEFT' : 'TIME',
+                color: urgent ? MemoryMatchTheme.pink : const Color(0xFF26A65B),
+              ),
+            ],
+          ),
+          if (timeTrial) ...[
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: LinearProgressIndicator(
+                value: state.timeRemaining / state.timeLimit,
+                minHeight: 5,
+                color: urgent ? MemoryMatchTheme.pink : MemoryMatchTheme.orange,
+                backgroundColor: MemoryMatchTheme.pinkPale,
+              ),
+            ),
+          ],
+          if (state.combo > 1) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+              decoration: BoxDecoration(
+                color: MemoryMatchTheme.orange,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text('${state.combo}× COMBO',
+                  style: MemoryMatchTheme.body(
+                    size: 12,
+                    color: Colors.white,
+                    weight: FontWeight.w900,
+                  )),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _formatTime(int seconds) =>
+      '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 58),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
+          decoration: BoxDecoration(
+            color: MemoryMatchTheme.cream,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: MemoryMatchTheme.softShadow,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 21),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: MemoryMatchTheme.body(
+                          size: 8,
+                          weight: FontWeight.w800,
+                        )),
+                    Text(value,
+                        maxLines: 1,
+                        style: MemoryMatchTheme.display(size: 15, height: 1.1)),
                   ],
                 ),
-              ).animate().scale(duration: 200.ms, curve: Curves.elasticOut),
-
-            // Mute button
-            _iconButton(
-              soundService.isMuted ? Icons.volume_off : Icons.volume_up,
-              soundService.toggleMute,
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       );
-    });
-  }
+}
 
-  Widget _backButton() {
+class _PairsProgress extends StatelessWidget {
+  const _PairsProgress({required this.state});
+  final MemoryMatchState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final found = state.totalPairs - state.remainingPairs;
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: _surfaceDark,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _accent.withValues(alpha: 0.15)),
+        color: MemoryMatchTheme.cream,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: MemoryMatchTheme.softShadow,
       ),
-      child: IconButton(
-        icon: const Icon(Icons.arrow_back, size: 20),
-        onPressed: () {
-          controller.pauseGame();
-          popAfterConfirmation(
-            context,
-            confirmExit: _showExitConfirmation,
-          ).then((_) {
-            if (!mounted) return;
-            if (!ModalRoute.of(context)!.isCurrent) {
-              controller.cleanupGame();
-            } else {
-              controller.resumeGame();
-            }
-          });
-        },
-        color: _accent,
-        padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(),
+      child: Row(
+        children: [
+          Text('$found OF ${state.totalPairs} PAIRS',
+              style: MemoryMatchTheme.body(size: 10, weight: FontWeight.w900)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: LinearProgressIndicator(
+                value: found / state.totalPairs,
+                minHeight: 10,
+                color: MemoryMatchTheme.orange,
+                backgroundColor: const Color(0xFFF1DFC2),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _iconButton(IconData icon, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _surfaceDark,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _accent.withValues(alpha: 0.15)),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: 20),
-        onPressed: onTap,
-        color: _accent,
-        padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(),
-      ),
-    );
-  }
+class _GameBoard extends StatelessWidget {
+  const _GameBoard({required this.state, required this.onCardTap});
 
-  // ---------- STATS BAR ----------
+  final MemoryMatchState state;
+  final ValueChanged<int> onCardTap;
 
-  Widget _buildStatsBar() {
-    return Obx(() {
-      final s = controller.state;
-      if (s == null) return const SizedBox.shrink();
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 440;
+        final spacing = compact ? 5.0 : 7.0;
+        const cardAspectRatio = .78;
+        final horizontalPadding =
+            MediaQuery.sizeOf(context).width < 350 ? 10.0 : 14.0;
+        final boardW = constraints.maxWidth - horizontalPadding * 2;
+        final boardH = constraints.maxHeight - (compact ? 70 : 105);
+        final maxCardW =
+            (boardW - (state.columns - 1) * spacing) / state.columns;
+        final maxCardH = (boardH - (state.rows - 1) * spacing) / state.rows;
+        final cardW = min(maxCardW, maxCardH * cardAspectRatio);
+        final cardH = cardW / cardAspectRatio;
+        final gridW = cardW * state.columns + spacing * (state.columns - 1);
+        final gridH = cardH * state.rows + spacing * (state.rows - 1);
 
-      final isTimeTrial = s.mode == MemoryMatchMode.timeTrial;
-      final timeText =
-          isTimeTrial ? '${s.timeRemaining}s' : '${s.timeElapsed}s';
-      final timeColor =
-          isTimeTrial && s.timeRemaining <= 10 ? Colors.redAccent : _accent;
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-        child: Column(
-          children: [
-            // Time-trial progress bar
-            if (isTimeTrial)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: s.timeRemaining / s.timeLimit,
-                    backgroundColor: _surfaceLight,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      s.timeRemaining <= 10 ? Colors.redAccent : _accent,
+        return Padding(
+          padding: EdgeInsets.only(top: compact ? 8 : 42),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: gridW + 16,
+                  height: gridH + 16,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(24),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                  ),
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: state.columns,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: cardAspectRatio,
                     ),
-                    minHeight: 4,
+                    itemCount: state.cards.length,
+                    itemBuilder: (context, index) => Semantics(
+                      button: true,
+                      label: state.cards[index].isFlipped ||
+                              state.cards[index].isMatched
+                          ? 'Card ${index + 1}, ${state.cards[index].emoji}'
+                          : 'Hidden card ${index + 1}',
+                      child: GestureDetector(
+                        key: ValueKey('memory-card-$index'),
+                        onTap: () => onCardTap(index),
+                        child: FlipCard(
+                            card: state.cards[index], mode: state.mode),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-
-            // Stats row
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              decoration: BoxDecoration(
-                color: _surfaceDark,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _accent.withValues(alpha: 0.1)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _statChip(Icons.star_rounded, s.score.toString(), 'Score'),
-                  _statChip(
-                      Icons.touch_app_rounded, s.moves.toString(), 'Moves'),
-                  _statChip(
-                    isTimeTrial ? Icons.hourglass_bottom : Icons.timer_outlined,
-                    timeText,
-                    isTimeTrial ? 'Left' : 'Time',
-                    valueColor: timeColor,
-                  ),
-                  _statChip(
-                    Icons.grid_view_rounded,
-                    '${s.columns}×${s.rows}',
-                    'Grid',
-                  ),
-                ],
-              ),
+                SizedBox(height: compact ? 8 : 18),
+                SizedBox(
+                  width: gridW + 8,
+                  child: _PairsProgress(state: state),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _statChip(IconData icon, String value, String label,
-      {Color? valueColor}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon,
-            color: valueColor ?? _accent.withValues(alpha: 0.7), size: 18),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ---------- GAME BOARD ----------
-
-  Widget _buildGameBoard() {
-    return Obx(() {
-      final s = controller.state;
-      if (s == null) {
-        return Center(
-          child: CircularProgressIndicator(color: _accent),
         );
-      }
-
-      final cols = s.columns;
-      final rows = s.rows;
-
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final spacing = 6.0;
-          final availW = constraints.maxWidth - 24; // horizontal padding
-          final availH = constraints.maxHeight - 16;
-
-          // Calculate card size to fit grid
-          final cardW = (availW - (cols - 1) * spacing) / cols;
-          final cardH = (availH - (rows - 1) * spacing) / rows;
-          final cardSize = min(cardW, cardH);
-
-          final gridW = cardSize * cols + (cols - 1) * spacing;
-          final gridH = cardSize * rows + (rows - 1) * spacing;
-
-          return Center(
-            child: SizedBox(
-              width: gridW,
-              height: gridH,
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: cols,
-                  crossAxisSpacing: spacing,
-                  mainAxisSpacing: spacing,
-                ),
-                itemCount: s.cards.length,
-                itemBuilder: (context, index) {
-                  final card = s.cards[index];
-                  return GestureDetector(
-                    onTap: () => controller.flipCard(index),
-                    child: FlipCard(
-                      card: card,
-                      mode: widget.mode,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(
-                        delay: Duration(milliseconds: 30 * index),
-                        duration: 300.ms,
-                      )
-                      .scale(
-                        begin: const Offset(0.8, 0.8),
-                        delay: Duration(milliseconds: 30 * index),
-                        duration: 300.ms,
-                        curve: Curves.easeOutBack,
-                      );
-                },
-              ),
-            ),
-          );
-        },
-      );
-    });
+      },
+    );
   }
 }

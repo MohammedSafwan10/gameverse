@@ -16,12 +16,12 @@ data, sounds, scoring, and AI behavior should be preserved.
 - Home screen: **redesigned and verified**.
 - Home featured carousel: **implemented** with Memory Match, Chess, and Quiz Master.
 - Android toolchain: upgraded and building successfully.
-- Next flow: **Memory Match**, beginning with mode selection.
-- Memory Match primary-screen mockups: **Directions A and B ready for selection**
-  under `docs/mockups/memory_match/`.
+- Memory Match: **Direction B implemented** across mode selection, gameplay,
+  pause/exit states, completion, Time's Up, and the three-level Challenge flow.
+- Memory Match production artwork is under `assets/images/games/memory_match/`.
 - Total real screens in the repository: **32**.
-- Completed: **1**.
-- Remaining: **31**.
+- Completed: **4**.
+- Remaining: **28**.
 
 Primary reference:
 
@@ -95,9 +95,9 @@ Current Home artwork:
 Complete one polished journey from Home to result before broadening the redesign.
 
 - [x] 1. Home
-- [ ] 2. Memory Match mode selection
-- [ ] 3. Memory Match gameplay
-- [ ] 4. Memory Match completion/result
+- [x] 2. Memory Match mode selection
+- [x] 3. Memory Match gameplay
+- [x] 4. Memory Match completion/result
 
 ### Phase 2: shared application surfaces
 
@@ -233,15 +233,6 @@ clean Android build on Windows.
 
 ## Next exact task
 
-Redesign `MemoryMatchModeSelectionScreen` at:
+Create mockup directions for the Games/category catalogue, then redesign:
 
-`lib/games/brain_training/memory_match/screens/mode_selection_screen.dart`
-
-Before implementation, inspect `GameMode`, `GameController`, `GameBinding`, and all
-navigation paths from mode selection to gameplay. The result should visually bridge
-the Home hero into the Memory Match game using the same rocket/flower tile language,
-palette, typography, and compact mobile spacing.
-
-After mode selection, continue directly through gameplay and completion so the
-project has one fully polished end-to-end game journey suitable for Play Store
-screenshots.
+`lib/screens/games/games_screen.dart`

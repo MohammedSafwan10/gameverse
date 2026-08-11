@@ -75,6 +75,7 @@ flutter:
     - assets/images/
     - assets/images/categories/
     - assets/images/games/
+    - assets/images/games/memory_match/
     - assets/images/home/games/
     - assets/images/google_logo.png
 

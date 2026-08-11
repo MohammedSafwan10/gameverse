@@ -39,6 +39,18 @@ class MemoryCard extends Equatable {
 /// Card themes with enough unique emojis for all grid sizes.
 /// Easy = 4x3 = 6 pairs, Medium = 4x4 = 8 pairs, Hard = 5x4 = 10 pairs
 class CardThemes {
+  static const List<String> gameverse = [
+    'rocket',
+    'flower',
+    'planet',
+    'moon',
+    'lightning',
+    'heart',
+    'controller',
+    'crown',
+    'rainbow',
+    'icecream',
+  ];
   static const List<String> animals = [
     '\u{1F981}',
     '\u{1F42F}',
@@ -127,13 +139,8 @@ class CardThemes {
 
   /// All themes grouped for random selection
   static const List<List<String>> allThemes = [
-    animals,
-    nature,
-    food,
-    sports,
-    travel,
+    gameverse,
   ];
-
 
   static const List<Color> cardColors = [
     Color(0xFF6C63FF),

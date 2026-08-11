@@ -24,36 +24,36 @@ class MemoryMatchSoundService extends GetxService {
   Future<void> playCardFlip() async {
     if (_isMuted.value) return;
     try {
-      await _player.play(AssetSource('sounds/card_flip.mp3'));
+      await _player.play(AssetSource('sounds/drop.mp3'));
     } catch (e) {
-      _logger.w('Error playing sound: card_flip.mp3 - $e');
+      _logger.w('Error playing Memory Match flip sound - $e');
     }
   }
 
   Future<void> playMatchSuccess() async {
     if (_isMuted.value) return;
     try {
-      await _player.play(AssetSource('sounds/match_success.mp3'));
+      await _player.play(AssetSource('sounds/win.mp3'));
     } catch (e) {
-      _logger.w('Error playing sound: match_success.mp3 - $e');
+      _logger.w('Error playing Memory Match success sound - $e');
     }
   }
 
   Future<void> playMatchFail() async {
     if (_isMuted.value) return;
     try {
-      await _player.play(AssetSource('sounds/match_fail.mp3'));
+      await _player.play(AssetSource('sounds/drop.mp3'));
     } catch (e) {
-      _logger.w('Error playing sound: match_fail.mp3 - $e');
+      _logger.w('Error playing Memory Match miss sound - $e');
     }
   }
 
   Future<void> playGameComplete() async {
     if (_isMuted.value) return;
     try {
-      await _player.play(AssetSource('sounds/game_complete.mp3'));
+      await _player.play(AssetSource('sounds/win.mp3'));
     } catch (e) {
-      _logger.w('Error playing sound: game_complete.mp3 - $e');
+      _logger.w('Error playing Memory Match completion sound - $e');
     }
   }
 }

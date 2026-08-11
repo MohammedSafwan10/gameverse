@@ -89,4 +89,102 @@ void main() {
     expect(controller.state!.status, GameStatus.playing);
     controller.onClose();
   });
+
+  test('challenge progression preserves and increments the level', () {
+    final controller = MemoryMatchGameController()..onInit();
+    addTearDown(controller.onClose);
+
+    controller.initGame(MemoryMatchMode.challenge, GameDifficulty.easy);
+    expect(controller.challengeLevel, 1);
+    expect(controller.state!.difficulty, GameDifficulty.easy);
+
+    controller.nextChallengeLevel();
+    expect(controller.challengeLevel, 2);
+    expect(controller.state!.difficulty, GameDifficulty.medium);
+
+    controller.nextChallengeLevel();
+    expect(controller.challengeLevel, 3);
+    expect(controller.state!.difficulty, GameDifficulty.hard);
+  });
+
+  test('starting a fresh challenge resets its level', () {
+    final controller = MemoryMatchGameController()..onInit();
+    addTearDown(controller.onClose);
+
+    controller.initGame(MemoryMatchMode.challenge, GameDifficulty.easy);
+    controller.nextChallengeLevel();
+    expect(controller.challengeLevel, 2);
+
+    controller.initGame(MemoryMatchMode.challenge, GameDifficulty.hard);
+    expect(controller.challengeLevel, 1);
+  });
+
+  testWidgets('pausing during a match keeps the game paused and timer safe',
+      (tester) async {
+    final controller = MemoryMatchGameController()..onInit();
+    addTearDown(controller.onClose);
+    controller.state = MemoryMatchState(
+      cards: const [
+        MemoryCard(
+          id: 1,
+          emoji: 'rocket',
+          backgroundColor: Color(0xFF00AA00),
+        ),
+        MemoryCard(
+          id: 2,
+          emoji: 'rocket',
+          backgroundColor: Color(0xFF00AA00),
+        ),
+      ],
+      mode: MemoryMatchMode.classic,
+      difficulty: GameDifficulty.easy,
+      startTime: DateTime.now(),
+    );
+
+    controller.flipCard(0);
+    controller.flipCard(1);
+    controller.pauseGame();
+    await tester.pump(const Duration(milliseconds: 750));
+
+    expect(controller.state!.isCompleted, isTrue);
+    expect(controller.state!.status, GameStatus.paused);
+
+    controller.resumeGame();
+    expect(controller.state!.status, GameStatus.completed);
+    controller.cleanupGame();
+  });
+
+  testWidgets('pausing during a mismatch preserves paused status',
+      (tester) async {
+    final controller = MemoryMatchGameController()..onInit();
+    addTearDown(controller.onClose);
+    controller.state = MemoryMatchState(
+      cards: const [
+        MemoryCard(
+          id: 1,
+          emoji: 'rocket',
+          backgroundColor: Color(0xFF00AA00),
+        ),
+        MemoryCard(
+          id: 2,
+          emoji: 'flower',
+          backgroundColor: Color(0xFFAA0000),
+        ),
+      ],
+      mode: MemoryMatchMode.classic,
+      difficulty: GameDifficulty.easy,
+      startTime: DateTime.now(),
+    );
+
+    controller.flipCard(0);
+    controller.flipCard(1);
+    controller.pauseGame();
+    await tester.pump(const Duration(milliseconds: 1100));
+
+    expect(controller.state!.status, GameStatus.paused);
+    expect(controller.state!.isChecking, isFalse);
+    controller.resumeGame();
+    expect(controller.state!.status, GameStatus.playing);
+    controller.cleanupGame();
+  });
 }
