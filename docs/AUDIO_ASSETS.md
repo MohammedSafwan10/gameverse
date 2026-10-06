@@ -1,5 +1,21 @@
 # Audio assets
 
+## Connect Four
+
+Reuses the existing licensed, FFmpeg-prepared CC0 PCM WAV effects documented
+below. No new external download or music loop:
+
+- Disc drop: Kenney Interface Sounds `pluck_001.ogg`, `memory_flip.wav`, volume 0.40.
+- Win: Kenney Music Jingles `jingles_PIZZI07.ogg`, `chess_win.wav`, volume 0.45.
+- Draw: Kenney Interface Sounds `confirmation_002.ogg`, `memory_match.wav`, volume 0.45.
+
+All are mono 44.1 kHz 16-bit PCM. FFmpeg silence detection was checked for the
+short drop cue; it is about 0.10 seconds with no detected 30 ms silence span.
+Independent pools preload on mode entry. Mute is checked before and after pool
+preparation, using the settings controller rather than an independent stale flag.
+Gameplay never awaits playback. Shared legacy MP3s remain because Flappy Bird
+still references them; Connect Four no longer uses them.
+
 ## Tic-Tac-Toe
 
 Reuses existing FFmpeg-prepared CC0 mono 44.1 kHz 16-bit PCM clips:

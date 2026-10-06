@@ -133,10 +133,13 @@ Chess:
 
 Connect Four:
 
-- [ ] 17. Mode selection
-- [ ] 18. Gameplay
-- [ ] 19. Statistics
-- [ ] 20. Settings
+- [x] 17. Mode selection
+- [x] 18. Gameplay (including AI setup, results and pause/restart/leave dialogs)
+- [x] 19. Statistics
+- [x] 20. Settings (and native How to Play diagrams)
+
+Implementation and verification notes: `docs/CONNECT_FOUR_REDESIGN.md`.
+Approved references and production prompts: `docs/mockups/connect_four/`.
 
 ### Phase 4: word and puzzle games
 

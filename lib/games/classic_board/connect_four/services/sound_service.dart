@@ -1,120 +1,63 @@
-import 'package:get/get.dart';
+import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:logger/logger.dart';
+import 'package:get/get.dart';
+import '../controllers/settings_controller.dart';
 
+/// Pre-trimmed CC0 PCM effects, independent pools, one live settings source.
 class SoundService extends GetxService {
-  late AudioPlayer _dropPlayer;
-  late AudioPlayer _winPlayer;
-  final isEnabled = true.obs;
-  final _storage = GetStorage();
-  static const _soundEnabledKey = 'connect_four_sound_enabled';
-  bool _isInitialized = false;
-  final _logger = Logger();
-
-  @override
-  void onInit() {
-    super.onInit();
-    _loadSoundSettings();
-    _initPlayers();
-  }
-
-  void _loadSoundSettings() {
-    final soundEnabled = _storage.read(_soundEnabledKey);
-    if (soundEnabled != null) {
-      isEnabled.value = soundEnabled;
-    }
-  }
-
-  Future<void> _initPlayers() async {
+  final Map<String, AudioPool> _pools = {};
+  Future<void>? _loading;
+  bool _closed = false;
+  Future<void> preload() => _loading ??= _create();
+  Future<void> _create() async {
     try {
-      _dropPlayer = AudioPlayer();
-      _winPlayer = AudioPlayer();
-
-      // Configure players
-      await _dropPlayer.setReleaseMode(ReleaseMode.stop);
-      await _winPlayer.setReleaseMode(ReleaseMode.stop);
-
-      // Set shorter timeout
-      await _dropPlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _winPlayer.setPlayerMode(PlayerMode.lowLatency);
-
-      // Pre-load sound files
-      await _dropPlayer.setSourceAsset('sounds/drop.mp3');
-      await _winPlayer.setSourceAsset('sounds/win.mp3');
-
-      _isInitialized = true;
-    } catch (e) {
-      _logger.e('Error initializing sound players: $e');
-      _isInitialized = false;
+      for (final entry in const {
+        'drop': 'sounds/memory_flip.wav',
+        'win': 'chess/sounds_v2/chess_win.wav',
+        'draw': 'sounds/memory_match.wav'
+      }.entries) {
+        final pool = await AudioPool.createFromAsset(
+            path: entry.value,
+            minPlayers: entry.key == 'drop' ? 2 : 1,
+            maxPlayers: 3);
+        if (_closed) {
+          await pool.dispose();
+          return;
+        }
+        _pools[entry.key] = pool;
+      }
+    } catch (_) {
+      for (final pool in _pools.values) {
+        await pool.dispose();
+      }
+      _pools.clear();
+      _loading = null;
     }
   }
 
-  void toggleSound() {
-    isEnabled.value = !isEnabled.value;
-    _storage.write(_soundEnabledKey, isEnabled.value);
-  }
-
-  Future<void> playDropSound() async {
-    if (!isEnabled.value || !_isInitialized) return;
-
+  bool get _enabled =>
+      Get.isRegistered<ConnectFourSettingsController>() &&
+      Get.find<ConnectFourSettingsController>().isSoundEnabled.value;
+  Future<void> _play(String event) async {
+    if (_closed || !_enabled) return;
     try {
-      // Use a timeout to prevent hanging
-      await _dropPlayer.stop().timeout(
-            const Duration(milliseconds: 100),
-            onTimeout: () => null,
-          );
-
-      await _dropPlayer.seek(Duration.zero).timeout(
-            const Duration(milliseconds: 100),
-            onTimeout: () => null,
-          );
-
-      await _dropPlayer.resume().timeout(
-            const Duration(milliseconds: 500),
-            onTimeout: () => null,
-          );
-    } catch (e) {
-      // If there's an error, try to reinitialize the player
-      _logger.w('Error playing drop sound: $e');
-      _initPlayers();
-    }
+      await preload();
+      if (!_closed && _enabled) {
+        await _pools[event]?.start(volume: event == 'drop' ? .4 : .45);
+      }
+    } catch (_) {}
   }
 
-  Future<void> playWinSound() async {
-    if (!isEnabled.value || !_isInitialized) return;
-
-    try {
-      // Use a timeout to prevent hanging
-      await _winPlayer.stop().timeout(
-            const Duration(milliseconds: 100),
-            onTimeout: () => null,
-          );
-
-      await _winPlayer.seek(Duration.zero).timeout(
-            const Duration(milliseconds: 100),
-            onTimeout: () => null,
-          );
-
-      await _winPlayer.resume().timeout(
-            const Duration(milliseconds: 500),
-            onTimeout: () => null,
-          );
-    } catch (e) {
-      // If there's an error, try to reinitialize the player
-      _logger.w('Error playing win sound: $e');
-      _initPlayers();
-    }
-  }
-
+  Future<void> playDropSound() => _play('drop');
+  Future<void> playWinSound() => _play('win');
+  Future<void> playDrawSound() => _play('draw');
   @override
   void onClose() {
-    try {
-      _dropPlayer.dispose();
-      _winPlayer.dispose();
-    } catch (e) {
-      _logger.e('Error disposing sound players: $e');
+    _closed = true;
+    for (final pool in _pools.values) {
+      unawaited(pool.dispose());
     }
+    _pools.clear();
     super.onClose();
   }
 }

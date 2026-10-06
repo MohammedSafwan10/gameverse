@@ -221,6 +221,106 @@ void main() {
     expect(controller.board.value.status, GameStatus.playing);
   });
 
+  testWidgets('pause freezes a pending turn and blocks taps until resume',
+      (tester) async {
+    final c = createController()..setGameMode(GameMode.pvp);
+    final pending = c.makeMove(0);
+    await tester.pump(const Duration(milliseconds: 250));
+    c.pauseGame();
+    await tester.pump(const Duration(seconds: 2));
+    expect(c.currentPlayer.value, CellState.player1);
+    final snapshot = c.board.value;
+    await c.makeMove(1);
+    expect(c.board.value, snapshot);
+    c.resumeGame();
+    await tester.pump();
+    await pending;
+    expect(c.currentPlayer.value, CellState.player2);
+    expect(c.isAnimating.value, false);
+  });
+
+  testWidgets('reset while paused releases stale work without leaking a turn',
+      (tester) async {
+    final c = createController()..setGameMode(GameMode.pvp);
+    final pending = c.makeMove(0);
+    c.pauseGame();
+    await tester.pump(const Duration(seconds: 1));
+    c.resetGame();
+    await tester.pump();
+    await pending;
+    c.resumeGame();
+    expect(c.board.value, Board.empty());
+    expect(c.currentPlayer.value, CellState.player1);
+  });
+
+  testWidgets('full draw records once and refuses further input',
+      (tester) async {
+    final c = createController()..setGameMode(GameMode.pvp);
+    final rows = [
+      'RRYYRR.',
+      'YYRRYYR',
+      'RRYYRRY',
+      'YYRRYYR',
+      'RRYYRRY',
+      'YYRRYYR'
+    ];
+    c.board.value = Board(
+        cells: rows
+            .map((s) => s
+                .split('')
+                .map((v) => v == 'R'
+                    ? CellState.player1
+                    : v == 'Y'
+                        ? CellState.player2
+                        : CellState.empty)
+                .toList())
+            .toList());
+    c.currentPlayer.value = CellState.player2;
+    final pending = c.makeMove(6);
+    await tester.pump(const Duration(milliseconds: 600));
+    await pending;
+    expect(c.board.value.status, GameStatus.draw);
+    expect(c.board.value.winningCells, isEmpty);
+    await c.makeMove(0);
+    expect(fakeStats().updateCount, 1);
+  });
+
+  testWidgets('auto restart freezes during pause and resets only once',
+      (tester) async {
+    final c = createController()..setGameMode(GameMode.pvp);
+    Get.find<ConnectFourSettingsController>().isAutoRestartEnabled.value = true;
+    final cells = emptyCells();
+    for (var col = 0; col < 3; col++) {
+      cells[5][col] = CellState.player1;
+    }
+    c.board.value = Board(cells: cells);
+    final pending = c.makeMove(3);
+    await tester.pump(const Duration(milliseconds: 600));
+    await pending;
+    c.pauseGame();
+    await tester.pump(const Duration(seconds: 8));
+    expect(c.board.value.status, GameStatus.player1Won);
+    c.resumeGame();
+    await tester.pump(const Duration(seconds: 5));
+    expect(c.board.value, Board.empty());
+    expect(fakeStats().updateCount, 1);
+  });
+
+  testWidgets('corrupt stats are sanitized and playing rounds are not counted',
+      (tester) async {
+    await GetStorage().write('connect_four_stats',
+        {'playerWins': -9, 'aiWins': 'bad', 'draws': 2, 'gamesPlayed': 99});
+    final stats = Get.put(ConnectFourStatsController());
+    expect(stats.playerWins.value, 0);
+    expect(stats.aiWins.value, 0);
+    expect(stats.gamesPlayed.value, 2);
+    stats.updateGameStats(
+        gameMode: GameMode.vsAI,
+        result: GameStatus.playing,
+        gameDuration: Duration.zero);
+    expect(stats.gamesPlayed.value, 2);
+  });
+
   testWidgets('settings ignore invalid persisted values', (tester) async {
     final storage = GetStorage();
     await storage.write('connect_four_game_mode', 99);

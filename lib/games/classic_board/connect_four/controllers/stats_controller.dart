@@ -38,31 +38,31 @@ class ConnectFourStatsController extends GetxController {
   }
 
   void _loadStats() {
-    try {
-      final stats = _storage.read(_statsKey);
-      if (stats != null) {
-        playerWins.value = stats['playerWins'] ?? 0;
-        aiWins.value = stats['aiWins'] ?? 0;
-        draws.value = stats['draws'] ?? 0;
-        gamesPlayed.value = stats['gamesPlayed'] ?? 0;
-
-        player1Wins.value = stats['player1Wins'] ?? 0;
-        player2Wins.value = stats['player2Wins'] ?? 0;
-        multiplayerDraws.value = stats['multiplayerDraws'] ?? 0;
-        multiplayerGamesPlayed.value = stats['multiplayerGamesPlayed'] ?? 0;
-
-        easyWins.value = stats['easyWins'] ?? 0;
-        mediumWins.value = stats['mediumWins'] ?? 0;
-        hardWins.value = stats['hardWins'] ?? 0;
-
-        currentStreak.value = stats['currentStreak'] ?? 0;
-        bestStreak.value = stats['bestStreak'] ?? 0;
-
-        _logger.i('Connect Four stats loaded successfully');
-      }
-    } catch (e) {
-      _logger.e('Failed to load Connect Four stats: $e');
+    final stored = _storage.read(_statsKey);
+    if (stored is! Map) return;
+    final fields = <String, RxInt>{
+      'playerWins': playerWins,
+      'aiWins': aiWins,
+      'draws': draws,
+      'gamesPlayed': gamesPlayed,
+      'player1Wins': player1Wins,
+      'player2Wins': player2Wins,
+      'multiplayerDraws': multiplayerDraws,
+      'multiplayerGamesPlayed': multiplayerGamesPlayed,
+      'easyWins': easyWins,
+      'mediumWins': mediumWins,
+      'hardWins': hardWins,
+      'currentStreak': currentStreak,
+      'bestStreak': bestStreak,
+    };
+    for (final field in fields.entries) {
+      final value = stored[field.key];
+      field.value.value = value is int && value >= 0 ? value : 0;
     }
+    gamesPlayed.value = playerWins.value + aiWins.value + draws.value;
+    multiplayerGamesPlayed.value =
+        player1Wins.value + player2Wins.value + multiplayerDraws.value;
+    bestStreak.value = math.max(bestStreak.value, currentStreak.value);
   }
 
   void _saveStats() {
@@ -96,8 +96,10 @@ class ConnectFourStatsController extends GetxController {
     AIDifficulty? difficulty,
     required Duration gameDuration,
   }) {
+    if (result == GameStatus.playing) return;
     if (gameMode == GameMode.vsAI) {
-      _updateSinglePlayerStats(result, difficulty!, gameDuration);
+      _updateSinglePlayerStats(
+          result, difficulty ?? AIDifficulty.medium, gameDuration);
     } else {
       _updateMultiplayerStats(result, gameDuration);
     }

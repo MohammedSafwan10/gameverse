@@ -44,6 +44,7 @@ class Board extends Equatable {
   }
 
   int getLowestEmptyRow(int col) {
+    if (col < 0 || col >= cols) return -1;
     for (int row = rows - 1; row >= 0; row--) {
       if (cells[row][col] == CellState.empty) return row;
     }

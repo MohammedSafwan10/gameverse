@@ -1,292 +1,184 @@
 import 'dart:math' show Point;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/game_controller.dart';
 import '../models/board.dart';
+import 'arcade_ui.dart';
 
+/// The entire column is tappable; rendering and collision use the same cell grid.
 class BoardWidget extends StatelessWidget {
+  const BoardWidget({super.key, required this.controller});
   final ConnectFourController controller;
-
-  const BoardWidget({
-    super.key,
-    required this.controller,
-  });
-
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cellSize = constraints.maxWidth / Board.cols;
-        return Stack(
-          children: [
-            _buildBackground(cellSize),
-            _buildDiscs(cellSize),
-            _buildCabinetOverlay(cellSize),
-            _buildTouchAreas(cellSize),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildBackground(double cellSize) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.shade700,
-            Colors.blue.shade900,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCabinetOverlay(double cellSize) {
-    return IgnorePointer(
-      child: CustomPaint(
-        painter: CabinetPainter(cellSize: cellSize),
-        child: AspectRatio(
-          aspectRatio: Board.cols / Board.rows,
-          child: Container(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDiscs(double cellSize) {
-    return Obx(() {
-      final board = controller.board.value;
-      final lastMove = controller.lastMove.value;
-
-      return Stack(
-        children: [
-          for (int row = 0; row < Board.rows; row++)
-            for (int col = 0; col < Board.cols; col++)
-              if (board.cells[row][col] != CellState.empty)
-                TweenAnimationBuilder<double>(
-                  key: ValueKey('disc_${row}_${col}_${board.cells[row][col]}'),
-                  duration: lastMove?.x == row && lastMove?.y == col
-                      ? const Duration(milliseconds: 500)
-                      : Duration.zero,
-                  curve: Curves.bounceOut,
-                  tween: Tween<double>(
-                    begin: lastMove?.x == row && lastMove?.y == col
-                        ? -cellSize
-                        : row * cellSize,
-                    end: row * cellSize,
-                  ),
-                  builder: (context, value, child) {
-                    return Positioned(
-                      left: col * cellSize,
-                      top: value,
-                      width: cellSize,
-                      height: cellSize,
-                      child: child!,
-                    );
-                  },
-                  child: Center(
-                    child: _buildDisc(board.cells[row][col], cellSize,
-                        board.winningCells.contains(Point(row, col))),
-                  ),
-                ),
-        ],
-      );
-    });
-  }
-
-  Widget _buildDisc(CellState state, double cellSize, bool isWinning) {
-    final color =
-        state == CellState.player1 ? Colors.redAccent : Colors.amber.shade400;
-
-    final darkColor = state == CellState.player1
-        ? Colors.red.shade900
-        : Colors.orange.shade800;
-
-    return Container(
-      width: cellSize * 0.82,
-      height: cellSize * 0.82,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          // Deep drop shadow
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-          // Inner glow
-          BoxShadow(
-            color: Colors.white.withValues(alpha: 0.3),
-            blurRadius: 2,
-            offset: const Offset(-2, -2),
-          ),
-        ],
-        gradient: RadialGradient(
-          colors: [
-            Colors.white.withValues(alpha: 0.8),
-            color,
-            darkColor,
-          ],
-          stops: const [0.0, 0.5, 1.0],
-          center: const Alignment(-0.3, -0.3),
-          radius: 0.8,
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white.withValues(alpha: 0.4),
-              Colors.transparent,
-              darkColor.withValues(alpha: 0.4),
-            ],
-          ),
-        ),
-      ),
-    )
-        .animate(target: isWinning ? 1 : 0)
-        .scale(
-            begin: const Offset(1, 1),
-            end: const Offset(1.1, 1.1),
-            duration: 300.ms)
-        .then(delay: 200.ms)
-        .shimmer(duration: 1000.ms, color: Colors.white.withValues(alpha: 0.4));
-  }
-
-  Widget _buildTouchAreas(double cellSize) {
-    return Obx(() {
-      final isPlayerTurn = controller.gameMode.value == GameMode.pvp ||
-          controller.currentPlayer.value == CellState.player1;
-
-      return Row(
-        children: List.generate(
-          Board.cols,
-          (col) => Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: (!isPlayerTurn ||
-                      controller.isAnimating.value ||
-                      controller.isGameOver ||
-                      controller.isAIThinking.value)
-                  ? null
-                  : () {
-                      if (controller.board.value.isValidMove(col)) {
-                        controller.makeMove(col);
-                      } else {
-                        HapticFeedback.heavyImpact();
-                      }
-                    },
-              onTapDown: (_) {
-                if (isPlayerTurn &&
-                    !controller.isAnimating.value &&
-                    !controller.isGameOver) {
-                  controller.updatePreviewColumn(col);
-                  HapticFeedback.selectionClick();
-                }
-              },
-              onTapUp: (_) => controller.clearPreview(),
-              onTapCancel: () => controller.clearPreview(),
-              child: Container(
-                color: Colors.transparent,
-                child: Column(
-                  children: [
-                    const Spacer(),
-                    if (controller.previewColumn.value == col &&
-                        isPlayerTurn &&
-                        !controller.isGameOver)
-                      Icon(
-                        Icons.arrow_drop_down_circle_rounded,
-                        color: Colors.white.withValues(alpha: 0.5),
-                        size: 32,
-                      )
-                          .animate(onPlay: (c) => c.repeat(reverse: true))
-                          .moveY(begin: -5, end: 5, duration: 500.ms),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    });
-  }
+  Widget build(BuildContext context) => Obx(() => ConnectFourBoard(
+      board: controller.board.value,
+      lastMove: controller.lastMove.value,
+      animating: controller.isAnimating.value,
+      paused: controller.isPaused.value,
+      onColumn: controller.isPaused.value ||
+              controller.isGameOver ||
+              controller.isAnimating.value ||
+              controller.isAIThinking.value ||
+              (controller.gameMode.value == GameMode.vsAI &&
+                  controller.currentPlayer.value == CellState.player2)
+          ? null
+          : (c) => controller.makeMove(c)));
 }
 
-class CabinetPainter extends CustomPainter {
-  final double cellSize;
-
-  CabinetPainter({required this.cellSize});
-
+class ConnectFourBoard extends StatelessWidget {
+  const ConnectFourBoard(
+      {super.key,
+      required this.board,
+      this.lastMove,
+      this.animating = false,
+      this.paused = false,
+      this.onColumn});
+  final Board board;
+  final Point<int>? lastMove;
+  final bool animating, paused;
+  final ValueChanged<int>? onColumn;
   @override
-  void paint(Canvas canvas, Size size) {
-    // Semi-transparent blue for the cabinet
-    final paint = Paint()
-      ..color = Colors.blue.shade800.withValues(alpha: 0.85)
-      ..style = PaintingStyle.fill;
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) {
+        final cell = (box.maxWidth - 32) / 7;
+        final height = cell * 6;
+        return Column(children: [
+          if (board.status == GameStatus.playing)
+            Row(children: [
+              const SizedBox(width: 12),
+              for (var c = 0; c < 7; c++)
+                Expanded(
+                    child: Semantics(
+                        label: 'Drop in column ${c + 1}',
+                        button: true,
+                        child: IconButton(
+                            key: ValueKey('cf-column-$c'),
+                            padding: EdgeInsets.zero,
+                            onPressed: onColumn != null && board.isValidMove(c)
+                                ? () => onColumn!(c)
+                                : null,
+                            icon: Icon(Icons.arrow_downward_rounded,
+                                color: board.isValidMove(c)
+                                    ? cfCream
+                                    : cfCream.withValues(alpha: .25),
+                                size: 22)))),
+              const SizedBox(width: 12),
+            ]),
+          Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF1974F5),
+                        Color(0xFF004CCA),
+                        Color(0xFF002E94)
+                      ]),
+                  border: Border.all(color: cfCream, width: 6),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: .35),
+                        offset: const Offset(0, 6),
+                        blurRadius: 12)
+                  ]),
+              child: SizedBox(
+                  height: height,
+                  child: ClipRect(
+                      child: TickerMode(
+                          enabled: !paused,
+                          child: Stack(children: [
+                            for (var r = 0; r < 6; r++)
+                              for (var c = 0; c < 7; c++)
+                                Positioned(
+                                    left: c * cell,
+                                    top: r * cell,
+                                    width: cell,
+                                    height: cell,
+                                    child: Padding(
+                                        padding: EdgeInsets.all(cell * .07),
+                                        child: Container(
+                                            decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                gradient: const RadialGradient(
+                                                    center: Alignment(.25, .3),
+                                                    colors: [
+                                                      Color(0xFF0950BC),
+                                                      Color(0xFF002B80),
+                                                      Color(0xFF001B5D)
+                                                    ],
+                                                    stops: [
+                                                      0,
+                                                      .72,
+                                                      1
+                                                    ]),
+                                                border: Border.all(
+                                                    color:
+                                                        const Color(0xFF5296FF),
+                                                    width: 1.5)),
+                                            child: board.cells[r][c] ==
+                                                    CellState.empty
+                                                ? null
+                                                : _Token(
+                                                    key: ValueKey(
+                                                        '${board.cells[r][c]}-$r-$c'),
+                                                    red: board.cells[r][c] ==
+                                                        CellState.player1,
+                                                    winning: board.winningCells.contains(Point(r, c)),
+                                                    distance: animating && lastMove == Point(r, c) ? -(r + 1) * cell : 0)))),
+                            if (onColumn != null)
+                              for (var c = 0; c < 7; c++)
+                                Positioned(
+                                    left: c * cell,
+                                    top: 0,
+                                    width: cell,
+                                    height: height,
+                                    child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                            onTap: board.isValidMove(c)
+                                                ? () => onColumn!(c)
+                                                : null,
+                                            child: Semantics(
+                                                label: 'Column ${c + 1}',
+                                                button: true,
+                                                child:
+                                                    const SizedBox.expand())))),
+                          ]))))),
+          Container(
+              height: 10,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                  color: const Color(0xFF002E89),
+                  borderRadius: BorderRadius.circular(8))),
+        ]);
+      });
+}
 
-    // Inner shadow for depth
-    final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    // Highlight for 3D effect
-    final highlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    for (int row = 0; row < Board.rows; row++) {
-      for (int col = 0; col < Board.cols; col++) {
-        final center = Offset((col + 0.5) * cellSize, (row + 0.5) * cellSize);
-        final radius = cellSize * 0.42;
-
-        final rect =
-            Rect.fromCenter(center: center, width: cellSize, height: cellSize);
-
-        // Complex path for the "punched out" hole effect
-        final path = Path()
-          ..addRect(rect)
-          ..addOval(Rect.fromCircle(center: center, radius: radius))
-          ..fillType = PathFillType.evenOdd;
-
-        canvas.drawPath(path, paint);
-
-        // Draw inner dark shadow ring
-        canvas.drawOval(
-            Rect.fromCircle(center: center, radius: radius), shadowPaint);
-
-        // Draw light highlight slightly offset
-        canvas.drawArc(
-            Rect.fromCircle(
-                center: Offset(center.dx - 1, center.dy - 1),
-                radius: radius + 1),
-            3.14,
-            3.14,
-            false,
-            highlightPaint);
-      }
-    }
-  }
-
+class _Token extends StatelessWidget {
+  const _Token(
+      {super.key,
+      required this.red,
+      required this.winning,
+      required this.distance});
+  final bool red, winning;
+  final double distance;
   @override
-  bool shouldRepaint(CabinetPainter oldDelegate) => false;
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+      tween: Tween(begin: distance, end: 0),
+      duration: const Duration(milliseconds: 480),
+      curve: Curves.bounceOut,
+      builder: (context, dy, child) =>
+          Transform.translate(offset: Offset(0, dy), child: child),
+      child: Container(
+          decoration: winning
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cfCream, width: 3),
+                  boxShadow: const [
+                      BoxShadow(color: Color(0xFFFFD260), blurRadius: 10)
+                    ])
+              : null,
+          child: Image.asset('$cfAssets${red ? 'red' : 'yellow'}-disc.png',
+              fit: BoxFit.contain, excludeFromSemantics: true)));
 }
