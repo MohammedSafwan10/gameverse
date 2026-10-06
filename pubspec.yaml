@@ -35,6 +35,12 @@ flutter:
       fonts:
         - asset: assets/fonts/Barlow-SemiBold.ttf
           weight: 600
+    - family: BlockResin
+      fonts:
+        - asset: assets/fonts/Barlow-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Barlow-ExtraBold.ttf
+          weight: 800
     - family: BarlowCondensed
       fonts:
         - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
@@ -59,6 +65,8 @@ flutter:
     - assets/images/games/memory_match/
     - assets/images/games/tic_tac_toe/
     - assets/images/games/connect_four/
+    - assets/images/games/block_merge/
+    - assets/sounds/block_merge/
     - assets/images/games/chess/
     - assets/images/games/chess/pieces_v2/
     - assets/images/games/chess/board_textures/

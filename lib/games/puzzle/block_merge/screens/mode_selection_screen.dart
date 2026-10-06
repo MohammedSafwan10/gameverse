@@ -1,474 +1,180 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'dart:developer' as dev;
-import '../controllers/settings_controller.dart';
-import '../controllers/game_controller.dart';
 import '../bindings/game_binding.dart';
+import '../controllers/game_controller.dart';
+import '../controllers/settings_controller.dart';
+import '../widgets/resin_ui.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
-import 'package:gameverse/widgets/guarded_exit.dart';
+import 'support_screens.dart';
 
-class BlockMergeModeSelectionScreen extends StatelessWidget {
+class BlockMergeModeSelectionScreen extends StatefulWidget {
   const BlockMergeModeSelectionScreen({super.key});
+  @override
+  State<BlockMergeModeSelectionScreen> createState() =>
+      _BlockMergeModeSelectionScreenState();
+}
 
-  Future<bool> _showExitConfirmationDialog(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Row(
-              children: [
-                Icon(Icons.warning_amber_rounded,
-                    color: Colors.orange.shade800),
-                const SizedBox(width: 8),
-                const Text('Exit Game'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Are you sure you want to exit Block Merge?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'You can always come back and play later!',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: Colors.orange.shade800,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade800,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Exit',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+class _BlockMergeModeSelectionScreenState
+    extends State<BlockMergeModeSelectionScreen> {
+  late final BlockMergeSettingsController settings;
+  late final BlockMergeController game;
+  @override
+  void initState() {
+    super.initState();
+    BlockMergeBinding().dependencies();
+    settings = Get.find<BlockMergeSettingsController>();
+    game = Get.find<BlockMergeController>();
+    game.setPaused(true);
+    if (settings.soundEnabled.value) unawaited(game.audio.preload());
+  }
+
+  Future<void> start(BlockMergeMode mode) async {
+    game.startMode(mode);
+    await Get.to(() => const BlockMergeGameScreen());
+    game.setPaused(true);
   }
 
   @override
   Widget build(BuildContext context) {
-    dev.log('Building BlockMergeModeSelectionScreen', name: 'BlockMerge');
-    final isCompact = MediaQuery.of(context).size.width < 380;
-
-    // Initialize services using the binding
-    if (!Get.isRegistered<BlockMergeController>()) {
-      dev.log('Initializing Block Merge dependencies', name: 'BlockMerge');
-      BlockMergeBinding().dependencies();
-    } else {
-      dev.log('Block Merge dependencies already initialized',
-          name: 'BlockMerge');
-    }
-
-    final settingsController = Get.find<BlockMergeSettingsController>();
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          final shouldPop = await _showExitConfirmationDialog(context);
-          if (shouldPop) {
-            if (!context.mounted) return;
-            await popAfterConfirmation(
-              context,
-              confirmExit: () async => true,
-            );
-          }
-        }
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () async {
-              final shouldPop = await _showExitConfirmationDialog(context);
-              if (shouldPop) {
-                if (!context.mounted) return;
-                await popAfterConfirmation(
-                  context,
-                  confirmExit: () async => true,
-                );
-              }
-            },
-          ).animate().fadeIn(delay: 100.ms),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () => Get.to(() => const BlockMergeSettingsScreen()),
-              tooltip: 'Game Settings',
-            ).animate().fadeIn(delay: 100.ms),
-          ],
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.orange.shade200,
-                Colors.orange.shade50,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(settingsController, isCompact),
+    return ResinPage(
+        child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: ResinViewport(builder: (context, box) {
+              final compact = box.maxHeight < 650;
+              final scale = MediaQuery.textScalerOf(context).scale(1);
+              return Column(children: [
+                Row(children: [
+                  ResinIcon(Icons.arrow_back_rounded,
+                      label: 'Back', onTap: () => Get.back()),
+                  const Spacer(),
+                  ResinIcon(Icons.bar_chart_rounded,
+                      label: 'Statistics',
+                      onTap: () =>
+                          Get.to(() => const BlockMergeStatisticsScreen())),
+                  const SizedBox(width: 10),
+                  ResinIcon(Icons.settings_rounded,
+                      label: 'Settings',
+                      onTap: () =>
+                          Get.to(() => const BlockMergeSettingsScreen())),
+                ]),
+                const SizedBox(height: 6),
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      isCompact ? 12 : 16,
-                      isCompact ? 8 : 16,
-                      isCompact ? 12 : 16,
-                      16,
-                    ),
-                    child: Column(
-                      children: [
-                        _buildModeCard(
-                          title: 'Classic Mode',
-                          description:
-                              'Reach 2048 with no time pressure. Perfect for strategic play!',
-                          icon: Icons.grid_4x4,
-                          mode: BlockMergeMode.classic,
-                          features: [
-                            'Unlimited time',
-                            'Reach 2048 to win',
-                            'Keep playing after winning',
-                            'Track your high score',
+                    child: Stack(children: [
+                  Positioned.fill(
+                      top: compact ? 94 : 113, child: const ResinArt('hero')),
+                  Align(
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('BLOCK\nMERGE',
+                                style: resinText(compact ? 32 : 52)),
+                            const SizedBox(height: 4),
+                            Text('Choose your mode',
+                                style: resinText(compact ? 16 : 20,
+                                    weight: FontWeight.w600)),
+                          ])),
+                ])),
+                Obx(() => ResinSurface(
+                    radius: 30,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 22, vertical: 6),
+                    color: resinMint,
+                    child: Text('BEST  ${settings.bestScore.value}',
+                        style: resinText(19)))),
+                const SizedBox(height: 10),
+                SizedBox(
+                    height: (compact ? 90 : 103) * scale,
+                    child: _ModeCard(
+                        title: 'CLASSIC',
+                        subtitle: 'Swipe. Merge. Reach 2048.',
+                        art: 'objects',
+                        color: resinCoral,
+                        onTap: () => start(BlockMergeMode.classic))),
+                const SizedBox(height: 10),
+                SizedBox(
+                    height: (compact ? 112 : 142) * scale,
+                    child: Row(children: [
+                      Expanded(
+                          child: _ModeCard(
+                              title: 'TIME\nCHALLENGE',
+                              subtitle: 'Beat the clock.',
+                              art: 'clock',
+                              color: resinMint,
+                              small: true,
+                              onTap: () =>
+                                  start(BlockMergeMode.timeChallenge))),
+                      const SizedBox(width: 10),
+                      Expanded(
+                          child: _ModeCard(
+                              title: 'ZEN',
+                              subtitle: 'Play at your pace.',
+                              art: 'zen',
+                              color: resinLilac,
+                              small: true,
+                              onTap: () => start(BlockMergeMode.zen))),
+                    ])),
+                const SizedBox(height: 12),
+                ResinButton('HOW TO PLAY',
+                    color: const Color(0xFFF5F4E9),
+                    icon: Icons.menu_book_rounded,
+                    onTap: () => Get.to(() => const BlockMergeHelpScreen())),
+              ]);
+            })));
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  final String title, subtitle, art;
+  final Color color;
+  final VoidCallback onTap;
+  final bool small;
+  const _ModeCard(
+      {required this.title,
+      required this.subtitle,
+      required this.art,
+      required this.color,
+      required this.onTap,
+      this.small = false});
+  @override
+  Widget build(BuildContext context) => Semantics(
+      button: true,
+      label: title.replaceAll('\n', ' '),
+      child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(24),
+              child: ResinSurface(
+                  color: color,
+                  padding: const EdgeInsets.all(12),
+                  child: Stack(fit: StackFit.expand, children: [
+                    Positioned(
+                        right: small ? -10 : 5,
+                        bottom: small ? -8 : -12,
+                        width: small ? 65 : 105,
+                        height: small ? 48 : 90,
+                        child: ResinArt(art)),
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: resinText(small ? 19 : 25)),
+                          const SizedBox(height: 5),
+                          SizedBox(
+                              width: small
+                                  ? 110
+                                  : MediaQuery.sizeOf(context).width * .53,
+                              child: Text(subtitle,
+                                  style: resinText(small ? 12 : 14,
+                                      weight: FontWeight.w600))),
+                          if (small) ...[
+                            const Spacer(),
+                            const Icon(Icons.arrow_forward_rounded,
+                                color: resinInk, size: 22),
                           ],
-                          settingsController: settingsController,
-                          isCompact: isCompact,
-                        ),
-                        SizedBox(height: isCompact ? 12 : 16),
-                        _buildModeCard(
-                          title: 'Time Challenge',
-                          description:
-                              'Race against time! Reach the highest score before time runs out.',
-                          icon: Icons.timer,
-                          mode: BlockMergeMode.timeChallenge,
-                          features: [
-                            '3 minutes time limit',
-                            'Score as high as possible',
-                            'Quick thinking required',
-                            'Perfect for speed runs',
-                          ],
-                          settingsController: settingsController,
-                          isCompact: isCompact,
-                        ),
-                        SizedBox(height: isCompact ? 12 : 16),
-                        _buildModeCard(
-                          title: 'Zen Mode',
-                          description:
-                              'Relaxed mode with no game over. Practice and improve your strategy.',
-                          icon: Icons.spa,
-                          mode: BlockMergeMode.zen,
-                          features: [
-                            'No game over',
-                            'Practice freely',
-                            'Experiment with strategies',
-                            'Perfect for beginners',
-                          ],
-                          settingsController: settingsController,
-                          isCompact: isCompact,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeCard({
-    required String title,
-    required String description,
-    required IconData icon,
-    required BlockMergeMode mode,
-    required List<String> features,
-    required BlockMergeSettingsController settingsController,
-    required bool isCompact,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: InkWell(
-        onTap: () {
-          dev.log('Starting $title', name: 'BlockMerge');
-          // Clear any existing game state before switching modes
-          final controller = Get.find<BlockMergeController>();
-          controller.clearGameState();
-          settingsController.setGameMode(mode);
-          // Start a new game immediately after mode change
-          controller.newGame();
-          Get.to(() => const BlockMergeGameScreen());
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: EdgeInsets.all(isCompact ? 16 : 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(isCompact ? 10 : 12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.shade200.withValues(
-                            red: Colors.orange.shade200.r.toDouble(),
-                            green: Colors.orange.shade200.g.toDouble(),
-                            blue: Colors.orange.shade200.b.toDouble(),
-                            alpha: 0.5,
-                          ),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      icon,
-                      color: Colors.orange.shade800,
-                      size: isCompact ? 24 : 28,
-                    ),
-                  ),
-                  SizedBox(width: isCompact ? 12 : 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: isCompact ? 18 : 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: isCompact ? 12 : 16),
-              Wrap(
-                spacing: isCompact ? 6 : 8,
-                runSpacing: isCompact ? 6 : 8,
-                children: features
-                    .map((feature) => _buildFeatureChip(feature, isCompact))
-                    .toList(),
-              ),
-              SizedBox(height: isCompact ? 8 : 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      dev.log('Starting $title', name: 'BlockMerge');
-                      settingsController.setGameMode(mode);
-                      Get.to(() => const BlockMergeGameScreen());
-                    },
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('Play Now'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.orange.shade800,
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.2);
-  }
-
-  Widget _buildFeatureChip(String feature, bool isCompact) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 10 : 12,
-        vertical: isCompact ? 5 : 6,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.orange.shade200),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.check_circle_outline,
-              size: 16, color: Colors.orange.shade800),
-          const SizedBox(width: 4),
-          Text(
-            feature,
-            style: TextStyle(
-              fontSize: isCompact ? 11 : 12,
-              color: Colors.orange.shade800,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(
-      BlockMergeSettingsController settingsController, bool isCompact) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        isCompact ? 12 : 16,
-        12,
-        isCompact ? 12 : 16,
-        isCompact ? 8 : 16,
-      ),
-      child: Column(
-        children: [
-          SizedBox(height: isCompact ? 0 : 8),
-          Text(
-            'Block Merge',
-            style: Get.textTheme.headlineMedium?.copyWith(
-              color: Colors.orange.shade800,
-              fontWeight: FontWeight.bold,
-            ),
-          ).animate().fadeIn().slideY(begin: -0.3, curve: Curves.easeOutBack),
-          const SizedBox(height: 4),
-          Text(
-            'Choose Your Game Mode',
-            style: TextStyle(
-              fontSize: isCompact ? 14 : 16,
-              color: Colors.orange.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ).animate().fadeIn(delay: 200.ms),
-          SizedBox(height: isCompact ? 12 : 16),
-          Obx(() => Wrap(
-                alignment: WrapAlignment.center,
-                spacing: isCompact ? 8 : 12,
-                runSpacing: isCompact ? 8 : 12,
-                children: [
-                  _buildStatChip(
-                    'Best Score',
-                    settingsController.bestScore.value.toString(),
-                    Icons.emoji_events,
-                    isCompact,
-                  ),
-                  _buildStatChip(
-                    'Games Won',
-                    settingsController.gamesWon.value.toString(),
-                    Icons.workspace_premium,
-                    isCompact,
-                  ),
-                  _buildStatChip(
-                    'Win Rate',
-                    settingsController.getWinRate(),
-                    Icons.analytics,
-                    isCompact,
-                  ),
-                ],
-              )).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatChip(
-      String label, String value, IconData icon, bool isCompact) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 10 : 12,
-        vertical: isCompact ? 7 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              red: Colors.black.r.toDouble(),
-              green: Colors.black.g.toDouble(),
-              blue: Colors.black.b.toDouble(),
-              alpha: 0.05,
-            ),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: isCompact ? 14 : 16, color: Colors.orange.shade800),
-          const SizedBox(width: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: isCompact ? 9 : 10,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: isCompact ? 13 : 14,
-                  color: Colors.orange.shade900,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+                        ]),
+                  ])))));
 }

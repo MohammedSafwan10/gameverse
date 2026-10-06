@@ -1,733 +1,365 @@
-import 'package:get/get.dart';
-import 'dart:math' as math;
 import 'dart:async';
-import 'package:get_storage/get_storage.dart';
-import 'package:flutter/material.dart';
+import 'dart:math';
 import 'package:flutter/services.dart';
-import '../models/game_state.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../models/block.dart';
+import '../models/game_state.dart';
+import '../models/merge_engine.dart';
+import '../services/audio_service.dart';
 import 'settings_controller.dart';
-import 'dart:developer' as dev;
 
 class BlockMergeController extends GetxController {
-  final BlockMergeSettingsController _settingsController;
-  final Rx<BlockMergeGameState> gameState = BlockMergeGameState.initial().obs;
-  final RxInt score = 0.obs;
-  final RxInt bestScore = 0.obs;
-  final RxBool isGameOver = false.obs;
-  final RxBool hasWon = false.obs;
+  final BlockMergeSettingsController settings;
+  final Random random;
+  final DateTime Function() now;
   final GetStorage _storage = GetStorage();
+  final audio = BlockMergeAudio();
+  final motion = Rx<MergeResult?>(null);
+  final gameState = BlockMergeGameState.initial().obs;
+  final score = 0.obs, bestScore = 0.obs, previousScore = 0.obs;
+  final isGameOver = false.obs, hasWon = false.obs, isPaused = false.obs;
+  final timeRemaining = 180.obs;
+  final grid = Rx<List<List<Block?>>>(_empty());
+  final previousGrid = Rx<List<List<Block?>>>(_empty());
+  Timer? _timer;
+  DateTime? _lastTick;
+  int _fractionalMicros = 0;
+  bool _closed = false,
+      _winRecorded = false,
+      _milestoneSeen = false,
+      _counted = false;
 
-  final grid = Rx<List<List<Block?>>>(
-      List.generate(4, (_) => List.generate(4, (_) => null)));
-  final previousGrid = Rx<List<List<Block?>>>(
-      List.generate(4, (_) => List.generate(4, (_) => null)));
-  final RxInt previousScore = 0.obs;
-
-  Timer? _gameTimer;
-  Timer? _firstStartupBlockTimer;
-  Timer? _secondStartupBlockTimer;
-  Worker? _gameStateWorker;
-  int _gameGeneration = 0;
-  bool _isClosed = false;
-  bool _hasRecordedWinForGame = false;
-  final RxInt timeRemaining = 180.obs;
-  final RxBool isPaused = false.obs;
-
-  BlockMergeController(this._settingsController) {
-    _gameStateWorker = ever(gameState, _onGameStateChanged);
-    bestScore.value = _storage.read('block_merge_best_score') ?? 0;
-    _loadGameState();
+  BlockMergeController(this.settings,
+      {Random? random, DateTime Function()? now})
+      : random = random ?? Random(),
+        now = now ?? _monotonicClock() {
+    final best = _storage.read<dynamic>('block_merge_best_score');
+    bestScore.value = best is int && best >= 0 ? best : 0;
+    settings.updateBestScore(bestScore.value);
+    if (!_restore()) _fresh();
+  }
+  static List<List<Block?>> _empty() =>
+      List.generate(4, (_) => List.filled(4, null));
+  static DateTime Function() _monotonicClock() {
+    final stopwatch = Stopwatch()..start();
+    final origin = DateTime.utc(1970);
+    return () => origin.add(stopwatch.elapsed);
   }
 
-  int _highestTileInGrid(List<List<Block?>> source) {
-    var highest = 0;
-    for (final row in source) {
-      for (final block in row) {
-        if (block != null && block.value > highest) {
-          highest = block.value;
-        }
+  List<List<int>> get values =>
+      grid.value.map((r) => r.map((b) => b?.value ?? 0).toList()).toList();
+  int get highest => values.expand((r) => r).fold(0, max);
+  bool get expired =>
+      settings.gameMode.value == BlockMergeMode.timeChallenge &&
+      timeRemaining.value == 0;
+  bool get canUndo => gameState.value.canUndo && !expired;
+  List<List<Block?>> _blocks(List<List<int>> source) => List.generate(
+      4,
+      (y) => List.generate(
+          4,
+          (x) => source[y][x] == 0
+              ? null
+              : Block(value: source[y][x], position: Position(x, y))));
+  List<List<Block?>> _copy(List<List<Block?>> source) =>
+      source.map((r) => r.toList()).toList();
+  List<List<int>> _decode(dynamic data) {
+    if (data is! List || data.length != 4) {
+      throw const FormatException('Board rows');
+    }
+    return List.generate(4, (y) {
+      final row = data[y];
+      if (row is! List || row.length != 4) {
+        throw const FormatException('Board columns');
       }
-    }
-    return highest;
-  }
-
-  void _loadGameState() {
-    try {
-      final savedMode = _storage.read('block_merge_current_mode');
-      if (savedMode != null &&
-          savedMode == _settingsController.gameMode.value.toString()) {
-        final savedGrid = _storage.read('block_merge_grid');
-        final savedScore = _storage.read('block_merge_current_score') ?? 0;
-        final savedTime = _storage.read('block_merge_time_remaining') ?? 180;
-        final savedPrevGrid = _storage.read('block_merge_previous_grid');
-        final savedPrevScore = _storage.read('block_merge_previous_score') ?? 0;
-
-        if (savedGrid != null) {
-          try {
-            grid.value = _deserializeGrid(savedGrid as List<dynamic>);
-            score.value = savedScore as int;
-            previousGrid.value = savedPrevGrid != null
-                ? _deserializeGrid(savedPrevGrid as List<dynamic>)
-                : List.generate(4, (_) => List.generate(4, (_) => null));
-            previousScore.value = savedPrevScore as int;
-
-            gameState.value = gameState.value.copyWith(
-              status: GameStatus.playing,
-              highestTile: _highestTileInGrid(grid.value),
-              currentScore: score.value,
-              canUndo: savedPrevGrid != null,
-              previousGrid: _cloneGrid(previousGrid.value),
-              previousScore: previousScore.value,
-            );
-
-            if (_settingsController.gameMode.value ==
-                BlockMergeMode.timeChallenge) {
-              timeRemaining.value = savedTime as int;
-              if (timeRemaining.value > 0) {
-                final generation = _gameGeneration;
-                Future.microtask(() => _startTimer(generation: generation));
-              }
-            }
-
-            if (score.value > bestScore.value) {
-              bestScore.value = score.value;
-              _storage.write('block_merge_best_score', bestScore.value);
-            }
-          } catch (e) {
-            dev.log('Error loading saved game state: $e', name: 'BlockMerge');
-            _resetGameState();
-          }
-        } else {
-          _resetGameState();
+      return List.generate(4, (x) {
+        final cell = row[x];
+        final v = cell is Map ? cell['value'] ?? 0 : cell;
+        if (v is! int || v < 0 || v == 1 || (v != 0 && v & (v - 1) != 0)) {
+          throw const FormatException('Tile');
         }
-      } else {
-        _resetGameState();
-      }
-    } catch (e) {
-      dev.log('Error loading game state: $e', name: 'BlockMerge');
-      _resetGameState();
-    }
-  }
-
-  void _resetGameState() {
-    _cancelStartupBlockTimers();
-    final generation = ++_gameGeneration;
-    grid.value = List.generate(4, (_) => List.generate(4, (_) => null));
-    previousGrid.value = List.generate(4, (_) => List.generate(4, (_) => null));
-    score.value = 0;
-    previousScore.value = 0;
-    isGameOver.value = false;
-    hasWon.value = false;
-    _hasRecordedWinForGame = false;
-    isPaused.value = false;
-    timeRemaining.value = 180;
-
-    if (_settingsController.gameMode.value == BlockMergeMode.timeChallenge) {
-      Future.microtask(() => _startTimer(generation: generation));
-    }
-
-    gameState.value = BlockMergeGameState.initial().copyWith(
-      status: GameStatus.playing,
-      moves: 0,
-      playTime: Duration.zero,
-      highestTile: 0,
-    );
-
-    _firstStartupBlockTimer = Timer(const Duration(milliseconds: 100), () {
-      if (_isStale(generation)) return;
-      _addNewBlock();
-      _secondStartupBlockTimer = Timer(const Duration(milliseconds: 100), () {
-        if (_isStale(generation)) return;
-        _addNewBlock();
+        return v;
       });
     });
   }
 
-  bool _isStale(int generation) => _isClosed || generation != _gameGeneration;
-
-  void _cancelStartupBlockTimers() {
-    _firstStartupBlockTimer?.cancel();
-    _secondStartupBlockTimer?.cancel();
-    _firstStartupBlockTimer = null;
-    _secondStartupBlockTimer = null;
-  }
-
-  void _saveGameState() {
+  bool _restore() {
     try {
-      _storage.write('block_merge_current_mode',
-          _settingsController.gameMode.value.toString());
-      _storage.write('block_merge_grid', _serializeGrid(grid.value));
-      _storage.write('block_merge_current_score', score.value);
-      _storage.write('block_merge_time_remaining', timeRemaining.value);
-      _storage.write(
-          'block_merge_previous_grid', _serializeGrid(previousGrid.value));
-      _storage.write('block_merge_previous_score', previousScore.value);
-    } catch (e) {
-      dev.log('Error saving game state: $e', name: 'BlockMerge');
-    }
-  }
-
-  List<List<Map<String, dynamic>>> _serializeGrid(List<List<Block?>> grid) {
-    return List.generate(
-      4,
-      (i) => List.generate(4, (j) {
-        final block = grid[i][j];
-        return block != null
-            ? {
-                'value': block.value,
-                'x': block.position.x,
-                'y': block.position.y,
-                'isNew': block.isNew,
-                'isMerged': block.isMerged,
-              }
-            : <String, dynamic>{};
-      }),
-    );
-  }
-
-  List<List<Block?>> _deserializeGrid(List<dynamic> serializedGrid) {
-    return List.generate(
-      4,
-      (i) => List.generate(4, (j) {
-        final blockData = serializedGrid[i][j];
-        if (blockData is Map && blockData.isNotEmpty) {
-          return Block(
-            value: blockData['value'] as int,
-            position: Position(blockData['x'] as int, blockData['y'] as int),
-            isNew: blockData['isNew'] as bool? ?? false,
-            isMerged: blockData['isMerged'] as bool? ?? false,
-          );
+      final saved = _storage.read<dynamic>('block_merge_session_v2');
+      final legacy = saved is! Map;
+      dynamic read(String field, String key) =>
+          legacy ? _storage.read<dynamic>(key) : saved[field];
+      if (read('mode', 'block_merge_current_mode') !=
+          settings.gameMode.value.toString()) {
+        return false;
+      }
+      final board = _decode(read('board', 'block_merge_grid'));
+      if (board.expand((r) => r).every((v) => v == 0)) return false;
+      int integer(dynamic v, int fallback) => v is int && v >= 0 ? v : fallback;
+      grid.value = _blocks(board);
+      score.value = integer(read('score', 'block_merge_current_score'), 0);
+      timeRemaining.value =
+          integer(read('remaining', 'block_merge_time_remaining'), 180)
+              .clamp(0, 180);
+      final prior = read('previous', 'block_merge_previous_grid');
+      var undo = false;
+      if (prior != null) {
+        try {
+          final decoded = _decode(prior);
+          undo = decoded.expand((r) => r).any((v) => v != 0) &&
+              (legacy || saved['undo'] == true);
+          previousGrid.value = _blocks(decoded);
+        } on FormatException {
+          /* A damaged undo does not discard the current board. */
         }
-        return null;
-      }),
-    );
-  }
-
-  List<List<Block?>> _cloneGrid(List<List<Block?>> source) {
-    return List.generate(
-      4,
-      (i) => List.generate(4, (j) {
-        final block = source[i][j];
-        return block != null
-            ? Block(
-                value: block.value,
-                position: Position(block.position.x, block.position.y),
-                isNew: block.isNew,
-                isMerged: block.isMerged,
-              )
-            : null;
-      }),
-    );
-  }
-
-  void _saveState({
-    required List<List<Block?>> previousGridSnapshot,
-    required int previousScoreSnapshot,
-  }) {
-    try {
-      previousGrid.value = _cloneGrid(previousGridSnapshot);
-      previousScore.value = previousScoreSnapshot;
-      gameState.value = gameState.value.copyWith(
-        previousGrid: _cloneGrid(previousGridSnapshot),
-        previousScore: previousScoreSnapshot,
-        canUndo: true,
-        moves: gameState.value.moves + 1,
-        currentScore: score.value,
-      );
-      _saveGameState();
-    } catch (e) {
-      dev.log('Error saving state: $e', name: 'BlockMerge');
+      }
+      previousScore.value =
+          integer(read('previousScore', 'block_merge_previous_score'), 0);
+      _winRecorded = legacy ? highest >= 2048 : saved['winRecorded'] == true;
+      _milestoneSeen =
+          legacy ? highest >= 2048 : saved['milestoneSeen'] == true;
+      _counted = true;
+      _fractionalMicros =
+          legacy ? 0 : integer(saved['fraction'], 0).clamp(0, 999999);
+      hasWon.value = !expired && highest >= 2048 && !_milestoneSeen;
+      isGameOver.value = expired || !MergeEngine.canMove(values);
+      gameState.value = BlockMergeGameState.initial().copyWith(
+          status: hasWon.value
+              ? GameStatus.won
+              : isGameOver.value
+                  ? GameStatus.gameOver
+                  : GameStatus.playing,
+          moves: legacy ? 0 : integer(saved['moves'], 0),
+          playTime:
+              Duration(seconds: legacy ? 0 : integer(saved['seconds'], 0)),
+          currentScore: score.value,
+          highestTile: highest,
+          canUndo: undo,
+          previousGrid: _copy(previousGrid.value),
+          previousScore: previousScore.value);
+      _startTimer();
+      return true;
+    } on Object {
+      return false;
     }
   }
 
-  void undo() {
-    if (!gameState.value.canUndo || isPaused.value) return;
-
-    try {
-      grid.value = List.generate(
-          4,
-          (i) => List.generate(4, (j) {
-                final block = previousGrid.value[i][j];
-                return block != null
-                    ? Block(
-                        value: block.value,
-                        position: Position(block.position.x, block.position.y),
-                        isNew: false,
-                        isMerged: false,
-                      )
-                    : null;
-              }));
-
-      score.value = previousScore.value;
-      gameState.value = gameState.value.copyWith(
-        canUndo: false,
-        moves: gameState.value.moves - 1,
-        currentScore: previousScore.value,
-      );
-      _saveGameState();
-    } catch (e) {
-      dev.log('Error during undo: $e', name: 'BlockMerge');
-    }
+  void _fresh() {
+    motion.value = null;
+    _fractionalMicros = 0;
+    _timer?.cancel();
+    grid.value = _empty();
+    previousGrid.value = _empty();
+    score.value = previousScore.value = 0;
+    isGameOver.value = hasWon.value = isPaused.value = false;
+    _winRecorded = _milestoneSeen = _counted = false;
+    timeRemaining.value = 180;
+    gameState.value =
+        BlockMergeGameState.initial().copyWith(status: GameStatus.playing);
+    _spawn();
+    _spawn();
+    gameState.value = gameState.value.copyWith(highestTile: highest);
+    _startTimer();
   }
 
   void newGame() {
-    try {
-      if (_isClosed) return;
-      _gameTimer?.cancel();
-      clearGameState();
-      _resetGameState();
-      _settingsController.incrementGamesPlayed();
-    } catch (e) {
-      dev.log('Error starting new game: $e', name: 'BlockMerge');
-    }
+    if (_closed) return;
+    _fresh();
+    _countGame();
+    save();
   }
 
-  void clearGameState() {
-    _cancelStartupBlockTimers();
-    _gameGeneration++;
-    _storage.remove('block_merge_grid');
-    _storage.remove('block_merge_current_score');
-    _storage.remove('block_merge_time_remaining');
-    _storage.remove('block_merge_previous_grid');
-    _storage.remove('block_merge_previous_score');
-  }
-
-  @override
-  void onClose() {
-    _isClosed = true;
-    _cancelStartupBlockTimers();
-    _gameGeneration++;
-    _gameTimer?.cancel();
-    _gameStateWorker?.dispose();
-    _gameStateWorker = null;
-    // Don't clear saved game state on close — preserve progress
-    super.onClose();
-  }
-
-  void _onGameStateChanged(BlockMergeGameState state) {
-    if (state.status == GameStatus.gameOver || state.status == GameStatus.won) {
-      _gameTimer?.cancel();
-      _settingsController.updateBestScore(score.value);
-      _settingsController.updateHighestTile(gameState.value.highestTile);
-      if (state.status == GameStatus.won) {
-        _recordWinOnce();
-      }
-    }
-  }
-
-  void _recordWinOnce() {
-    if (_hasRecordedWinForGame) return;
-    _hasRecordedWinForGame = true;
-    _settingsController.incrementWins();
-  }
-
-  void togglePause() {
-    if (_isClosed) return;
-    isPaused.value = !isPaused.value;
-    if (isPaused.value) {
-      _gameTimer?.cancel();
-    } else {
-      _startTimer(generation: _gameGeneration);
-    }
-  }
-
-  void _startTimer({required int generation}) {
-    if (_isStale(generation) ||
-        _settingsController.gameMode.value != BlockMergeMode.timeChallenge) {
+  /// One active run is saved. Re-entering its mode resumes it; another mode
+  /// deliberately starts a fresh run, as does the Restart action.
+  void startMode(BlockMergeMode mode) {
+    if (settings.gameMode.value == mode && _counted) {
+      setPaused(false);
       return;
     }
-
-    _gameTimer?.cancel();
-    _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_isStale(generation) ||
-          _settingsController.gameMode.value != BlockMergeMode.timeChallenge) {
-        timer.cancel();
-        return;
-      }
-
-      if (!isPaused.value && timeRemaining.value > 0) {
-        timeRemaining.value--;
-        if (timeRemaining.value == 0) {
-          timer.cancel();
-          isGameOver.value = true;
-          gameState.value = gameState.value.copyWith(
-            status: GameStatus.gameOver,
-            currentScore: score.value,
-          );
-        }
-      }
-    });
-  }
-
-  void continueAfterWin() {
-    if (hasWon.value) {
-      hasWon.value = false;
-      gameState.value = gameState.value.copyWith(status: GameStatus.playing);
+    settings.setGameMode(mode);
+    if (!_restore()) {
+      newGame();
+    } else {
+      setPaused(false);
     }
   }
 
-  void _addNewBlock() {
-    try {
-      final emptyPositions = _getEmptyPositions();
-      if (emptyPositions.isEmpty) return;
-
-      final random = math.Random();
-      final position = emptyPositions[random.nextInt(emptyPositions.length)];
-      final value = random.nextDouble() < 0.9 ? 2 : 4;
-
-      final newGrid = List.generate(
-          4,
-          (i) => List.generate(4, (j) {
-                final block = grid.value[i][j];
-                return block != null
-                    ? Block(
-                        value: block.value,
-                        position: Position(block.position.x, block.position.y),
-                        isNew: block.isNew,
-                        isMerged: block.isMerged,
-                      )
-                    : null;
-              }));
-
-      newGrid[position.y][position.x] = Block(
-        value: value,
-        position: position,
-        isNew: true,
-      );
-      grid.value = newGrid;
-
-      if (value > gameState.value.highestTile) {
-        gameState.value = gameState.value.copyWith(highestTile: value);
-      }
-    } catch (e) {
-      dev.log('Error adding new block: $e', name: 'BlockMerge');
-    }
+  void _countGame() {
+    if (_counted && settings.gamesPlayed.value > 0) return;
+    _counted = true;
+    settings.incrementGamesPlayed();
   }
 
-  List<Position> _getEmptyPositions() {
-    List<Position> emptyPositions = [];
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        if (grid.value[i][j] == null) {
-          emptyPositions.add(Position(j, i));
-        }
+  void _spawn() {
+    final empty = <Position>[];
+    for (var y = 0; y < 4; y++) {
+      for (var x = 0; x < 4; x++) {
+        if (grid.value[y][x] == null) empty.add(Position(x, y));
       }
     }
-    return emptyPositions;
+    if (empty.isEmpty) return;
+    final p = empty[random.nextInt(empty.length)];
+    final next = _copy(grid.value);
+    next[p.y][p.x] = Block(
+        value: random.nextDouble() < .9 ? 2 : 4, position: p, isNew: true);
+    grid.value = next;
   }
 
   void moveLeft() => _move(Direction.left);
   void moveRight() => _move(Direction.right);
   void moveUp() => _move(Direction.up);
   void moveDown() => _move(Direction.down);
-
   void _move(Direction direction) {
-    if (isGameOver.value || isPaused.value) return;
-
-    try {
-      final previousGridSnapshot = _cloneGrid(grid.value);
-      final previousScoreSnapshot = score.value;
-      bool moved = false;
-      List<List<Block?>> newGrid = _cloneGrid(grid.value);
-
-      switch (direction) {
-        case Direction.left:
-          moved = _moveHorizontal(newGrid, false);
-          break;
-        case Direction.right:
-          moved = _moveHorizontal(newGrid, true);
-          break;
-        case Direction.up:
-          moved = _moveVertical(newGrid, false);
-          break;
-        case Direction.down:
-          moved = _moveVertical(newGrid, true);
-          break;
-      }
-
-      if (moved) {
-        grid.value = newGrid;
-        _saveState(
-          previousGridSnapshot: previousGridSnapshot,
-          previousScoreSnapshot: previousScoreSnapshot,
-        );
-        _addNewBlock();
-        _checkGameState();
-
-        if (score.value > _settingsController.bestScore.value) {
-          _settingsController.updateBestScore(score.value);
-        }
-
-        if (_settingsController.vibrationEnabled.value) {
-          _playMoveVibration();
-        }
-
-        if (_settingsController.soundEnabled.value) {
-          // Add sound effect here if needed
-        }
-
-        _saveGameState();
-      }
-    } catch (e) {
-      dev.log('Error during move: $e', name: 'BlockMerge');
+    _tick();
+    if (_closed ||
+        isGameOver.value ||
+        isPaused.value ||
+        hasWon.value ||
+        expired) {
+      return;
     }
+    final result = MergeEngine.move(values, direction);
+    if (!result.changed) return;
+    _countGame();
+    previousGrid.value = _copy(grid.value);
+    previousScore.value = score.value;
+    motion.value = result;
+    grid.value = _blocks(result.board);
+    score.value += result.gained;
+    _spawn();
+    final wonNow = highest >= 2048 && !_milestoneSeen;
+    if (highest >= 2048 && !_winRecorded) {
+      _winRecorded = true;
+      settings.incrementWins();
+    }
+    hasWon.value = wonNow;
+    isGameOver.value = !MergeEngine.canMove(values);
+    settings.updateBestScore(score.value);
+    settings.updateHighestTile(highest);
+    bestScore.value = settings.bestScore.value;
+    gameState.value = gameState.value.copyWith(
+        moves: gameState.value.moves + 1,
+        currentScore: score.value,
+        highestTile: highest,
+        canUndo: true,
+        previousGrid: _copy(previousGrid.value),
+        previousScore: previousScore.value,
+        status: wonNow
+            ? GameStatus.won
+            : isGameOver.value
+                ? GameStatus.gameOver
+                : GameStatus.playing);
+    if (settings.vibrationEnabled.value) {
+      unawaited(HapticFeedback.lightImpact());
+    }
+    if (settings.soundEnabled.value) {
+      audio.play(wonNow
+          ? 'win'
+          : result.gained > 0
+              ? 'merge'
+              : 'slide');
+    }
+    save();
   }
 
-  void _playMoveVibration() async {
-    try {
-      await HapticFeedback.mediumImpact();
-    } catch (e) {
-      dev.log('Move vibration error: $e', name: 'BlockMerge');
-    }
+  void undo() {
+    if (_closed || !canUndo || isPaused.value || hasWon.value) return;
+    motion.value = null;
+    grid.value = _copy(previousGrid.value);
+    score.value = previousScore.value;
+    isGameOver.value = !MergeEngine.canMove(values);
+    gameState.value = gameState.value.copyWith(
+        status: isGameOver.value ? GameStatus.gameOver : GameStatus.playing,
+        canUndo: false,
+        moves: max(0, gameState.value.moves - 1),
+        currentScore: score.value,
+        highestTile: highest);
+    save();
   }
 
-  void _playMergeVibration(int value) async {
-    if (!_settingsController.vibrationEnabled.value) return;
-
-    try {
-      if (value >= 512) {
-        for (var i = 0; i < 3; i++) {
-          await HapticFeedback.heavyImpact();
-          await Future.delayed(const Duration(milliseconds: 50));
-        }
-      } else if (value >= 128) {
-        await HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 50));
-        await HapticFeedback.heavyImpact();
-      } else if (value >= 32) {
-        await HapticFeedback.heavyImpact();
-      } else {
-        await HapticFeedback.mediumImpact();
-      }
-    } catch (e) {
-      dev.log('Merge vibration error: $e', name: 'BlockMerge');
-    }
+  void continueAfterWin() {
+    if (!hasWon.value) return;
+    _lastTick = now();
+    _milestoneSeen = true;
+    hasWon.value = false;
+    gameState.value = gameState.value.copyWith(
+        status: isGameOver.value ? GameStatus.gameOver : GameStatus.playing);
+    save();
   }
 
-  bool _moveHorizontal(List<List<Block?>> newGrid, bool toRight) {
-    bool moved = false;
-    for (int y = 0; y < 4; y++) {
-      List<Block?> row = List.generate(4, (x) {
-        final block = newGrid[y][x];
-        return block != null
-            ? Block(
-                value: block.value,
-                position: Position(block.position.x, block.position.y),
-                isNew: block.isNew,
-                isMerged: block.isMerged,
-              )
-            : null;
-      });
-      List<Block?> newRow = _mergeLine(row, toRight, y, isHorizontal: true);
-      if (!_lineValuesEqual(row, newRow)) {
-        moved = true;
-        newGrid[y] = newRow;
-      }
-    }
-    return moved;
+  void setPaused(bool paused) {
+    _tick();
+    isPaused.value = paused;
+    save();
   }
 
-  bool _moveVertical(List<List<Block?>> newGrid, bool toBottom) {
-    bool moved = false;
-    for (int x = 0; x < 4; x++) {
-      List<Block?> column = List.generate(4, (y) {
-        final block = newGrid[y][x];
-        return block != null
-            ? Block(
-                value: block.value,
-                position: Position(block.position.x, block.position.y),
-                isNew: block.isNew,
-                isMerged: block.isMerged,
-              )
-            : null;
-      });
-      List<Block?> newColumn =
-          _mergeLine(column, toBottom, x, isHorizontal: false);
-      if (!_lineValuesEqual(column, newColumn)) {
-        moved = true;
-        for (int y = 0; y < 4; y++) {
-          newGrid[y][x] = newColumn[y];
-        }
+  void togglePause() => setPaused(!isPaused.value);
+  void _startTimer() {
+    _timer?.cancel();
+    _lastTick = now();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  void _tick() {
+    final timestamp = now();
+    final elapsed =
+        _lastTick == null ? Duration.zero : timestamp.difference(_lastTick!);
+    _lastTick = timestamp;
+    if (_closed || isPaused.value || hasWon.value || isGameOver.value) return;
+    _fractionalMicros += max(0, elapsed.inMicroseconds);
+    final seconds = _fractionalMicros ~/ Duration.microsecondsPerSecond;
+    _fractionalMicros %= Duration.microsecondsPerSecond;
+    if (seconds == 0) return;
+    final activeSeconds =
+        settings.gameMode.value == BlockMergeMode.timeChallenge
+            ? min(seconds, timeRemaining.value)
+            : seconds;
+    gameState.value = gameState.value.copyWith(
+        playTime: gameState.value.playTime + Duration(seconds: activeSeconds));
+    if (settings.gameMode.value == BlockMergeMode.timeChallenge) {
+      timeRemaining.value = max(0, timeRemaining.value - seconds);
+      if (expired) {
+        isGameOver.value = true;
+        gameState.value = gameState.value
+            .copyWith(status: GameStatus.gameOver, canUndo: false);
       }
     }
-    return moved;
+    if (expired || gameState.value.playTime.inSeconds % 5 == 0) save();
   }
 
-  List<Block?> _mergeLine(List<Block?> line, bool reverse, int index,
-      {required bool isHorizontal}) {
-    if (reverse) line = line.reversed.toList();
-    List<Block?> result = List.filled(4, null);
-    int resultIndex = 0;
-
-    // For horizontal moves: index = row (y), resultIndex = column (x)
-    // For vertical moves: index = column (x), resultIndex = row (y)
-    Position makePosition(int ri) {
-      final pos = reverse ? 3 - ri : ri;
-      return isHorizontal ? Position(pos, index) : Position(index, pos);
-    }
-
-    List<Block?> nonNull = line.where((block) => block != null).toList();
-    for (int i = 0; i < nonNull.length; i++) {
-      if (i + 1 < nonNull.length &&
-          nonNull[i]!.value == nonNull[i + 1]!.value) {
-        final newValue = nonNull[i]!.value * 2;
-        result[resultIndex] = Block(
-          value: newValue,
-          position: makePosition(resultIndex),
-          isMerged: true,
-        );
-        score.value += newValue;
-
-        if (score.value > bestScore.value) {
-          bestScore.value = score.value;
-          _storage.write('block_merge_best_score', bestScore.value);
-        }
-
-        _playMergeVibration(newValue);
-
-        if (newValue == 2048 && !hasWon.value) {
-          hasWon.value = true;
-          _recordWinOnce();
-          gameState.value = gameState.value.copyWith(
-            status: _settingsController.gameMode.value == BlockMergeMode.zen
-                ? GameStatus.playing
-                : GameStatus.won,
-          );
-
-          if (_settingsController.vibrationEnabled.value) {
-            _playVictoryVibration();
-          }
-        }
-
-        if (newValue > gameState.value.highestTile) {
-          gameState.value = gameState.value.copyWith(highestTile: newValue);
-          _settingsController.updateHighestTile(newValue);
-        }
-
-        i++;
-      } else {
-        result[resultIndex] = nonNull[i]!.copyWith(
-          position: makePosition(resultIndex),
-          isNew: false,
-          isMerged: false,
-        );
-      }
-      resultIndex++;
-    }
-
-    if (reverse) result = result.reversed.toList();
-    return result;
+  void save() {
+    if (!_counted || _closed) return;
+    unawaited(_storage.write('block_merge_session_v2', {
+      'mode': settings.gameMode.value.toString(),
+      'board': values,
+      'score': score.value,
+      'previous': previousGrid.value
+          .map((r) => r.map((b) => b?.value ?? 0).toList())
+          .toList(),
+      'previousScore': previousScore.value,
+      'undo': gameState.value.canUndo,
+      'remaining': timeRemaining.value,
+      'moves': gameState.value.moves,
+      'seconds': gameState.value.playTime.inSeconds,
+      'fraction': _fractionalMicros,
+      'winRecorded': _winRecorded,
+      'milestoneSeen': _milestoneSeen
+    }));
   }
 
-  void _playVictoryVibration() async {
-    try {
-      for (var i = 0; i < 3; i++) {
-        await HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-      await Future.delayed(const Duration(milliseconds: 150));
-      for (var i = 0; i < 2; i++) {
-        await HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
-    } catch (e) {
-      dev.log('Victory vibration error: $e', name: 'BlockMerge');
-    }
-  }
-
-  void _checkGameState() {
-    if (!_hasValidMoves()) {
-      isGameOver.value = true;
-      gameState.value = gameState.value.copyWith(status: GameStatus.gameOver);
-      _settingsController.updateBestScore(score.value);
-      _settingsController.updateHighestTile(gameState.value.highestTile);
-    }
-  }
-
-  bool _hasValidMoves() {
-    // Check for empty cells
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        if (grid.value[i][j] == null) return true;
-      }
-    }
-
-    // Check for possible merges
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        final current = grid.value[i][j];
-        if (current != null) {
-          // Check right
-          if (j < 3 && grid.value[i][j + 1]?.value == current.value) {
-            return true;
-          }
-          // Check down
-          if (i < 3 && grid.value[i + 1][j]?.value == current.value) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-  bool _lineValuesEqual(List<Block?> a, List<Block?> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i]?.value != b[i]?.value) return false;
-    }
-    return true;
-  }
-
+  void clearGameState() => unawaited(_storage.remove('block_merge_session_v2'));
   void exitGame({bool popRoute = true}) {
-    _gameTimer?.cancel();
-    clearGameState();
-    if (popRoute) {
-      Get.back();
-    }
+    setPaused(true);
+    if (popRoute) Get.back();
   }
 
-  Future<bool> onWillPop() async {
-    if (isPaused.value) return true;
-
-    final shouldExit = await Get.dialog<bool>(
-          AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.warning_amber_rounded,
-                    color: Colors.orange.shade800),
-                const SizedBox(width: 8),
-                const Text('Exit Game'),
-              ],
-            ),
-            content: const Text(
-                'Are you sure you want to exit? Progress will be lost.'),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(result: false),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.orange.shade800),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => Get.back(result: true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade800,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Exit'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-
-    if (shouldExit) {
-      exitGame();
-    }
-    return false;
+  @override
+  void onClose() {
+    if (_closed) return;
+    save();
+    _closed = true;
+    _timer?.cancel();
+    unawaited(audio.dispose());
+    super.onClose();
   }
 }

@@ -26,15 +26,24 @@ class BlockMergeSettingsController extends GetxController {
 
   void _loadSettings() {
     try {
-      bestScore.value = _storage.read('block_merge_best_score') ?? 0;
-      gamesPlayed.value = _storage.read('block_merge_games_played') ?? 0;
-      gamesWon.value = _storage.read('block_merge_games_won') ?? 0;
-      highestTile.value = _storage.read('block_merge_highest_tile') ?? 0;
+      int counter(String key) {
+        final value = _storage.read<dynamic>(key);
+        return value is int && value >= 0 ? value : 0;
+      }
 
-      soundEnabled.value = _storage.read('block_merge_sound_enabled') ?? true;
-      vibrationEnabled.value =
-          _storage.read('block_merge_vibration_enabled') ?? true;
-      showTutorial.value = _storage.read('block_merge_show_tutorial') ?? true;
+      bool preference(String key) {
+        final value = _storage.read<dynamic>(key);
+        return value is bool ? value : true;
+      }
+
+      bestScore.value = counter('block_merge_best_score');
+      gamesPlayed.value = counter('block_merge_games_played');
+      gamesWon.value = counter('block_merge_games_won');
+      highestTile.value = counter('block_merge_highest_tile');
+
+      soundEnabled.value = preference('block_merge_sound_enabled');
+      vibrationEnabled.value = preference('block_merge_vibration_enabled');
+      showTutorial.value = preference('block_merge_show_tutorial');
 
       final savedMode = _storage.read('block_merge_game_mode');
       if (savedMode != null) {
