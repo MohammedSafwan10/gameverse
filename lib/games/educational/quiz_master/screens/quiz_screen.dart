@@ -1,848 +1,406 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/quiz_controller.dart';
 import '../controllers/mode_selection_controller.dart';
 import '../models/quiz_category.dart';
-import '../models/quiz_question.dart';
-import '../models/quiz_session_result.dart';
-import '../../../../widgets/guarded_exit.dart';
+import '../widgets/gallery_ui.dart';
+import 'support_screens.dart';
 
 class QuizScreen extends StatefulWidget {
+  const QuizScreen(
+      {super.key,
+      required this.category,
+      required this.questionCount,
+      required this.mode,
+      this.controller});
   final QuizCategory category;
   final int questionCount;
   final QuizMode mode;
-
-  const QuizScreen({
-    super.key,
-    required this.category,
-    required this.questionCount,
-    required this.mode,
-  });
-
+  final QuizMasterController? controller;
   @override
-  State<QuizScreen> createState() => _QuizScreenState();
+  State<QuizScreen> createState() => _QuizState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
-  late final QuizMasterController controller;
-
+class _QuizState extends State<QuizScreen> with WidgetsBindingObserver {
+  late final QuizMasterController game;
+  bool _leaving = false, _allowPop = false, _background = false;
   @override
   void initState() {
     super.initState();
-    controller = Get.put(QuizMasterController());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.startQuiz(
-        category: widget.category,
-        questionCount: widget.questionCount,
-        mode: widget.mode,
-      );
-    });
+    WidgetsBinding.instance.addObserver(this);
+    game = widget.controller ?? QuizMasterController();
+    if (widget.controller == null) {
+      game.startQuiz(
+          category: widget.category,
+          questionCount: widget.questionCount,
+          mode: widget.mode);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _background = state != AppLifecycleState.resumed;
+    game.setPaused(_background || _leaving);
   }
 
   @override
   void dispose() {
-    if (Get.isRegistered<QuizMasterController>()) {
-      Get.delete<QuizMasterController>();
-    }
+    WidgetsBinding.instance.removeObserver(this);
+    if (widget.controller == null) game.onClose();
     super.dispose();
   }
 
+  Future<void> _exit() async {
+    if (_leaving) return;
+    if (game.isCompleted.value) {
+      _pop();
+      return;
+    }
+    _leaving = true;
+    game.setPaused(true);
+    final leave = await showDialog<bool>(
+        context: context, builder: (_) => const QuizLeaveDialog());
+    if (!mounted) return;
+    _leaving = false;
+    if (leave == true) {
+      _pop();
+    } else {
+      game.setPaused(_background);
+    }
+  }
+
+  void _pop() {
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  void _restart() => game.startQuiz(
+      category: widget.category,
+      questionCount: widget.questionCount,
+      mode: widget.mode);
   @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          await popAfterConfirmation(
-            context,
-            confirmExit: () => _showExitConfirmationDialog(context, controller),
-          );
-        }
+  Widget build(BuildContext context) => PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _exit();
       },
-      child: Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                widget.category.color.withValues(
-                  alpha: 0.05,
-                ),
-                Colors.white,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final result = controller.sessionResult.value;
-              if (controller.isCompleted.value && result != null) {
-                return _buildResultsView(controller, result);
-              }
-
-              final currentQuestion = controller.currentQuestion.value;
-              if (currentQuestion == null) {
-                final message = controller.errorMessage.value ?? 'No questions available';
-                return Center(child: Text(message));
-              }
-
-              return Column(
-                children: [
-                  _buildHeader(context, controller),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          _buildQuestionCard(currentQuestion, controller),
-                          const SizedBox(height: 20),
-                          _buildOptions(currentQuestion, controller),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (controller.hasAnswered.value)
-                    _buildNextButton(controller)
-                        .animate()
-                        .fadeIn()
-                        .slideY(begin: 1, end: 0),
-                ],
-              );
-            }),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, QuizMasterController controller) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  await popAfterConfirmation(
-                    context,
-                    confirmExit: () =>
-                        _showExitConfirmationDialog(context, controller),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: 0.05,
-                        ),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.arrow_back_rounded, size: 24),
-                ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(
-                        alpha: 0.1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Obx(() => Text(
-                              '${controller.score.value}',
-                              style: const TextStyle(
-                                color: Colors.amber,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(
-                        alpha: 0.1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.local_fire_department_rounded,
-                          color: Colors.orange,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Obx(() => Text(
-                              '${controller.streak.value}x',
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: widget.category.color.withValues(
-                    alpha: 0.1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(widget.category.icon,
-                    color: widget.category.color, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.category.name,
-                    style: Get.textTheme.titleMedium?.copyWith(
-                      color: widget.category.color,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '${widget.questionCount} questions',
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final progress = controller.questions.isEmpty
-                  ? 0.0
-                  : (controller.currentQuestionIndex.value + 1) /
-                      controller.questions.length;
-              return Stack(
-                children: [
-                  Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: widget.category.color.withValues(
-                        alpha: 0.1,
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: 8,
-                    width: constraints.maxWidth * progress,
-                    decoration: BoxDecoration(
-                      color: widget.category.color,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Question ${controller.currentQuestionIndex.value + 1}/${controller.questions.length}',
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (controller.timeRemaining.value > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(
-                      alpha: 0.1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.timer_outlined,
-                        color: Colors.green,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Obx(() => Text(
-                            '${controller.timeRemaining.value}s',
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
-                          )),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuestionCard(
-    QuizQuestion question,
-    QuizMasterController controller,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(
-          alpha: 0.9,
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            question.question,
-            style: Get.textTheme.titleLarge?.copyWith(
-              color: Colors.black87,
-              height: 1.4,
-            ),
-          ),
-          if (question.imageUrl != null) ...[
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                question.imageUrl!,
-                fit: BoxFit.cover,
-                height: 200,
-                width: double.infinity,
-              ),
-            ),
-          ],
-          if (controller.hasAnswered.value) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: (controller.selectedAnswer.value ==
-                            question.correctOptionIndex
-                        ? Colors.green
-                        : Colors.red)
-                    .withValues(
-                  alpha: 0.1,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        controller.selectedAnswer.value ==
-                                question.correctOptionIndex
-                            ? Icons.check_circle_rounded
-                            : Icons.cancel_rounded,
-                        color: controller.selectedAnswer.value ==
-                                question.correctOptionIndex
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        controller.selectedAnswer.value ==
-                                question.correctOptionIndex
-                            ? 'Correct!'
-                            : 'Incorrect',
-                        style: Get.textTheme.titleMedium?.copyWith(
-                          color: controller.selectedAnswer.value ==
-                                  question.correctOptionIndex
-                              ? Colors.green
-                              : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Explanation:',
-                    style: Get.textTheme.titleSmall?.copyWith(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    question.explanation,
-                    style: Get.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black54,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOptions(
-    QuizQuestion question,
-    QuizMasterController controller,
-  ) {
-    return Column(
-      children: question.options.asMap().entries.map((entry) {
-        final index = entry.key;
-        final option = entry.value;
-        final isSelected = controller.selectedAnswer.value == index;
-        final hasAnswered = controller.hasAnswered.value;
-        final isCorrect = index == question.correctOptionIndex;
-
-        Color getOptionColor() {
-          if (!hasAnswered) return widget.category.color;
-          if (isCorrect) return Colors.green;
-          if (isSelected && !isCorrect) return Colors.red;
-          return Colors.grey;
+      child: GalleryPage(child: Obx(() {
+        if (game.isCompleted.value && game.sessionResult.value != null) {
+          return _results();
         }
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap:
-                  hasAnswered ? null : () => controller.answerQuestion(index),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: getOptionColor().withValues(
-                    alpha: isSelected ? 0.15 : 0.05,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: getOptionColor().withValues(
-                          alpha: isSelected ? 0.2 : 0.1,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          String.fromCharCode(65 + index),
-                          style: TextStyle(
-                            color: getOptionColor(),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        option,
-                        style: Get.textTheme.bodyLarge?.copyWith(
-                          color: Colors.black87,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                    if (hasAnswered)
-                      Icon(
-                        isCorrect
-                            ? Icons.check_circle_rounded
-                            : (isSelected ? Icons.cancel_rounded : null),
-                        color: isCorrect ? Colors.green : Colors.red,
-                        size: 24,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ).animate().fadeIn().slideX(delay: Duration(milliseconds: index * 100));
-      }).toList(),
-    );
-  }
-
-  Widget _buildNextButton(QuizMasterController controller) {
-    final isLastQuestion = controller.currentQuestionIndex.value ==
-        controller.questions.length - 1;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: ElevatedButton(
-        onPressed: isLastQuestion ? controller.completeQuiz : controller.nextQuestion,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: widget.category.color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 32,
-            vertical: 16,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              isLastQuestion ? 'Finish Quiz' : 'Next Question',
-              style: Get.textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              isLastQuestion ? Icons.flag_rounded : Icons.arrow_forward_rounded,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultStat(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(
-          alpha: 0.1,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(
-                alpha: 0.2,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Get.textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                value,
-                style: Get.textTheme.titleLarge?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+        if (game.isLoading.value || game.currentQuestion.value == null) {
+          return Column(children: [
+            Align(
+                alignment: Alignment.centerLeft,
+                child: GalleryIcon(
+                    icon: Icons.arrow_back, onTap: _exit, label: 'Back')),
+            const Spacer(),
+            const SizedBox(height: 130, child: GalleryArt('hero')),
+            if (game.isLoading.value)
+              const CircularProgressIndicator()
+            else ...[
+              Text(game.errorMessage.value ?? 'No questions available',
+                  style: quizText(18)),
+              const SizedBox(height: 20),
+              GalleryButton('TRY AGAIN', onTap: _restart)
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultsView(
-    QuizMasterController controller,
-    QuizSessionResult result,
-  ) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: widget.category.color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.emoji_events_rounded,
-              color: widget.category.color,
-              size: 48,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Quiz Complete!',
-            style: Get.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Great job on completing the quiz!',
-            style: Get.textTheme.bodyMedium?.copyWith(
-              color: Colors.black54,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          _buildResultStat(
-            'Final Score',
-            '${result.finalScore}',
-            Icons.star_rounded,
-            Colors.amber,
-          ),
-          const SizedBox(height: 16),
-          _buildResultStat(
-            'Highest Streak',
-            '${result.highestStreak}x',
-            Icons.local_fire_department_rounded,
-            Colors.orange,
-          ),
-          const SizedBox(height: 16),
-          _buildResultStat(
-            'Correct Answers',
-            '${result.correctAnswers}/${result.totalQuestions}',
-            Icons.check_circle_outline_rounded,
-            Colors.green,
-          ),
-          const SizedBox(height: 16),
-          _buildResultStat(
-            'Accuracy',
-            '${(result.accuracy * 100).round()}%',
-            Icons.track_changes_rounded,
-            widget.category.color,
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
+            const Spacer(),
+          ]);
+        }
+        return _play();
+      })));
+  Widget _play() {
+    final q = game.currentQuestion.value!;
+    final answered = game.hasAnswered.value;
+    final answer = answered ? game.answers.last : null;
+    final height = MediaQuery.sizeOf(context).height;
+    final compact = height < 650;
+    return Column(children: [
+      Row(children: [
+        GalleryIcon(
+            icon: Icons.arrow_back_rounded, onTap: _exit, label: 'Leave quiz'),
+        const SizedBox(width: 10),
+        Expanded(
+            child: Text('${widget.category.name.toUpperCase()} QUIZ',
+                style: quizText(compact ? 22 : 28, display: true)))
+      ]),
+      const SizedBox(height: 10),
+      GalleryPanel(
+          padding: const EdgeInsets.all(8),
+          child: Row(children: [
+            Expanded(
+                child: GalleryStat(
+                    'SCORE', '${game.score.value}', Icons.bar_chart)),
+            Expanded(
+                child: GalleryStat('STREAK', '${game.streak.value}',
+                    Icons.local_fire_department)),
+          ])),
+      const SizedBox(height: 10),
+      GalleryPanel(
+          padding: const EdgeInsets.all(10),
+          child: Column(children: [
+            Row(children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Get.back(),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    side: BorderSide(
-                      color: widget.category.color.withValues(alpha: 0.5),
-                    ),
-                  ),
                   child: Text(
-                    'Exit Quiz',
-                    style: TextStyle(
-                      color: widget.category.color,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => controller.startQuiz(
-                    category: widget.category,
-                    questionCount: widget.questionCount,
-                    mode: widget.mode,
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.category.color,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Play Again',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+                      'QUESTION ${game.currentQuestionIndex.value + 1} OF ${game.questions.length}',
+                      style: quizText(12, color: quizMuted))),
+              Icon(Icons.timer_outlined,
+                  size: 20,
+                  color: game.timeRemaining.value < 6 ? quizOrange : quizBlue),
+              const SizedBox(width: 5),
+              Text('${game.timeRemaining.value}s',
+                  style: quizText(20, display: true))
+            ]),
+            const SizedBox(height: 7),
+            ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                    value: (game.currentQuestionIndex.value + 1) /
+                        game.questions.length,
+                    backgroundColor: const Color(0xFFDCE5ED),
+                    color: quizBlue)),
+            const SizedBox(height: 5),
+            LinearProgressIndicator(
+                value: game.timeRemaining.value / 30,
+                minHeight: 2,
+                color: quizOrange,
+                backgroundColor: const Color(0xFFF0E5DC)),
+          ])),
+      const SizedBox(height: 10),
+      Expanded(child: LayoutBuilder(builder: (context, box) {
+        final artHeight =
+            compact ? 32.0 : (box.maxHeight * .12).clamp(48.0, 75.0);
+        return SingleChildScrollView(
+            child: Column(children: [
+          GalleryPanel(
+              padding: const EdgeInsets.all(10),
+              child: Column(children: [
+                SizedBox(
+                    height: artHeight,
+                    width: double.infinity,
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: GalleryArt(widget.category.id))),
+                const SizedBox(height: 10),
+                Text(q.question,
+                    style: quizText(compact ? 22 : 25, display: true),
+                    textAlign: TextAlign.center),
+              ])),
+          const SizedBox(height: 10),
+          for (int i = 0; i < q.options.length; i++)
+            Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _option(
+                    i,
+                    q.options[i],
+                    answered && i == q.correctOptionIndex,
+                    answered &&
+                        i == game.selectedAnswer.value &&
+                        i != q.correctOptionIndex,
+                    answered)),
+          if (answer != null)
+            GalleryPanel(
+                radius: 17,
+                color: answer.isCorrect
+                    ? const Color(0xFFE4F5EA)
+                    : const Color(0xFFFFF0E6),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(
+                            answer.isCorrect
+                                ? Icons.check_circle
+                                : answer.timedOut
+                                    ? Icons.timer_outlined
+                                    : Icons.lightbulb_outline,
+                            color: answer.isCorrect
+                                ? const Color(0xFF237245)
+                                : quizOrange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                            child: Text(
+                                answer.isCorrect
+                                    ? 'CORRECT! +${answer.points} points'
+                                    : answer.timedOut
+                                        ? "TIME'S UP"
+                                        : 'NOT QUITE',
+                                style: quizText(20, display: true)))
+                      ]),
+                      const SizedBox(height: 6),
+                      if (!answer.isCorrect)
+                        Text(
+                            'Correct answer: ${q.options[q.correctOptionIndex]}',
+                            style: quizText(15)),
+                      Text(q.explanation,
+                          style: quizText(15, color: quizMuted)),
+                    ])),
+        ]));
+      })),
+      const SizedBox(height: 10),
+      SizedBox(
+          height: 50,
+          child: answered
+              ? GalleryButton(
+                  game.currentQuestionIndex.value == game.questions.length - 1
+                      ? 'FINISH QUIZ'
+                      : 'NEXT QUESTION',
+                  orange: answer!.isCorrect,
+                  onTap: game.nextQuestion)
+              : Center(
+                  child: Text('Tap an answer to continue',
+                      style: quizText(14, color: quizMuted)))),
+    ]);
   }
 
-  Future<bool> _showExitConfirmationDialog(
-    BuildContext context,
-    QuizMasterController controller,
-  ) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(
-                    alpha: 0.1,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.exit_to_app_rounded,
-                  color: Colors.red,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Exit Quiz?',
-                style: Get.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to exit? Your progress will be lost.',
-                style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        side: BorderSide(
-                          color: Colors.grey.withValues(
-                            alpha: 0.5,
-                          ),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'Exit',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    return result ?? false;
+  Widget _option(
+          int i, String label, bool correct, bool wrong, bool disabled) =>
+      Semantics(
+          button: true,
+          enabled: !disabled,
+          label:
+              '${String.fromCharCode(65 + i)} $label${correct ? ", correct answer" : wrong ? ", your incorrect answer" : ""}',
+          child: GalleryPanel(
+              radius: 17,
+              padding: EdgeInsets.zero,
+              color: correct
+                  ? const Color(0xFFE4F5EA)
+                  : wrong
+                      ? const Color(0xFFFFE8E6)
+                      : Colors.white,
+              border: correct
+                  ? const Color(0xFF237245)
+                  : wrong
+                      ? const Color(0xFFB33939)
+                      : null,
+              child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                      borderRadius: BorderRadius.circular(17),
+                      onTap: disabled ? null : () => game.answerQuestion(i),
+                      child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Row(children: [
+                            CircleAvatar(
+                                radius: 17,
+                                backgroundColor: correct
+                                    ? const Color(0xFF237245)
+                                    : wrong
+                                        ? const Color(0xFFB33939)
+                                        : disabled
+                                            ? const Color(0xFFD8E1EB)
+                                            : quizBlue,
+                                child: Text(String.fromCharCode(65 + i),
+                                    style: quizText(15,
+                                        color: disabled && !correct && !wrong
+                                            ? quizNavy
+                                            : Colors.white))),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text(label, style: quizText(17))),
+                            if (correct || wrong)
+                              Icon(correct ? Icons.check_circle : Icons.cancel,
+                                  color: correct
+                                      ? const Color(0xFF237245)
+                                      : const Color(0xFFB33939)),
+                          ]))))));
+  Widget _results() {
+    final r = game.sessionResult.value!;
+    return Column(children: [
+      Align(
+          alignment: Alignment.centerLeft,
+          child: GalleryIcon(
+              icon: Icons.arrow_back, onTap: _exit, label: 'Back to topics')),
+      Expanded(
+          child: SingleChildScrollView(
+              child: Column(children: [
+        SizedBox(
+            height: MediaQuery.sizeOf(context).height < 650 ? 85 : 155,
+            child: const GalleryArt('trophy')),
+        Text('QUIZ COMPLETE',
+            style: quizText(34, display: true), textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        Text(
+            r.accuracy >= .8
+                ? 'A brilliant round of discovery'
+                : 'Every question is a chance to learn',
+            style: quizText(16, color: quizMuted),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 14),
+        GalleryPanel(
+            child: Column(children: [
+          Text('${widget.category.name} • ${r.totalQuestions} questions',
+              style: quizText(15, color: quizMuted)),
+          const Divider(height: 24, color: Color(0xFFDAE3EA)),
+          Text('FINAL SCORE', style: quizText(12, color: quizMuted)),
+          Text('${r.finalScore}', style: quizText(58, display: true)),
+          Row(children: [
+            Expanded(
+                child: GalleryStat(
+                    'CORRECT',
+                    '${r.correctAnswers}/${r.totalQuestions}',
+                    Icons.check_circle)),
+            Expanded(
+                child: GalleryStat(
+                    'ACCURACY', '${(r.accuracy * 100).round()}%', Icons.adjust))
+          ]),
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+                child: GalleryStat('BEST STREAK', '${r.highestStreak}x',
+                    Icons.local_fire_department)),
+            Expanded(
+                child: GalleryStat(
+                    'QUESTIONS', '${r.totalQuestions}', Icons.bar_chart))
+          ]),
+        ])),
+        if (game.errorMessage.value != null) ...[
+          const SizedBox(height: 12),
+          Text(game.errorMessage.value!, style: quizText(14)),
+          TextButton(
+              onPressed: game.saveSessionStats,
+              child: const Text('RETRY SAVE')),
+        ],
+      ]))),
+      const SizedBox(height: 12),
+      GalleryButton('PLAY AGAIN', orange: true, onTap: _restart),
+      const SizedBox(height: 10),
+      GalleryButton('REVIEW ANSWERS',
+          outline: true,
+          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => QuizReviewScreen(
+                  answers: List.unmodifiable(game.answers),
+                  categoryName: widget.category.name)))),
+      TextButton(onPressed: _exit, child: const Text('BACK TO TOPICS')),
+    ]);
   }
+}
+
+class QuizLeaveDialog extends StatelessWidget {
+  const QuizLeaveDialog({super.key});
+  @override
+  Widget build(BuildContext context) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(20),
+      child: GalleryPanel(
+          child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+        SizedBox(
+            height: MediaQuery.sizeOf(context).height < 650 ? 90 : 150,
+            child: const GalleryArt('leave')),
+        Text('LEAVE THIS QUIZ?',
+            style: quizText(27, display: true), textAlign: TextAlign.center),
+        const SizedBox(height: 12),
+        Text('This unfinished round will not be saved.',
+            style: quizText(16, color: quizMuted), textAlign: TextAlign.center),
+        const SizedBox(height: 20),
+        GalleryButton('KEEP PLAYING',
+            onTap: () => Navigator.of(context).pop(false)),
+        const SizedBox(height: 12),
+        GalleryButton('LEAVE QUIZ',
+            outline: true,
+            orange: true,
+            onTap: () => Navigator.of(context).pop(true)),
+      ]))));
 }

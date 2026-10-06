@@ -27,9 +27,20 @@ class QuizService extends GetxService implements QuizQuestionLoader {
   void onInit() {
     super.onInit();
     // Initialize stats from storage or default values
-    totalQuizzesPlayed = RxInt(_storage.read('totalQuizzesPlayed') ?? 0);
-    highScores = RxMap<String, int>(_storage.read('highScores') ?? {});
-    averageScoreRate = RxDouble(_storage.read('averageScoreRate') ?? 0.0);
+    final played = _storage.read<dynamic>('totalQuizzesPlayed');
+    totalQuizzesPlayed = RxInt(played is int && played >= 0 ? played : 0);
+    final stored = _storage.read<dynamic>('highScores');
+    highScores = <String, int>{}.obs;
+    if (stored is Map) {
+      for (final entry in stored.entries) {
+        if (entry.key is String && entry.value is int && entry.value >= 0) {
+          highScores[entry.key as String] = entry.value as int;
+        }
+      }
+    }
+    final rate = _storage.read<dynamic>('averageScoreRate');
+    averageScoreRate = RxDouble(
+        rate is num && rate.isFinite && rate >= 0 ? rate.toDouble() : 0);
   }
 
   // Categories with real questions for offline use
@@ -93,12 +104,12 @@ class QuizService extends GetxService implements QuizQuestionLoader {
   }) async {
     try {
       isLoading.value = true;
-      await Future.delayed(
-          const Duration(milliseconds: 500)); // Simulate loading
-
       final questions = _questionsBank[categoryId] ?? [];
+      if (questions.isEmpty || count < 1) return [];
       final mixedQuestions = List<QuizQuestion>.from(questions)..shuffle();
-      return mixedQuestions.take(count.clamp(1, mixedQuestions.length)).toList();
+      return mixedQuestions
+          .take(count.clamp(1, mixedQuestions.length))
+          .toList();
     } finally {
       isLoading.value = false;
     }

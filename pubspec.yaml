@@ -31,6 +31,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   fonts:
+    - family: QuizDisplay
+      fonts:
+        - asset: assets/fonts/DMSerifDisplay-Regular.ttf
     - family: Barlow
       fonts:
         - asset: assets/fonts/Barlow-SemiBold.ttf
@@ -66,6 +69,16 @@ flutter:
     - assets/images/games/tic_tac_toe/
     - assets/images/games/connect_four/
     - assets/images/games/block_merge/
+    - assets/images/games/quiz_master/room.png
+    - assets/images/games/quiz_master/hero.png
+    - assets/images/games/quiz_master/science.png
+    - assets/images/games/quiz_master/history.png
+    - assets/images/games/quiz_master/geography.png
+    - assets/images/games/quiz_master/mathematics.png
+    - assets/images/games/quiz_master/technology.png
+    - assets/images/games/quiz_master/trophy.png
+    - assets/images/games/quiz_master/help.png
+    - assets/images/games/quiz_master/leave.png
     - assets/sounds/block_merge/
     - assets/images/games/chess/
     - assets/images/games/chess/pieces_v2/

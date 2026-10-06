@@ -166,8 +166,8 @@ Flappy Bird:
 
 Quiz Master:
 
-- [ ] 27. Mode/category selection
-- [ ] 28. Quiz gameplay
+- [x] 27. Mode/category selection — Discovery Gallery, five topics and setup
+- [x] 28. Quiz gameplay — feedback, results, review, help and leave confirmation
 
 ## Workflow for each screen
 

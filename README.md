@@ -19,6 +19,8 @@ shared expressive mobile interface.
 - Per-game settings, saved progress, statistics, and high scores.
 - Responsive layouts verified at 320×568, 360×800, 390×844, and 430×932.
 - Prepared low-latency sound effects for Memory Match, Chess, board games, and Block Merge.
+- Discovery Gallery Quiz Master: five offline topics, quiz-length setup, timed
+  questions, inline explanations, results and answer review.
 - Resin-themed Block Merge: Classic, three-minute Time Challenge, and untimed Zen;
   swipe animations, one-move undo, a resumable local run, and a 2048 milestone.
 - Android, iOS, web, Windows, macOS, and Linux Flutter targets.
