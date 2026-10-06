@@ -31,6 +31,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   fonts:
+    - family: Barlow
+      fonts:
+        - asset: assets/fonts/Barlow-SemiBold.ttf
+          weight: 600
     - family: BarlowCondensed
       fonts:
         - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
@@ -53,6 +57,7 @@ flutter:
     - assets/images/games/
     - assets/images/games/flappy_bird/
     - assets/images/games/memory_match/
+    - assets/images/games/tic_tac_toe/
     - assets/images/games/chess/
     - assets/images/games/chess/pieces_v2/
     - assets/images/games/chess/board_textures/

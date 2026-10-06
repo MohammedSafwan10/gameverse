@@ -5,6 +5,7 @@ import '../controllers/stats_controller.dart';
 import '../services/ai_service.dart';
 import '../services/storage_service.dart';
 import '../services/navigation_service.dart';
+import '../services/sound_service.dart';
 
 class TicTacToeBinding extends Bindings {
   @override
@@ -20,6 +21,8 @@ class TicTacToeBinding extends Bindings {
       fenix: true,
     );
     Get.lazyPut(() => TicTacToeSettingsController(), fenix: true);
+    Get.lazyPut(() => TicTacToeSoundService(), fenix: true);
+    Get.find<TicTacToeSoundService>().preload();
     Get.lazyPut(
       () => TicTacToeGameController(
         Get.find<TicTacToeNavigationService>(),

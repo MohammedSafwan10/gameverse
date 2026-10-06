@@ -8,6 +8,7 @@ import '../services/storage_service.dart';
 
 class TicTacToeStatsController extends GetxController {
   final StorageService _storage;
+  late final Future<void> ready;
   final Rx<GameStats> _stats = const GameStats(
     difficultyStats: {},
     unlockedAchievements: {},
@@ -15,7 +16,7 @@ class TicTacToeStatsController extends GetxController {
   ).obs;
 
   TicTacToeStatsController(this._storage) {
-    _loadStats();
+    ready = _loadStats();
   }
 
   GameStats get stats => _stats.value;
@@ -69,6 +70,7 @@ class TicTacToeStatsController extends GetxController {
     required Duration gameDuration,
     int? winningPlayer,
   }) async {
+    await ready;
     try {
       if (gameMode == GameMode.singlePlayer && difficulty != null) {
         await _updateSinglePlayerStats(
@@ -186,6 +188,7 @@ class TicTacToeStatsController extends GetxController {
   }
 
   Future<void> resetAllStats() async {
+    await ready;
     try {
       _stats.value = const GameStats(
         difficultyStats: {},
@@ -197,6 +200,7 @@ class TicTacToeStatsController extends GetxController {
   }
 
   Future<void> resetSinglePlayerStats() async {
+    await ready;
     try {
       _stats.value = stats.copyWith(
         difficultyStats: {},
@@ -206,6 +210,7 @@ class TicTacToeStatsController extends GetxController {
   }
 
   Future<void> resetMultiplayerStats() async {
+    await ready;
     try {
       _stats.value = stats.copyWith(
         multiplayerStats: const MultiplayerStats(),

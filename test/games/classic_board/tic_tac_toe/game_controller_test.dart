@@ -88,7 +88,8 @@ void main() {
     await controller.makeMove(0);
 
     expect(controller.gameState.board[0], Player.x);
-    expect(controller.gameState.board.where((cell) => cell == Player.o), isEmpty);
+    expect(
+        controller.gameState.board.where((cell) => cell == Player.o), isEmpty);
     expect(controller.gameState.currentPlayer, Player.o);
     expect(controller.isThinking, isFalse);
   });

@@ -25,8 +25,8 @@ data, sounds, scoring, and AI behavior should be preserved.
   pause/exit states, completion, Time's Up, and the three-level Challenge flow.
 - Memory Match production artwork is under `assets/images/games/memory_match/`.
 - Total real screens in the repository: **28**.
-- Completed: **7**.
-- Remaining: **21**.
+- Tic-Tac-Toe: approved tactile direction implemented; verification and current
+  test limitations are recorded in `docs/TIC_TAC_TOE_POLISH.md`.
 
 Primary reference:
 
@@ -120,10 +120,10 @@ when the catalogue redesign is implemented.
 
 Tic-Tac-Toe:
 
-- [ ] 10. Mode selection
-- [ ] 11. Gameplay
-- [ ] 12. Statistics
-- [ ] 13. Settings
+- [x] 10. Mode selection
+- [x] 11. Gameplay
+- [x] 12. Statistics
+- [x] 13. Settings
 
 Chess:
 

@@ -6,7 +6,8 @@ import '../models/game_state.dart';
 import '../models/player.dart';
 
 class AIService extends GetxService {
-  final _random = Random();
+  AIService({Random? random}) : _random = random ?? Random();
+  final Random _random;
   final _logger = Logger();
 
   Future<int?> getNextMove(TicTacToeState state) async {
@@ -16,16 +17,20 @@ class AIService extends GetxService {
   }
 
   int calculateMove(TicTacToeState state, GameDifficulty difficulty) {
+    if (state.isGameOver || _checkWinner(state.board) != null) return -1;
     final emptyPositions = _getEmptyPositions(state.board);
     if (emptyPositions.isEmpty) return -1;
 
     switch (difficulty) {
       case GameDifficulty.easy:
-        return _makeEasyMove(state, emptyPositions);
+        return _makeEasyMove(
+            state.copyWith(board: List.of(state.board)), emptyPositions);
       case GameDifficulty.medium:
-        return _makeMediumMove(state, emptyPositions);
+        return _makeMediumMove(
+            state.copyWith(board: List.of(state.board)), emptyPositions);
       case GameDifficulty.hard:
-        return _makeHardMove(state, emptyPositions);
+        return _makeHardMove(
+            state.copyWith(board: List.of(state.board)), emptyPositions);
       case GameDifficulty.impossible:
         return _makeImpossibleMove(state, emptyPositions);
     }
@@ -120,31 +125,8 @@ class AIService extends GetxService {
 
     // 95% chance to make optimal move
     if (_random.nextDouble() < 0.95) {
-      // Take center if available
-      if (state.board[4] == Player.none) return 4;
-
-      // Create or block forks
-      final forkMove = _findForkMove(state.board, Player.o);
-      if (forkMove != null) return forkMove;
-
-      final opponentForkMove = _findForkMove(state.board, Player.x);
-      if (opponentForkMove != null) return opponentForkMove;
-
-      // Take opposite corner from opponent
-      final oppositeCornerMove = _findOppositeCornerMove(state.board);
-      if (oppositeCornerMove != null) return oppositeCornerMove;
-
-      // Take any corner
-      final corners = [0, 2, 6, 8];
-      for (final corner in corners) {
-        if (state.board[corner] == Player.none) return corner;
-      }
-
-      // Take any side
-      final sides = [1, 3, 5, 7];
-      for (final side in sides) {
-        if (state.board[side] == Player.none) return side;
-      }
+      // Minimax also handles multi-fork threats that a single-fork heuristic misses.
+      return _makeImpossibleMove(state, emptyPositions);
     }
 
     // 5% chance for a non-optimal move
@@ -225,37 +207,6 @@ class AIService extends GetxService {
           return i;
         }
         board[i] = Player.none;
-      }
-    }
-    return null;
-  }
-
-  // Find a move that creates a fork (two winning opportunities)
-  int? _findForkMove(List<Player> board, Player player) {
-    for (int i = 0; i < board.length; i++) {
-      if (board[i] == Player.none) {
-        board[i] = player;
-        int winningOpportunities = 0;
-        for (int j = 0; j < board.length; j++) {
-          if (board[j] == Player.none) {
-            board[j] = player;
-            if (_checkWinner(board) == player) winningOpportunities++;
-            board[j] = Player.none;
-          }
-        }
-        board[i] = Player.none;
-        if (winningOpportunities >= 2) return i;
-      }
-    }
-    return null;
-  }
-
-  // Find corners that are opposite to the opponent's
-  int? _findOppositeCornerMove(List<Player> board) {
-    final oppositeCorners = {0: 8, 2: 6, 6: 2, 8: 0};
-    for (final entry in oppositeCorners.entries) {
-      if (board[entry.key] == Player.x && board[entry.value] == Player.none) {
-        return entry.value;
       }
     }
     return null;

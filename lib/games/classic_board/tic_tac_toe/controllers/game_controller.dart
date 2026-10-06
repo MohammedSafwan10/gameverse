@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:flutter/services.dart';
+import '../services/sound_service.dart';
 import '../models/game_state.dart';
 import '../models/player.dart';
 import '../models/game_move.dart';
@@ -18,11 +20,13 @@ class TicTacToeGameController extends GetxController {
 
   final Rx<TicTacToeState> _gameState = TicTacToeState.initial().obs;
   final RxBool _isThinking = false.obs;
+  final RxBool _isSuspended = false.obs;
   final RxInt countdown = 3.obs;
   final Stopwatch _gameStopwatch = Stopwatch();
   bool _isDisposed = false;
   Timer? _countdownTimer;
   int _moveGeneration = 0;
+  int _roundGeneration = 0;
 
   TicTacToeGameController(this._navigationService, this._aiService) {
     _gameStopwatch.start();
@@ -30,6 +34,7 @@ class TicTacToeGameController extends GetxController {
 
   TicTacToeState get gameState => _gameState.value;
   bool get isThinking => _isThinking.value;
+  bool get isSuspended => _isSuspended.value;
   bool get isGameOver => _gameState.value.isGameOver;
 
   @override
@@ -41,7 +46,16 @@ class TicTacToeGameController extends GetxController {
   }
 
   Future<void> makeMove(int index) async {
+    if (gameState.settings.gameMode == GameMode.singlePlayer &&
+        gameState.currentPlayer == Player.o) {
+      return;
+    }
+    await _applyMove(index);
+  }
+
+  Future<void> _applyMove(int index) async {
     if (_isDisposed ||
+        isSuspended ||
         index < 0 ||
         index >= gameState.board.length ||
         isThinking ||
@@ -52,6 +66,12 @@ class TicTacToeGameController extends GetxController {
 
     _moveGeneration++;
     final currentPlayer = gameState.currentPlayer;
+    if (Get.isRegistered<TicTacToeSoundService>()) {
+      unawaited(Get.find<TicTacToeSoundService>().play('move'));
+    }
+    if (gameState.settings.vibrationEnabled) {
+      unawaited(HapticFeedback.selectionClick());
+    }
 
     final newBoard = List<Player>.from(gameState.board);
     newBoard[index] = currentPlayer;
@@ -70,17 +90,17 @@ class TicTacToeGameController extends GetxController {
         winner: currentPlayer,
         status: GameStatus.won,
       );
-      _handleGameOver();
+      await _handleGameOver();
       return;
     }
 
     if (_isBoardFull()) {
       _gameState.value = gameState.copyWith(status: GameStatus.draw);
-      _handleGameOver();
+      await _handleGameOver();
       return;
     }
 
-    if (_settingsController.settings.gameMode == GameMode.singlePlayer &&
+    if (gameState.settings.gameMode == GameMode.singlePlayer &&
         gameState.currentPlayer == Player.o) {
       await _makeAIMove();
     }
@@ -91,47 +111,62 @@ class TicTacToeGameController extends GetxController {
     final aiPlayer = gameState.currentPlayer;
 
     _isThinking.value = true;
-    await Future.delayed(gameState.settings.aiDelay);
-
-    if (_isDisposed ||
-        isGameOver ||
-        generation != _moveGeneration ||
-        gameState.currentPlayer != aiPlayer) {
+    try {
+      await Future.delayed(gameState.settings.aiDelay);
+      if (_isDisposed ||
+          isSuspended ||
+          isGameOver ||
+          generation != _moveGeneration ||
+          gameState.currentPlayer != aiPlayer) {
+        return;
+      }
+      final aiMove = await _aiService.getNextMove(gameState);
+      if (_isDisposed ||
+          isSuspended ||
+          isGameOver ||
+          generation != _moveGeneration ||
+          gameState.currentPlayer != aiPlayer) {
+        return;
+      }
       _isThinking.value = false;
-      return;
-    }
-
-    final aiMove = await _aiService.getNextMove(gameState);
-
-    if (_isDisposed ||
-        isGameOver ||
-        generation != _moveGeneration ||
-        gameState.currentPlayer != aiPlayer) {
-      _isThinking.value = false;
-      return;
-    }
-
-    _isThinking.value = false;
-
-    if (aiMove != null && aiMove >= 0 && aiMove < gameState.board.length) {
-      await makeMove(aiMove);
+      if (aiMove != null && aiMove >= 0 && aiMove < gameState.board.length) {
+        await _applyMove(aiMove);
+      }
+    } catch (_) {
+      // Keep a failed calculation from locking the board forever.
+      if (!_isDisposed && !isSuspended && generation == _moveGeneration) {
+        final fallback = gameState.board.indexOf(Player.none);
+        _isThinking.value = false;
+        if (fallback >= 0 && !isGameOver) await _applyMove(fallback);
+      }
+    } finally {
+      // A response from an old round must not unlock a newer AI turn.
+      if (!_isDisposed && generation == _moveGeneration) {
+        _isThinking.value = false;
+      }
     }
   }
 
   Future<void> _handleGameOver() async {
+    final generation = _roundGeneration;
+    final settings = gameState.settings;
     _gameStopwatch.stop();
     final gameDuration = _gameStopwatch.elapsed;
 
-    final gameMode = _settingsController.settings.gameMode;
+    final gameMode = settings.gameMode;
     final winner = gameState.winner;
     final isDraw = winner == null;
+    if (Get.isRegistered<TicTacToeSoundService>()) {
+      unawaited(
+          Get.find<TicTacToeSoundService>().play(isDraw ? 'draw' : 'win'));
+    }
 
     if (gameMode == GameMode.singlePlayer) {
       final isWin = winner == Player.x;
 
       await _statsController.updateGameStats(
         gameMode: gameMode,
-        difficulty: _settingsController.settings.difficulty,
+        difficulty: settings.difficulty,
         isWin: isWin,
         isDraw: isDraw,
         gameDuration: gameDuration,
@@ -150,18 +185,20 @@ class TicTacToeGameController extends GetxController {
         winningPlayer: winningPlayer,
       );
 
-      _gameState.refresh();
-      update();
+      if (!_isDisposed && generation == _roundGeneration) _gameState.refresh();
     }
 
-    if (_settingsController.settings.autoRestart) {
+    if (!_isDisposed &&
+        generation == _roundGeneration &&
+        settings.autoRestart) {
       countdown.value = 3;
       _countdownTimer?.cancel();
       _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_isDisposed) {
+        if (_isDisposed || generation != _roundGeneration) {
           timer.cancel();
           return;
         }
+        if (isSuspended) return;
         if (countdown.value > 1) {
           countdown.value--;
         } else {
@@ -199,15 +236,35 @@ class TicTacToeGameController extends GetxController {
   }
 
   void resetGame() {
+    _roundGeneration++;
     _moveGeneration++;
     _countdownTimer?.cancel();
     _gameState.value = TicTacToeState.initial().copyWith(
       settings: _settingsController.settings,
     );
     _isThinking.value = false;
+    _isSuspended.value = false;
     countdown.value = 3;
     _gameStopwatch.reset();
     _gameStopwatch.start();
+  }
+
+  /// Dialogs/help suspend both input and pending AI, and freeze auto-restart.
+  void setSuspended(bool value) {
+    if (_isDisposed || value == isSuspended) return;
+    _isSuspended.value = value;
+    _moveGeneration++;
+    _isThinking.value = false;
+    if (value) {
+      _gameStopwatch.stop();
+    } else {
+      if (!isGameOver) _gameStopwatch.start();
+      if (!isGameOver &&
+          gameState.settings.gameMode == GameMode.singlePlayer &&
+          gameState.currentPlayer == Player.o) {
+        unawaited(_makeAIMove());
+      }
+    }
   }
 
   void navigateBack() {
@@ -258,6 +315,7 @@ class TicTacToeGameController extends GetxController {
   @override
   void onClose() {
     _isDisposed = true;
+    _roundGeneration++;
     _moveGeneration++;
     _countdownTimer?.cancel();
     _gameStopwatch.stop();

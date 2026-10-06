@@ -1,5 +1,20 @@
 # Audio assets
 
+## Tic-Tac-Toe
+
+Reuses existing FFmpeg-prepared CC0 mono 44.1 kHz 16-bit PCM clips:
+
+- Move: Kenney Interface Sounds `pluck_001.ogg`, prepared as
+  `memory_flip.wav`, volume 0.45.
+- Win: Kenney Music Jingles `jingles_PIZZI07.ogg`, prepared as
+  `chess/sounds_v2/chess_win.wav`, volume 0.48.
+- Draw: Kenney Interface Sounds `confirmation_002.ogg`, prepared as
+  `memory_match.wav`, volume 0.48.
+
+See the entries below for original source URLs and licenses. Independent audio
+pools preload on mode entry; gameplay does not await playback. Mute is checked
+again after preload. No music loop or loud start cue is added.
+
 ## Memory Match
 
 The Memory Match effects are distributed under Creative Commons CC0.
