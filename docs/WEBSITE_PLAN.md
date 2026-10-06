@@ -1,11 +1,12 @@
 # GameVerse website
 
-## Current decision gate
+## Selected direction and implementation
 
-Three desktop + mobile concept images are being presented. Select one before
-building the site, generating final artwork, changing DNS or deploying. These
-are composition concepts, not live app screenshots: implementation must use the
-existing GameVerse icon and real app screenshots/artwork, not invented phone UI.
+The owner selected **01 Tactile Arcade** and authorized implementation and
+Coolify deployment. The website is implemented in `website/`: semantic static
+HTML/CSS, native dialogs, mobile navigation and policy generated from the app's
+source. Concepts are composition references, not live screenshots. Production
+uses the existing icon/artwork and a real Flutter widget render in the phone.
 
 - 01 Tactile Arcade: cream, cobalt and orange; sculpted game-piece hero;
   approachable premium identity, closest to the actual app. Recommended.
@@ -38,9 +39,9 @@ Read-only checks on 6 October 2026 confirmed:
 - Existing application BugHunter must remain untouched.
 - There is no existing `gameverse.nexdark.com` DNS record.
 
-Proposed new domain: `https://gameverse.nexdark.com`, with privacy at
-`https://gameverse.nexdark.com/privacy/`. Confirm the exact new resource and
-domain before deploying. A small static build served by a multi-architecture
+Authorized new domain: `https://gameverse.nexdark.com`, with privacy at
+`https://gameverse.nexdark.com/privacy/`. Create a new GameVerse project and
+website application only. A small static build served by a multi-architecture
 NGINX container is sufficient; no application database or secrets needed.
 GitHub Pages is no longer the hosting plan: the owner requested Coolify.
 
@@ -57,3 +58,23 @@ GitHub Pages is no longer the hosting plan: the owner requested Coolify.
    headers and deployment health. Preserve all unrelated domains/apps.
 
 Do not claim deployment until a public HTTPS check succeeds.
+
+## Verification / handoff
+
+- Website build and three Node tests passed.
+- Playwright passed 320×568, 360×800, 390×844, 430×932, 768×1024 and
+  1440×1000: no horizontal overflow, decoded assets, seven dialogs, Escape and
+  returned focus, coming-soon dialog, mobile navigation and policy; real 404.
+- Desktop/mobile screenshots inspected against the chosen reference. Reused
+  app card art differs from concept props intentionally; native content remains
+  responsive and truthful. Hero edges softened and phone frame refined.
+- `flutter analyze`: clean. Full serial suite: 406 passed. Android debug build:
+  passed. The focused marketing golden also passed without baseline updates.
+- `website/README.md` and `website/ASSETS.md` document local preview, asset
+  provenance and production build. No local preview server is left running.
+- Deployment pending public HTTPS verification. Record resource UUIDs, source
+  commit and deployment result here once verified.
+
+Next: deploy the pushed commit using root Dockerfile, base directory `/`, port
+8080 and `/health`, memory 128M / CPU 0.25. Add only the DNS-only GameVerse A
+record. Do not modify unrelated apps, domains, firewall or OCI capacity.

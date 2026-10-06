@@ -1,0 +1,11 @@
+*
+!Dockerfile
+!.dockerignore
+!website/
+!website/**
+!docs/
+!docs/PRIVACY_POLICY.md
+website/dist/
+website/node_modules/
+website/test/
+website/*.py

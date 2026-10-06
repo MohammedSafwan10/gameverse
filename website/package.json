@@ -1,0 +1,12 @@
+{
+  "name": "gameverse-website",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node build.mjs && node preview.mjs",
+    "build": "node build.mjs",
+    "test": "node --test test/build.test.mjs",
+    "preview": "node preview.mjs"
+  }
+}
