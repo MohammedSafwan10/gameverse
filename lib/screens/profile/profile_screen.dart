@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../services/player_progress.dart';
 
 import '../../widgets/gameverse_utility_widgets.dart';
 
@@ -8,7 +8,12 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ValueListenableBuilder<PlayerProgress>(
+        valueListenable: PlayerProgressStore.instance,
+        builder: (context, progress, _) => _build(context, progress),
+      );
+
+  Widget _build(BuildContext context, PlayerProgress progress) {
     final size = MediaQuery.sizeOf(context);
     final compact = size.height < 700 || size.width <= 330;
     final horizontal = size.width <= 330 ? 14.0 : 20.0;
@@ -39,13 +44,13 @@ class ProfileScreen extends StatelessWidget {
                       SizedBox(height: compact ? 12 : 18),
                       _ProfileHero(compact: compact),
                       SizedBox(height: compact ? 14 : 18),
-                      _StatsRow(compact: compact),
+                      _StatsRow(compact: compact, progress: progress),
                       SizedBox(height: compact ? 20 : 26),
                       const _SectionTitle('YOUR GAMEVERSE'),
                       const SizedBox(height: 10),
                       _ProfileMenu(compact: compact),
                       SizedBox(height: compact ? 16 : 22),
-                      _LevelProgress(compact: compact),
+                      _LevelProgress(compact: compact, progress: progress),
                     ],
                   ),
                 ),
@@ -146,7 +151,7 @@ class _ProfileHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Member since Feb 2026',
+                  'Progress saved on this device',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -165,7 +170,7 @@ class _ProfileHero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Text(
-                    'CASUAL EXPLORER',
+                    'LOCAL PLAYER',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -186,7 +191,8 @@ class _ProfileHero extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.compact});
+  const _StatsRow({required this.compact, required this.progress});
+  final PlayerProgress progress;
 
   final bool compact;
 
@@ -195,16 +201,24 @@ class _StatsRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: _StatTile('12', 'WINS', Icons.emoji_events_rounded,
-                GameVerseUtilityColors.gold, compact)),
+            child: _StatTile(
+                '${progress.wins}',
+                'WINS',
+                Icons.emoji_events_rounded,
+                GameVerseUtilityColors.gold,
+                compact)),
         SizedBox(width: compact ? 8 : 12),
         Expanded(
-            child: _StatTile('#42', 'RANK', Icons.leaderboard_rounded,
-                GameVerseUtilityColors.mint, compact)),
+            child: _StatTile(
+                '${progress.played}',
+                'RECORDED',
+                Icons.sports_esports_rounded,
+                GameVerseUtilityColors.mint,
+                compact)),
         SizedBox(width: compact ? 8 : 12),
         Expanded(
-            child: _StatTile('05', 'LEVEL', Icons.bolt_rounded,
-                GameVerseUtilityColors.orange, compact)),
+            child: _StatTile('${progress.games} / 7', 'GAMES',
+                Icons.explore_rounded, GameVerseUtilityColors.orange, compact)),
       ],
     );
   }
@@ -298,61 +312,6 @@ class _ProfileMenu extends StatelessWidget {
             compact: compact,
             onTap: () => Get.toNamed('/achievements'),
           ),
-          const Divider(
-              height: 1, indent: 76, endIndent: 18, color: Color(0x1A071A3D)),
-          _MenuRow(
-            title: 'Game History',
-            icon: Icons.history_rounded,
-            color: GameVerseUtilityColors.mint,
-            compact: compact,
-            onTap: () => Get.toNamed('/leaderboard'),
-          ),
-          const Divider(
-              height: 1, indent: 76, endIndent: 18, color: Color(0x1A071A3D)),
-          _MenuRow(
-            key: const Key('profile-support-row'),
-            title: 'Support Center',
-            icon: Icons.headset_mic_rounded,
-            color: GameVerseUtilityColors.pink,
-            compact: compact,
-            onTap: () => _showSupport(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showSupport(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: GameVerseUtilityColors.cream,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        icon: const GameVerseIconTile(
-          icon: Icons.headset_mic_rounded,
-          color: GameVerseUtilityColors.pink,
-          size: 58,
-        ),
-        title: const Text('How can we help?'),
-        content: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () => launchUrl(Uri.parse('mailto:itzmesafwan1@gmail.com')),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              children: [
-                Icon(Icons.email_rounded, color: GameVerseUtilityColors.cobalt),
-                SizedBox(width: 12),
-                Expanded(child: Text('itzmesafwan1@gmail.com')),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close')),
         ],
       ),
     );
@@ -409,7 +368,8 @@ class _MenuRow extends StatelessWidget {
 }
 
 class _LevelProgress extends StatelessWidget {
-  const _LevelProgress({required this.compact});
+  const _LevelProgress({required this.compact, required this.progress});
+  final PlayerProgress progress;
 
   final bool compact;
 
@@ -432,7 +392,7 @@ class _LevelProgress extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'LEVEL 05',
+            'BADGES',
             style: Theme.of(context)
                 .textTheme
                 .labelLarge
@@ -442,17 +402,17 @@ class _LevelProgress extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: const LinearProgressIndicator(
-                value: .62,
+              child: LinearProgressIndicator(
+                value: progress.unlocked / 9,
                 minHeight: 9,
                 backgroundColor: Color(0x44071A3D),
-                valueColor: AlwaysStoppedAnimation(Color(0xFF29C8F5)),
+                valueColor: const AlwaysStoppedAnimation(Color(0xFF29C8F5)),
               ),
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            '620 / 1000 XP',
+            '${progress.unlocked} / 9 UNLOCKED',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: Colors.white,
                   fontSize: 10,

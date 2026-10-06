@@ -75,6 +75,15 @@ void main() {
     expect(find.text('SMART GAMES'), findsOneWidget);
     expect(find.text('Flappy Bird'), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.tap(find.text('GAMES'));
+    await tester.pumpAndSettle();
+    expect(find.text('ALL GAMES'), findsOneWidget);
+    expect(find.text('Flappy Bird'), findsOneWidget);
+    await tester.tap(find.text('HOME'));
+    await tester.pumpAndSettle();
+    final scrollable =
+        tester.state<ScrollableState>(find.byType(Scrollable).first);
+    expect(scrollable.position.pixels, 0);
   });
 
   testWidgets('search query stays readable on the cream search surface',

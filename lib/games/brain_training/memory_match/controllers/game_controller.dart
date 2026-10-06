@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import '../../../../services/player_progress.dart';
 import 'package:get/get.dart';
 import '../models/card_model.dart';
 import '../models/game_mode.dart';
@@ -8,6 +9,9 @@ import '../services/sound_service.dart';
 import '../screens/completion_screen.dart';
 
 class MemoryMatchGameController extends GetxController {
+  MemoryMatchGameController({PlayerProgressStore? progressStore})
+      : _progressStore = progressStore ?? PlayerProgressStore.instance;
+  final PlayerProgressStore _progressStore;
   final _state = Rx<MemoryMatchState?>(null);
   MemoryMatchState? get state => _state.value;
   set state(MemoryMatchState? value) => _state.value = value;
@@ -224,6 +228,7 @@ class MemoryMatchGameController extends GetxController {
         );
 
         if (isComplete) {
+          unawaited(_progressStore.recordMemoryWin());
           if (wasPaused) {
             _completionPending = true;
             return;

@@ -5,7 +5,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/achievements/achievements_screen.dart';
-import 'screens/leaderboard/leaderboard_screen.dart';
+import 'services/player_progress.dart';
 import 'theme/app_theme.dart';
 import 'games/classic_board/tic_tac_toe/screens/game_screen.dart'
     as tic_tac_toe;
@@ -41,6 +41,7 @@ import 'games/educational/quiz_master/screens/mode_selection_screen.dart'
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
+  await PlayerProgressStore.instance.initialize();
 
   runApp(const MyApp());
 }
@@ -72,10 +73,6 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/achievements',
           page: () => const AchievementsScreen(),
-        ),
-        GetPage(
-          name: '/leaderboard',
-          page: () => const LeaderboardScreen(),
         ),
         // Tic Tac Toe Routes
         GetPage(

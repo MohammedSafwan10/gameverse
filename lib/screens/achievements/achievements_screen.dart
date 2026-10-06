@@ -1,53 +1,64 @@
 import 'package:flutter/material.dart';
+import '../../services/player_progress.dart';
 
 import '../../widgets/gameverse_utility_widgets.dart';
 
 class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({super.key});
 
-  static const _groups = [
-    _AchievementGroup(
-      title: 'BEGINNER',
-      color: GameVerseUtilityColors.mint,
-      icon: Icons.star_rounded,
-      achievements: [
-        _Achievement(
-            'First Win', 'Win your first game', 1, Icons.emoji_events_rounded),
-        _Achievement('Game Explorer', 'Play three different games', 1,
-            Icons.explore_rounded),
-        _Achievement('Quick Learner', 'Finish a how-to-play guide', 1,
-            Icons.school_rounded),
-      ],
-    ),
-    _AchievementGroup(
-      title: 'INTERMEDIATE',
-      color: GameVerseUtilityColors.orange,
-      icon: Icons.local_fire_department_rounded,
-      achievements: [
-        _Achievement('Winning Streak', 'Win 5 games in a row', .6,
-            Icons.local_fire_department_rounded),
-        _Achievement('Sharp Mind', 'Complete 10 brain games', .3,
-            Icons.psychology_rounded),
-        _Achievement('High Scorer', 'Reach 5,000 total points', 0,
-            Icons.trending_up_rounded),
-      ],
-    ),
-    _AchievementGroup(
-      title: 'EXPERT',
-      color: Color(0xFF9A7B4F),
-      icon: Icons.workspace_premium_rounded,
-      achievements: [
-        _Achievement('GameVerse Legend', 'Master every game', .2,
-            Icons.workspace_premium_rounded),
-        _Achievement('Unbeatable', 'Win 50 matches', 0, Icons.shield_rounded),
-        _Achievement('Perfect Player', 'Unlock every achievement', 0,
-            Icons.auto_awesome_rounded),
-      ],
-    ),
-  ];
+  List<_AchievementGroup> _groups(PlayerProgress progress) {
+    final badges = progress.badges;
+    return [
+      _AchievementGroup(
+        title: 'BEGINNER',
+        color: GameVerseUtilityColors.mint,
+        icon: Icons.star_rounded,
+        achievements: [
+          _Achievement('First Win', 'Record your first win', badges[0],
+              Icons.emoji_events_rounded),
+          _Achievement('Game Explorer', 'Record play in three games', badges[1],
+              Icons.explore_rounded),
+          _Achievement('Quiz Starter', 'Finish your first quiz', badges[2],
+              Icons.school_rounded),
+        ],
+      ),
+      _AchievementGroup(
+        title: 'INTERMEDIATE',
+        color: GameVerseUtilityColors.orange,
+        icon: Icons.local_fire_department_rounded,
+        achievements: [
+          _Achievement('Memory Master', 'Match all pairs on 10 boards',
+              badges[3], Icons.local_fire_department_rounded),
+          _Achievement('Sky Explorer', 'Pass 25 pipes in one flight', badges[4],
+              Icons.psychology_rounded),
+          _Achievement('Merge Maker', 'Create a 128 tile', badges[5],
+              Icons.trending_up_rounded),
+        ],
+      ),
+      _AchievementGroup(
+        title: 'EXPERT',
+        color: Color(0xFF9A7B4F),
+        icon: Icons.workspace_premium_rounded,
+        achievements: [
+          _Achievement('All-Rounder', 'Record play in all seven games',
+              badges[6], Icons.workspace_premium_rounded),
+          _Achievement('Fifty Wins', 'Record 50 wins or cleared boards',
+              badges[7], Icons.shield_rounded),
+          _Achievement('Badge Collector', 'Unlock the other eight badges',
+              badges[8], Icons.auto_awesome_rounded),
+        ],
+      ),
+    ];
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ValueListenableBuilder<PlayerProgress>(
+        valueListenable: PlayerProgressStore.instance,
+        builder: (context, progress, _) => _build(context, progress),
+      );
+
+  Widget _build(BuildContext context, PlayerProgress progress) {
+    final groups = _groups(progress);
     final size = MediaQuery.sizeOf(context);
     final compact = size.height < 700 || size.width <= 330;
     final horizontal = size.width <= 330 ? 14.0 : 20.0;
@@ -68,12 +79,16 @@ class AchievementsScreen extends StatelessWidget {
                     children: [
                       const GameVerseUtilityHeader(title: 'ACHIEVEMENTS'),
                       SizedBox(height: compact ? 12 : 18),
-                      _AchievementSummary(compact: compact),
+                      _AchievementSummary(compact: compact, progress: progress),
                       SizedBox(height: compact ? 18 : 24),
-                      for (var index = 0; index < _groups.length; index++) ...[
+                      const Text(
+                          'Based on local records. Memory progress starts with this update.',
+                          textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      for (var index = 0; index < groups.length; index++) ...[
                         _AchievementSection(
-                            group: _groups[index], compact: compact),
-                        if (index != _groups.length - 1)
+                            group: groups[index], compact: compact),
+                        if (index != groups.length - 1)
                           SizedBox(height: compact ? 18 : 24),
                       ],
                     ],
@@ -89,7 +104,8 @@ class AchievementsScreen extends StatelessWidget {
 }
 
 class _AchievementSummary extends StatelessWidget {
-  const _AchievementSummary({required this.compact});
+  const _AchievementSummary({required this.compact, required this.progress});
+  final PlayerProgress progress;
 
   final bool compact;
 
@@ -123,7 +139,7 @@ class _AchievementSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '3 / 9',
+                  '${progress.unlocked} / 9',
                   maxLines: 1,
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                         color: Colors.white,
@@ -145,7 +161,9 @@ class _AchievementSummary extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Your next badge is close!',
+                  progress.unlocked == 9
+                      ? 'Every badge earned!'
+                      : 'Play to earn your next badge',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -167,7 +185,7 @@ class _AchievementSummary extends StatelessWidget {
                 SizedBox.square(
                   dimension: compact ? 94 : 116,
                   child: CircularProgressIndicator(
-                    value: 1 / 3,
+                    value: progress.unlocked / 9,
                     strokeWidth: compact ? 10 : 12,
                     backgroundColor: Colors.white.withValues(alpha: 0.14),
                     valueColor: const AlwaysStoppedAnimation(
@@ -219,7 +237,7 @@ class _AchievementSection extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   group.title,
-                  maxLines: 1,
+                  maxLines: 2,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: GameVerseUtilityColors.ink,
                         fontSize: compact ? 17 : 18,
@@ -299,7 +317,7 @@ class _AchievementRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   achievement.description,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color:

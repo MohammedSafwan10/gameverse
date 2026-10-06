@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:gameverse/services/player_progress.dart';
 import 'package:gameverse/games/brain_training/memory_match/controllers/game_controller.dart';
 import 'package:gameverse/games/brain_training/memory_match/models/card_model.dart';
 import 'package:gameverse/games/brain_training/memory_match/models/game_mode.dart';
 import 'package:gameverse/games/brain_training/memory_match/models/game_state.dart';
 import 'package:gameverse/games/brain_training/memory_match/services/sound_service.dart';
+
+class _CountingProgress extends PlayerProgressStore {
+  int wins = 0;
+  @override
+  Future<void> recordMemoryWin() async {
+    wins++;
+  }
+}
 
 class _FakeMemoryMatchSoundService extends MemoryMatchSoundService {
   @override
@@ -121,7 +130,10 @@ void main() {
 
   testWidgets('pausing during a match keeps the game paused and timer safe',
       (tester) async {
-    final controller = MemoryMatchGameController()..onInit();
+    final progress = _CountingProgress();
+    addTearDown(progress.dispose);
+    final controller = MemoryMatchGameController(progressStore: progress)
+      ..onInit();
     addTearDown(controller.onClose);
     controller.state = MemoryMatchState(
       cards: const [
@@ -148,9 +160,14 @@ void main() {
 
     expect(controller.state!.isCompleted, isTrue);
     expect(controller.state!.status, GameStatus.paused);
+    expect(progress.wins, 1);
 
     controller.resumeGame();
     expect(controller.state!.status, GameStatus.completed);
+    controller.pauseGame();
+    controller.resumeGame();
+    expect(progress.wins, 1,
+        reason: 'Resume must not double-award a cleared board');
     controller.cleanupGame();
   });
 

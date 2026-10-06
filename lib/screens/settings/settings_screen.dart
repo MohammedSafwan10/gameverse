@@ -34,13 +34,8 @@ class SettingsScreen extends StatelessWidget {
                         title: 'SYSTEM',
                         icon: Icons.settings_rounded,
                         rows: const [
-                          _SettingData('Version', '1.0.0', Icons.info_rounded,
+                          _SettingData('Version', '1.0.1', Icons.info_rounded,
                               GameVerseUtilityColors.cobalt),
-                          _SettingData(
-                              'Storage',
-                              '12.4 MB used',
-                              Icons.storage_rounded,
-                              GameVerseUtilityColors.mint),
                         ],
                         compact: compact,
                       ),
@@ -57,36 +52,21 @@ class SettingsScreen extends StatelessWidget {
                             onTap: () => launchUrl(
                                 Uri.parse('mailto:itzmesafwan1@gmail.com')),
                           ),
-                          _SettingData(
-                            'Rate Game',
-                            'Enjoying GameVerse?',
-                            Icons.star_rounded,
-                            GameVerseUtilityColors.gold,
-                            onTap: () => _showThanks(context),
-                          ),
                         ],
                         compact: compact,
                       ),
                       SizedBox(height: compact ? 18 : 24),
                       _SettingsSection(
-                        title: 'LEGAL',
+                        title: 'YOUR DATA',
                         icon: Icons.balance_rounded,
                         rows: [
                           _SettingData(
-                            'Privacy Policy',
-                            'How we handle your data',
+                            'Local Progress',
+                            'How your saved games work',
                             Icons.shield_rounded,
                             GameVerseUtilityColors.cobalt,
-                            onTap: () => _showInfo(context, 'Privacy Policy',
-                                'GameVerse stores game progress locally on your device. A complete published privacy policy will be available before release.'),
-                          ),
-                          _SettingData(
-                            'Terms of Service',
-                            'Usage rules and info',
-                            Icons.description_rounded,
-                            GameVerseUtilityColors.mint,
-                            onTap: () => _showInfo(context, 'Terms of Service',
-                                'Use GameVerse fairly, respect other players, and enjoy the games. Full release terms will be available before publication.'),
+                            onTap: () => _showInfo(context, 'Local Progress',
+                                'Game statistics, achievements and preferences are stored on this device. No GameVerse account or cloud leaderboard is used. Resetting a game’s statistics updates the related achievement progress. Clearing app data removes your local records. Device backups may restore app data. Memory Match records cleared boards from this update onward.'),
                           ),
                         ],
                         compact: compact,
@@ -99,12 +79,6 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  void _showThanks(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thanks for playing GameVerse!')),
     );
   }
 

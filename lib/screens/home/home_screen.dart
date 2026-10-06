@@ -258,6 +258,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         bottomNavigationBar: _HomeNavigation(
+          onHomeTap: () => _scrollController.animateTo(0,
+              duration: 450.ms, curve: Curves.easeOutCubic),
           onGamesTap: _scrollToGames,
           onAchievementsTap: () => Get.toNamed('/achievements'),
         ),
@@ -276,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _scrollToGames() {
+    setState(() => _selectedMood = null);
     final gamesContext = _gamesKey.currentContext;
     if (gamesContext == null) return;
     Scrollable.ensureVisible(
@@ -986,11 +989,13 @@ class _GameCard extends StatelessWidget {
 
 class _HomeNavigation extends StatelessWidget {
   const _HomeNavigation({
+    required this.onHomeTap,
     required this.onGamesTap,
     required this.onAchievementsTap,
   });
 
   final VoidCallback onGamesTap;
+  final VoidCallback onHomeTap;
   final VoidCallback onAchievementsTap;
 
   @override
@@ -1026,7 +1031,7 @@ class _HomeNavigation extends StatelessWidget {
                     label: 'Home',
                     icon: Icons.home_rounded,
                     selected: true,
-                    onTap: () {},
+                    onTap: onHomeTap,
                   ),
                 ),
                 Expanded(

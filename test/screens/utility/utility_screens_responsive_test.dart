@@ -4,12 +4,14 @@ import 'package:gameverse/screens/achievements/achievements_screen.dart';
 import 'package:gameverse/screens/profile/profile_screen.dart';
 import 'package:gameverse/screens/settings/settings_screen.dart';
 import 'package:get/get.dart';
+import 'package:gameverse/services/player_progress.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     Get.testMode = true;
+    PlayerProgressStore.instance.value = PlayerProgress();
   });
 
   tearDown(Get.reset);
@@ -45,10 +47,6 @@ void main() {
                   name: '/achievements',
                   page: () => const AchievementsScreen(),
                 ),
-                GetPage(
-                  name: '/leaderboard',
-                  page: () => const Scaffold(body: Text('Leaderboard')),
-                ),
               ],
             ),
           );
@@ -70,7 +68,7 @@ void main() {
     );
   }
 
-  testWidgets('profile actions open settings, achievements, and support',
+  testWidgets('profile opens real destinations and omits removed mock links',
       (tester) async {
     _setSize(tester, const Size(390, 844));
     await tester.pumpWidget(
@@ -84,10 +82,6 @@ void main() {
           GetPage(
             name: '/achievements',
             page: () => const Scaffold(body: Text('Achievements destination')),
-          ),
-          GetPage(
-            name: '/leaderboard',
-            page: () => const Scaffold(body: Text('Leaderboard destination')),
           ),
         ],
       ),
@@ -111,15 +105,10 @@ void main() {
 
     Get.back<void>();
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('profile-support-row')),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.byKey(const Key('profile-support-row')));
-    await tester.pumpAndSettle();
-    expect(find.text('How can we help?'), findsOneWidget);
-    expect(find.text('itzmesafwan1@gmail.com'), findsOneWidget);
+    expect(find.text('Game History'), findsNothing);
+    expect(find.text('Support Center'), findsNothing);
+    expect(find.text('#42'), findsNothing);
+    expect(find.textContaining('XP'), findsNothing);
     expect(find.textContaining('NEXDARK'), findsNothing);
   });
 
@@ -129,9 +118,22 @@ void main() {
     await tester.pump();
 
     expect(find.text('Contact Us'), findsOneWidget);
-    expect(find.text('Rate Game'), findsOneWidget);
+    expect(find.text('Rate Game'), findsNothing);
+    expect(find.text('Storage'), findsNothing);
+    expect(find.text('1.0.1'), findsOneWidget);
     expect(find.textContaining('NEXDARK'), findsNothing);
     expect(find.textContaining('Built with'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('achievement summary refreshes from real progress',
+      (tester) async {
+    _setSize(tester, const Size(390, 844));
+    await tester.pumpWidget(const MaterialApp(home: AchievementsScreen()));
+    expect(find.text('0 / 9'), findsOneWidget);
+    PlayerProgressStore.instance.value = PlayerProgress(wins: 1, quizzes: 1);
+    await tester.pump();
+    expect(find.text('2 / 9'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
