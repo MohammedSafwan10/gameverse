@@ -1,7 +1,11 @@
 # Connect Four mode-selection mockups
 
-Three proposals, pending user selection. Generated using the built-in GPT image
+Direction 1 selected by the user. Generated using the built-in GPT image
 tool. No application code, rules or runtime assets changed in this mockup pass.
+
+Eight additional screen/state proposals (04–11) are saved in this directory.
+See `SCREEN_PROMPTS.md` for prompts and implementation rules. These are awaiting
+approval, not completed application screens.
 
 1. `01-tactile-arcade.png`: cobalt, cream, red/yellow resin; bright arcade.
 2. `02-midnight-arena.png`: navy/brass competition; corrected unsupported disc.
