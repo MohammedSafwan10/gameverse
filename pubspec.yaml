@@ -71,6 +71,13 @@ flutter:
     - assets/images/games/block_merge/
     - assets/images/games/quiz_master/room.png
     - assets/images/games/quiz_master/hero.png
+    - assets/images/games/quiz_master/header-v2.png
+    - assets/images/games/quiz_master/science-v2.png
+    - assets/images/games/quiz_master/history-v2.png
+    - assets/images/games/quiz_master/geography-v2.png
+    - assets/images/games/quiz_master/mathematics-v2.png
+    - assets/images/games/quiz_master/technology-banner-v2.png
+    - assets/sounds/quiz_master/
     - assets/images/games/quiz_master/science.png
     - assets/images/games/quiz_master/history.png
     - assets/images/games/quiz_master/geography.png

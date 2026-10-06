@@ -60,7 +60,13 @@ void main() {
       'technology',
       'trophy',
       'help',
-      'leave'
+      'leave',
+      'header-v2',
+      'science-v2',
+      'history-v2',
+      'geography-v2',
+      'mathematics-v2',
+      'technology-banner-v2'
     ]) {
       expect(
           (await rootBundle.load('assets/images/games/quiz_master/$name.png'))
@@ -68,12 +74,17 @@ void main() {
           greaterThan(0));
     }
     for (final entry in {
+      // Audio assets must be bundled too; native playback is separately mocked.
       'QuizDisplay': 'assets/fonts/DMSerifDisplay-Regular.ttf',
       'BlockResin': 'assets/fonts/Barlow-SemiBold.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf'
     }.entries) {
       final font = FontLoader(entry.key)..addFont(rootBundle.load(entry.value));
       await font.load();
+    }
+    for (final cue in ['tap', 'correct', 'wrong', 'timeout', 'complete']) {
+      final bytes = await rootBundle.load('assets/sounds/quiz_master/$cue.wav');
+      expect(bytes.lengthInBytes, greaterThan(44));
     }
   });
   setUp(() {

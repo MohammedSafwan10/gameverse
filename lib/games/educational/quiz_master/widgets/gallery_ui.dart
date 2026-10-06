@@ -13,8 +13,10 @@ TextStyle quizText(double size,
         height: 1.12);
 
 class GalleryPage extends StatelessWidget {
-  const GalleryPage({super.key, required this.child});
+  const GalleryPage(
+      {super.key, required this.child, this.backgroundArt = 'room'});
   final Widget child;
+  final String? backgroundArt;
   @override
   Widget build(BuildContext context) => Theme(
       data: ThemeData.light().copyWith(
@@ -27,11 +29,13 @@ class GalleryPage extends StatelessWidget {
       child: Scaffold(
           backgroundColor: const Color(0xFFF3F6F7),
           body: Stack(children: [
-            Positioned.fill(
-                child: Image.asset('assets/images/games/quiz_master/room.png',
-                    fit: BoxFit.cover,
-                    cacheWidth: 1080,
-                    excludeFromSemantics: true)),
+            if (backgroundArt != null)
+              Positioned.fill(
+                  child: Image.asset(
+                      'assets/images/games/quiz_master/$backgroundArt.png',
+                      fit: BoxFit.cover,
+                      cacheWidth: 1080,
+                      excludeFromSemantics: true)),
             SafeArea(
                 child: Center(
                     child: ConstrainedBox(
@@ -111,50 +115,85 @@ class GalleryButton extends StatelessWidget {
       {super.key,
       required this.onTap,
       this.orange = false,
+      this.icon,
       this.outline = false});
   final String label;
   final VoidCallback? onTap;
   final bool orange, outline;
+  final IconData? icon;
   @override
   Widget build(BuildContext context) {
     final color = orange ? quizOrange : quizBlue;
-    return SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-            onPressed: onTap,
-            style: FilledButton.styleFrom(
-                backgroundColor: outline ? Colors.white : color,
-                foregroundColor: outline ? color : Colors.white,
-                disabledBackgroundColor: const Color(0xFFE1E8EF),
-                disabledForegroundColor: quizMuted,
-                minimumSize: const Size(44, 48),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                    side: BorderSide(
-                        color: outline ? color : Colors.white, width: 1.5)),
-                elevation: 3,
-                shadowColor: color.withValues(alpha: .25)),
-            child: Text(label,
-                textAlign: TextAlign.center,
-                style: quizText(16,
-                    color: onTap == null
-                        ? quizMuted
-                        : outline
-                            ? color
-                            : Colors.white))));
+    return DecoratedBox(
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: outline || onTap == null
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                        Color.lerp(color, Colors.white, .2)!,
+                        color,
+                        Color.lerp(color, Colors.black, .18)!
+                      ]),
+            boxShadow: [
+              BoxShadow(
+                  color: color.withValues(alpha: .18),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5))
+            ]),
+        child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+                onPressed: onTap,
+                style: FilledButton.styleFrom(
+                    backgroundColor: outline
+                        ? Colors.white
+                        : onTap == null
+                            ? null
+                            : Colors.transparent,
+                    foregroundColor: outline ? color : Colors.white,
+                    disabledBackgroundColor: const Color(0xFFE1E8EF),
+                    disabledForegroundColor: quizMuted,
+                    minimumSize: const Size(44, 48),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        side: BorderSide(
+                            color: outline ? color : Colors.white, width: 1.5)),
+                    elevation: 0,
+                    shadowColor: color.withValues(alpha: .25)),
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 25),
+                    const SizedBox(width: 12)
+                  ],
+                  Flexible(
+                      child: Text(label,
+                          textAlign: TextAlign.center,
+                          style: quizText(16,
+                              color: onTap == null
+                                  ? quizMuted
+                                  : outline
+                                      ? color
+                                      : Colors.white)))
+                ]))));
   }
 }
 
 class GalleryStat extends StatelessWidget {
-  const GalleryStat(this.label, this.value, this.icon, {super.key});
+  const GalleryStat(this.label, this.value, this.icon,
+      {super.key, this.iconColor = quizOrange});
   final String label, value;
   final IconData icon;
+  final Color iconColor;
   @override
   Widget build(BuildContext context) =>
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon, color: quizOrange, size: 24),
+        Icon(icon, color: iconColor, size: 24),
         const SizedBox(width: 8),
         Flexible(
             child: Column(

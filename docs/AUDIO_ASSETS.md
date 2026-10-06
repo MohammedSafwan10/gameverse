@@ -1,5 +1,38 @@
 # Audio assets
 
+## Quiz Master — Discovery Gallery
+
+Downloaded from Kenney's official Interface Sounds and Music Jingles pages;
+both pages and the included licenses explicitly mark the packs CC0.
+Licenses retained under `assets/sounds/quiz_master/`. No background music or
+loud game-start fanfare. Separate preloaded pools; unready cues are skipped,
+never queued. Persistent mute is available on topic selection and gameplay.
+
+| Prepared file | Original / pack | Duration | Preparation | Playback volume |
+|---|---|---|---|---|
+| tap.wav | pluck_001.ogg / Interface | 84 ms | Trim at 87 ms, 2 ms fade-in, 22 ms fade-out, gain .65 | .30 |
+| correct.wav | confirmation_001.ogg / Interface | 290 ms | 3 ms fade-in, 40 ms fade-out, gain .55 | .42 |
+| wrong.wav | error_002.ogg / Interface | 165 ms | 3 ms fade-in, 40 ms fade-out, gain .45 | .30 |
+| timeout.wav | minimize_002.ogg / Interface | 258 ms | 3 ms fade-in, 50 ms fade-out, gain .40 | .30 |
+| complete.wav | jingles_PIZZI03.ogg / Music Jingles | 1111 ms | Trim at 1111 ms, 4 ms fade-in, 121 ms fade-out, gain .60 | .40 |
+
+FFmpeg silencedetect and volumedetect checked before and after conversion.
+Original tap silence begins at 86.6 ms; jingle trailing silence begins at
+1111.3 ms. Other originals have no detected 10 ms silence interval.
+Prepared fade tails fall below -45 dB near their ends; no leading silence found.
+Files are mono 44.1 kHz 16-bit PCM WAV. Peaks before playback attenuation:
+tap -3.3 dB, correct/wrong -6.4 dB, timeout -9.1 dB, completion -8.6 dB.
+The 10 ms click_002 candidate was rejected as too short.
+
+Answer cues are attached to newly recorded answers; completion is once per
+finished round. Tap is used for category selection, not layered redundantly
+over every answer. Background/leave/mute stop active cues. Pool disposal waits
+for late starts to stop. Automated checks cover these lifecycle races; subjective
+loudness and timbre still need the user's listening feedback on their phone.
+
+- https://kenney.nl/assets/interface-sounds
+- https://kenney.nl/assets/music-jingles
+
 ## Block Merge — fresh resin
 
 Downloaded from https://kenney.nl/assets/interface-sounds (CC0 / public domain).

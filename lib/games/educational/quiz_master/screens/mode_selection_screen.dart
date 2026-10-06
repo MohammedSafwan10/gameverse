@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../bindings/quiz_binding.dart';
 import '../models/quiz_category.dart';
 import '../services/quiz_service.dart';
+import '../services/quiz_sound_service.dart';
 import '../widgets/gallery_ui.dart';
 import 'quiz_screen.dart';
 import 'support_screens.dart';
@@ -16,17 +18,24 @@ class QuizMasterModeSelectionScreen extends StatefulWidget {
 
 class _QuizMenuState extends State<QuizMasterModeSelectionScreen> {
   late final QuizService service;
+  late final QuizSoundService sounds;
   bool _opening = false;
   @override
   void initState() {
     super.initState();
     if (!Get.isRegistered<QuizService>()) QuizMasterBinding().dependencies();
     service = Get.find<QuizService>();
+    sounds = Get.isRegistered<QuizSoundService>()
+        ? Get.find<QuizSoundService>()
+        : Get.put(QuizSoundService());
+    sounds.suspend(false);
+    unawaited(sounds.preload());
   }
 
   Future<void> _setup(QuizCategory category) async {
     if (_opening) return;
     _opening = true;
+    sounds.play('tap');
     final count = await showDialog<int>(
         context: context, builder: (_) => QuizSetupDialog(category: category));
     if (mounted && count != null) {
@@ -36,59 +45,94 @@ class _QuizMenuState extends State<QuizMasterModeSelectionScreen> {
               questionCount: count,
               mode: QuizMode.practice)));
     }
+    sounds.suspend(false);
     _opening = false;
   }
 
   @override
-  Widget build(BuildContext context) =>
-      GalleryPage(child: GalleryViewport(builder: (context, height) {
+  Widget build(BuildContext context) => GalleryPage(
+      backgroundArt: null,
+      child: GalleryViewport(builder: (context, height) {
         final compact = height < 650;
-        final gap = compact ? 8.0 : 12.0;
+        final gap = compact ? 6.0 : 8.0;
+        final headerHeight = height * (compact ? .24 : .215);
         return Column(children: [
-          Row(children: [
-            GalleryIcon(
-                icon: Icons.arrow_back_rounded,
-                onTap: () => Navigator.of(context).pop(),
-                label: 'Back'),
-            const Spacer(),
-            GalleryIcon(
-                icon: Icons.help_outline_rounded,
-                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => const QuizHelpScreen())),
-                label: 'How to play')
-          ]),
-          SizedBox(height: gap),
           SizedBox(
-              height: height * .20,
-              child: Row(children: [
-                Expanded(
-                    flex: 11,
+              height: headerHeight,
+              child: Stack(children: [
+                Positioned.fill(
+                    child: ShaderMask(
+                        blendMode: BlendMode.dstIn,
+                        shaderCallback: (bounds) => const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.white,
+                                  Colors.white,
+                                  Colors.transparent
+                                ],
+                                stops: [
+                                  0,
+                                  .88,
+                                  1
+                                ]).createShader(bounds),
+                        child:
+                            const GalleryArt('header-v2', fit: BoxFit.cover))),
+                Positioned(
+                    top: 0,
+                    left: 0,
+                    child: GalleryIcon(
+                        icon: Icons.arrow_back_rounded,
+                        onTap: () => Navigator.of(context).pop(),
+                        label: 'Back')),
+                Positioned(
+                    top: 0,
+                    right: 0,
+                    child: GalleryIcon(
+                        icon: Icons.question_mark_rounded,
+                        onTap: _help,
+                        label: 'How to play')),
+                Positioned(
+                    top: 0,
+                    right: 50,
+                    child: Obx(() => GalleryIcon(
+                        icon: sounds.muted.value
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        onTap: sounds.toggleMute,
+                        label: sounds.muted.value
+                            ? 'Enable sound'
+                            : 'Mute sound'))),
+                Positioned(
+                    left: 0,
+                    bottom: 4,
+                    right: MediaQuery.sizeOf(context).width * .49,
                     child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
+                        alignment: Alignment.bottomLeft,
                         child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text('QUIZ',
-                                  style: quizText(compact ? 38 : 49,
-                                      display: true)),
+                                  style: quizText(compact ? 40 : 56,
+                                          display: true,
+                                          color: const Color(0xFF003BAF))
+                                      .copyWith(height: .98)),
                               Text('MASTER',
-                                  style: quizText(compact ? 32 : 40,
-                                      display: true, color: quizOrange)),
-                              const SizedBox(height: 4),
+                                  style: quizText(compact ? 33 : 45,
+                                          display: true, color: quizOrange)
+                                      .copyWith(height: 1)),
+                              const SizedBox(height: 5),
                               Text('Choose your topic',
-                                  style: quizText(compact ? 13 : 16)),
+                                  style: quizText(compact ? 13 : 16,
+                                      color: quizMuted)),
                             ]))),
-                Expanded(
-                    flex: 9,
-                    child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: const GalleryArt('hero', fit: BoxFit.contain))),
               ])),
           SizedBox(height: gap),
           Obx(() => GalleryPanel(
-              padding: EdgeInsets.all(compact ? 8 : 12),
+              padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 8 : 14, vertical: compact ? 7 : 10),
               child: Row(children: [
                 Expanded(
                     child: GalleryStat(
@@ -100,13 +144,14 @@ class _QuizMenuState extends State<QuizMasterModeSelectionScreen> {
                     child: GalleryStat(
                         'QUIZZES PLAYED',
                         '${service.totalQuizzesPlayed.value}',
-                        Icons.bar_chart_rounded)),
+                        Icons.bar_chart_rounded,
+                        iconColor: quizBlue)),
               ]))),
           SizedBox(height: gap),
           Expanded(
               child: Column(children: [
             Expanded(
-                flex: 3,
+                flex: 6,
                 child: Row(children: [
                   Expanded(child: _card(service.categories[0])),
                   SizedBox(width: gap),
@@ -114,90 +159,96 @@ class _QuizMenuState extends State<QuizMasterModeSelectionScreen> {
                 ])),
             SizedBox(height: gap),
             Expanded(
-                flex: 3,
+                flex: 6,
                 child: Row(children: [
                   Expanded(child: _card(service.categories[2])),
                   SizedBox(width: gap),
                   Expanded(child: _card(service.categories[3])),
                 ])),
             SizedBox(height: gap),
-            Expanded(flex: 2, child: _card(service.categories[4], wide: true)),
+            Expanded(flex: 5, child: _card(service.categories[4], wide: true)),
           ])),
           SizedBox(height: gap),
           GalleryButton('HOW TO PLAY',
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => const QuizHelpScreen()))),
+              icon: Icons.menu_book_rounded, onTap: _help),
         ]);
       }));
-  Widget _card(QuizCategory category, {bool wide = false}) {
-    if (wide && MediaQuery.sizeOf(context).height < 650) {
-      return GalleryPanel(
-          padding: EdgeInsets.zero,
+
+  void _help() => Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => const QuizHelpScreen()));
+
+  Widget _card(QuizCategory category, {bool wide = false}) => Semantics(
+      button: true,
+      label: 'Start ${category.name} quiz',
+      child: GalleryPanel(
+          padding: const EdgeInsets.all(2),
+          radius: 17,
           child: Material(
               color: Colors.transparent,
               child: InkWell(
-                  borderRadius: BorderRadius.circular(19),
+                  borderRadius: BorderRadius.circular(15),
                   onTap: () => _setup(category),
-                  child: Row(children: [
-                    const Expanded(flex: 2, child: GalleryArt('technology')),
-                    Expanded(
-                        flex: 3,
-                        child: Text(category.name,
-                            style: quizText(19, display: true))),
-                    const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Icon(Icons.chevron_right_rounded,
-                            color: quizOrange)),
-                  ]))));
-    }
-    return Semantics(
-        button: true,
-        label: 'Start ${category.name} quiz',
-        child: GalleryPanel(
-            padding: EdgeInsets.zero,
-            radius: 19,
-            child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                    borderRadius: BorderRadius.circular(19),
-                    onTap: () => _setup(category),
-                    child: Column(children: [
-                      Expanded(
-                          child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(17)),
-                              child: SizedBox.expand(
-                                  child: GalleryArt(category.id,
-                                      fit: wide ||
-                                              MediaQuery.sizeOf(context)
-                                                      .height <
-                                                  650
-                                          ? BoxFit.contain
-                                          : BoxFit.cover)))),
-                      Padding(
-                          padding: const EdgeInsets.fromLTRB(9, 6, 8, 6),
-                          child: Row(children: [
-                            Expanded(
-                                child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(category.name,
-                                        maxLines: 1,
-                                        style: quizText(
-                                            category.id == 'mathematics'
-                                                ? 17
-                                                : 19,
-                                            display: true)))),
-                            Container(
-                                width: 25,
-                                height: 25,
-                                decoration: const BoxDecoration(
-                                    color: quizOrange, shape: BoxShape.circle),
-                                child: const Icon(Icons.chevron_right_rounded,
-                                    color: Colors.white, size: 22)),
-                          ])),
-                    ])))));
-  }
+                  child: wide && MediaQuery.sizeOf(context).height < 650
+                      ? Row(children: [
+                          const Expanded(
+                              child: GalleryArt('technology-banner-v2')),
+                          Expanded(
+                              child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(category.name,
+                                      style: quizText(20, display: true)))),
+                          const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.chevron_right_rounded,
+                                  color: quizOrange)),
+                        ])
+                      : Column(children: [
+                          Expanded(
+                              child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(14)),
+                                  child: SizedBox.expand(
+                                      child: GalleryArt(
+                                          wide
+                                              ? 'technology-banner-v2'
+                                              : '${category.id}-v2',
+                                    fit: MediaQuery.sizeOf(context).height < 650
+                                        ? BoxFit.contain
+                                        : BoxFit.cover)))),
+                          Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 4, 6, 5),
+                              child: Row(children: [
+                                Expanded(
+                                    child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(category.name,
+                                            style:
+                                                quizText(20, display: true)))),
+                                Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Color(0xFFFF9B41),
+                                              quizOrange
+                                            ]),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                              color: Color(0x33D55B00),
+                                              blurRadius: 3,
+                                              offset: Offset(0, 2))
+                                        ]),
+                                    child: const Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: Colors.white,
+                                        size: 25)),
+                              ])),
+                        ])))));
 }
 
 class QuizSetupDialog extends StatefulWidget {

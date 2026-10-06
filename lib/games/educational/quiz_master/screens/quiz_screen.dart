@@ -4,6 +4,7 @@ import '../controllers/quiz_controller.dart';
 import '../controllers/mode_selection_controller.dart';
 import '../models/quiz_category.dart';
 import '../widgets/gallery_ui.dart';
+import '../services/quiz_sound_service.dart';
 import 'support_screens.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -23,12 +24,29 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizState extends State<QuizScreen> with WidgetsBindingObserver {
   late final QuizMasterController game;
+  QuizSoundService? sounds;
+  Worker? _answerSound, _completionSound;
   bool _leaving = false, _allowPop = false, _background = false;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     game = widget.controller ?? QuizMasterController();
+    if (widget.controller == null && Get.isRegistered<QuizSoundService>()) {
+      sounds = Get.find<QuizSoundService>()..suspend(false);
+      _answerSound = ever(game.answers, (_) {
+        if (game.answers.isEmpty) return;
+        final answer = game.answers.last;
+        sounds?.play(answer.timedOut
+            ? 'timeout'
+            : answer.isCorrect
+                ? 'correct'
+                : 'wrong');
+      });
+      _completionSound = ever(game.isCompleted, (complete) {
+        if (complete) sounds?.play('complete');
+      });
+    }
     if (widget.controller == null) {
       game.startQuiz(
           category: widget.category,
@@ -41,11 +59,15 @@ class _QuizState extends State<QuizScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _background = state != AppLifecycleState.resumed;
     game.setPaused(_background || _leaving);
+    sounds?.suspend(_background || _leaving);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _answerSound?.dispose();
+    _completionSound?.dispose();
+    sounds?.suspend(true);
     if (widget.controller == null) game.onClose();
     super.dispose();
   }
@@ -58,6 +80,7 @@ class _QuizState extends State<QuizScreen> with WidgetsBindingObserver {
     }
     _leaving = true;
     game.setPaused(true);
+    sounds?.suspend(true);
     final leave = await showDialog<bool>(
         context: context, builder: (_) => const QuizLeaveDialog());
     if (!mounted) return;
@@ -66,6 +89,7 @@ class _QuizState extends State<QuizScreen> with WidgetsBindingObserver {
       _pop();
     } else {
       game.setPaused(_background);
+      sounds?.suspend(_background);
     }
   }
 
@@ -124,7 +148,14 @@ class _QuizState extends State<QuizScreen> with WidgetsBindingObserver {
         const SizedBox(width: 10),
         Expanded(
             child: Text('${widget.category.name.toUpperCase()} QUIZ',
-                style: quizText(compact ? 22 : 28, display: true)))
+                style: quizText(compact ? 22 : 28, display: true))),
+        if (sounds != null)
+          Obx(() => GalleryIcon(
+              icon: sounds!.muted.value
+                  ? Icons.volume_off_rounded
+                  : Icons.volume_up_rounded,
+              onTap: sounds!.toggleMute,
+              label: sounds!.muted.value ? 'Enable sound' : 'Mute sound')),
       ]),
       const SizedBox(height: 10),
       GalleryPanel(
