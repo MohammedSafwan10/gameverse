@@ -26,13 +26,16 @@ shared expressive mobile interface.
   questions, inline explanations, results and answer review.
 - Resin-themed Block Merge: Classic, three-minute Time Challenge, and untimed Zen;
   swipe animations, one-move undo, a resumable local run, and a 2048 milestone.
-- Android, iOS, web, Windows, macOS, and Linux Flutter targets.
+- Bundled offline typography; no runtime font downloads.
+- Android is the release target. Other Flutter platform folders are retained,
+  but are not release-certified.
 
 The app combines shared navigation with game-specific visual themes. It does not require an
 account, network connection, Firebase, or cloud services.
 
-Gameplay is offline; fresh-install font availability still requires release
-verification. The visual redesign is not a production-readiness certificate.
+Gameplay and bundled fonts work without network requests. A fresh release
+installation still needs physical-device smoke testing. The visual redesign is
+not a production-readiness certificate.
 See [release status](docs/PLAYER_PROGRESS_AND_RELEASE_STATUS.md) for remaining
 store, device, typography and test gates.
 
@@ -40,8 +43,8 @@ store, device, typography and test gates.
 
 Requirements:
 
-- Flutter SDK compatible with Dart `^3.5.4`
-- Android SDK and Java 17 for Android builds
+- Flutter 3.47.5 / Dart 3.13.4 or compatible newer stable SDK
+- Android SDK, Java 17+, AGP 9.4.0, Gradle 9.6.0 and Kotlin 2.4.20
 
 ```bash
 flutter pub get
@@ -53,7 +56,7 @@ Before handing off a change:
 ```bash
 dart format lib test
 flutter analyze
-flutter test --reporter compact
+flutter test --concurrency=1 --reporter compact
 flutter build apk --debug
 ```
 
@@ -62,6 +65,10 @@ Detailed design and polish guidance is maintained in:
 - `docs/FRONTEND_REDESIGN_PLAN.md`
 - `docs/GAME_POLISH_PLAYBOOK.md`
 - `docs/AUDIO_ASSETS.md`
+- `docs/FONT_ASSETS.md`
+- `docs/ANDROID_RELEASE.md` — signing, AAB validation and store gates
+- `docs/PRIVACY_POLICY.md` — NexDark Labs' offline-data policy
+- `docs/WEBSITE_PLAN.md` — website concepts and proposed Coolify deployment
 
 ## Project structure
 

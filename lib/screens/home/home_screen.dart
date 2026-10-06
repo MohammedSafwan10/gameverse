@@ -1198,7 +1198,7 @@ class _GameSearchDelegate extends SearchDelegate<void> {
     return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: matches.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final game = matches[index];
         return ListTile(

@@ -353,7 +353,7 @@ class _ResinBoardState extends State<ResinBoard>
                         Transform.scale(scale: scale, child: ResinTile(value)));
             return AnimatedBuilder(
                 animation: animation,
-                builder: (_, __) {
+                builder: (_, _) {
                   final moving = animation.isAnimating &&
                       widget.motion != null &&
                       animation.value < .72;

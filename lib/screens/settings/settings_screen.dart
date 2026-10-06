@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/gameverse_utility_widgets.dart';
+import '../../services/app_info.dart';
+import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -30,14 +32,17 @@ class SettingsScreen extends StatelessWidget {
                       SizedBox(height: compact ? 12 : 18),
                       _SettingsHero(compact: compact),
                       SizedBox(height: compact ? 18 : 24),
-                      _SettingsSection(
-                        title: 'SYSTEM',
-                        icon: Icons.settings_rounded,
-                        rows: const [
-                          _SettingData('Version', '1.0.1', Icons.info_rounded,
-                              GameVerseUtilityColors.cobalt),
-                        ],
-                        compact: compact,
+                      ValueListenableBuilder<String>(
+                        valueListenable: AppInfo.version,
+                        builder: (context, version, _) => _SettingsSection(
+                          title: 'SYSTEM',
+                          icon: Icons.settings_rounded,
+                          rows: [
+                            _SettingData('Version', version, Icons.info_rounded,
+                                GameVerseUtilityColors.cobalt),
+                          ],
+                          compact: compact,
+                        ),
                       ),
                       SizedBox(height: compact ? 18 : 24),
                       _SettingsSection(
@@ -46,11 +51,10 @@ class SettingsScreen extends StatelessWidget {
                         rows: [
                           _SettingData(
                             'Contact Us',
-                            'itzmesafwan1@gmail.com',
+                            'nexdarksolutions@gmail.com',
                             Icons.email_rounded,
                             GameVerseUtilityColors.pink,
-                            onTap: () => launchUrl(
-                                Uri.parse('mailto:itzmesafwan1@gmail.com')),
+                            onTap: () => _contact(context),
                           ),
                         ],
                         compact: compact,
@@ -60,6 +64,17 @@ class SettingsScreen extends StatelessWidget {
                         title: 'YOUR DATA',
                         icon: Icons.balance_rounded,
                         rows: [
+                          _SettingData(
+                            'Privacy Policy',
+                            'Offline data and your choices',
+                            Icons.privacy_tip_rounded,
+                            GameVerseUtilityColors.cobalt,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const PrivacyPolicyScreen(),
+                              ),
+                            ),
+                          ),
                           _SettingData(
                             'Local Progress',
                             'How your saved games work',
@@ -89,8 +104,11 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: GameVerseUtilityColors.cream,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: Text(title),
-        content: Text(body),
+        title: Text(title,
+            style: const TextStyle(color: GameVerseUtilityColors.ink)),
+        content: SingleChildScrollView(
+            child: Text(body,
+                style: const TextStyle(color: GameVerseUtilityColors.ink))),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
@@ -98,6 +116,21 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _contact(BuildContext context) async {
+    try {
+      if (await launchUrl(Uri.parse('mailto:nexdarksolutions@gmail.com'))) {
+        return;
+      }
+    } catch (_) {
+      // A device without an email client should not produce an uncaught error.
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Email us at nexdarksolutions@gmail.com'),
+      ));
+    }
   }
 }
 
@@ -141,15 +174,19 @@ class _SettingsHero extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'MAKE IT YOURS',
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontSize: compact ? 21 : 26,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -.3,
-                      ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'MAKE IT YOURS',
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontSize: compact ? 21 : 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.3,
+                        ),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(

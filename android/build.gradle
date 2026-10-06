@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Override AGP's bundled Kotlin without applying the obsolete Android plugin.
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20"
+    }
+}
+
 allprojects {
     repositories {
         google()

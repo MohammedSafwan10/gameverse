@@ -9,6 +9,8 @@ import 'package:gameverse/games/brain_training/memory_match/screens/game_screen.
 import 'package:gameverse/games/brain_training/memory_match/screens/mode_selection_screen.dart';
 import 'package:gameverse/games/brain_training/memory_match/services/sound_service.dart';
 import 'package:get/get.dart';
+import 'package:gameverse/theme/app_theme.dart';
+import '../../../support/offline_fonts.dart';
 
 class _SilentSoundService extends MemoryMatchSoundService {
   @override
@@ -26,6 +28,7 @@ class _SilentSoundService extends MemoryMatchSoundService {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(loadOfflineFonts);
 
   setUp(() {
     Get.testMode = true;
@@ -49,7 +52,9 @@ void main() {
       (tester) async {
         _setSize(tester, size);
         await tester.pumpWidget(
-          const GetMaterialApp(home: MemoryMatchModeSelectionScreen()),
+          GetMaterialApp(
+              theme: AppTheme.lightTheme,
+              home: const MemoryMatchModeSelectionScreen()),
         );
         await tester.pump();
 
@@ -70,7 +75,8 @@ void main() {
       (tester) async {
         _setSize(tester, size);
         await tester.pumpWidget(
-          const GetMaterialApp(
+          GetMaterialApp(
+            theme: AppTheme.lightTheme,
             home: MemoryMatchGameScreen(
               mode: MemoryMatchMode.classic,
               difficulty: GameDifficulty.hard,
@@ -98,7 +104,8 @@ void main() {
       (tester) async {
         _setSize(tester, size);
         await tester.pumpWidget(
-          const GetMaterialApp(
+          GetMaterialApp(
+            theme: AppTheme.lightTheme,
             home: GameCompletionScreen(
               mode: MemoryMatchMode.classic,
               difficulty: GameDifficulty.medium,
@@ -130,7 +137,9 @@ void main() {
       (tester) async {
     _setSize(tester, const Size(320, 568));
     await tester.pumpWidget(
-      const GetMaterialApp(home: MemoryMatchModeSelectionScreen()),
+      GetMaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const MemoryMatchModeSelectionScreen()),
     );
 
     await tester.tap(find.text('CLASSIC'));
@@ -149,7 +158,8 @@ void main() {
   testWidgets('time-up result shows retry guidance', (tester) async {
     _setSize(tester, const Size(390, 844));
     await tester.pumpWidget(
-      const GetMaterialApp(
+      GetMaterialApp(
+        theme: AppTheme.lightTheme,
         home: GameCompletionScreen(
           mode: MemoryMatchMode.timeTrial,
           difficulty: GameDifficulty.easy,
@@ -173,7 +183,8 @@ void main() {
       (tester) async {
     _setSize(tester, const Size(320, 568));
     await tester.pumpWidget(
-      const GetMaterialApp(
+      GetMaterialApp(
+        theme: AppTheme.lightTheme,
         home: MemoryMatchGameScreen(
           mode: MemoryMatchMode.classic,
           difficulty: GameDifficulty.medium,
@@ -200,7 +211,8 @@ void main() {
       (tester) async {
     _setSize(tester, const Size(320, 568));
     await tester.pumpWidget(
-      const GetMaterialApp(
+      GetMaterialApp(
+        theme: AppTheme.lightTheme,
         home: MemoryMatchGameScreen(
           mode: MemoryMatchMode.classic,
           difficulty: GameDifficulty.medium,

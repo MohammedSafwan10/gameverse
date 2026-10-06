@@ -138,20 +138,23 @@ class _ProfileHero extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Guest Player',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: GameVerseUtilityColors.ink,
-                        fontSize: compact ? 22 : 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -.5,
-                      ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Guest Player',
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: GameVerseUtilityColors.ink,
+                          fontSize: compact ? 22 : 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.5,
+                        ),
+                  ),
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Progress saved on this device',
+                  'On-device progress',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(

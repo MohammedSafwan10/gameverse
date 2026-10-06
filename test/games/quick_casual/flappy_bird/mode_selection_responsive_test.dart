@@ -8,6 +8,7 @@ import 'package:get_storage/get_storage.dart';
 
 import 'package:gameverse/games/quick_casual/flappy_bird/controllers/settings_controller.dart';
 import 'package:gameverse/games/quick_casual/flappy_bird/screens/mode_selection_screen.dart';
+import '../../../support/offline_fonts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -15,11 +16,7 @@ void main() {
 
   setUpAll(() async {
     Get.testMode = true;
-    final fontLoader = FontLoader('BarlowCondensed')
-      ..addFont(rootBundle.load('assets/fonts/BarlowCondensed-SemiBold.ttf'))
-      ..addFont(rootBundle.load('assets/fonts/BarlowCondensed-Bold.ttf'))
-      ..addFont(rootBundle.load('assets/fonts/BarlowCondensed-ExtraBold.ttf'));
-    await fontLoader.load();
+    await loadOfflineFonts();
     storageDirectory =
         Directory.systemTemp.createTempSync('flappy-mode-selection-');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

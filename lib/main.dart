@@ -6,6 +6,7 @@ import 'screens/profile/profile_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/achievements/achievements_screen.dart';
 import 'services/player_progress.dart';
+import 'services/app_info.dart';
 import 'theme/app_theme.dart';
 import 'games/classic_board/tic_tac_toe/screens/game_screen.dart'
     as tic_tac_toe;
@@ -42,6 +43,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await PlayerProgressStore.instance.initialize();
+  await AppInfo.initialize();
 
   runApp(const MyApp());
 }

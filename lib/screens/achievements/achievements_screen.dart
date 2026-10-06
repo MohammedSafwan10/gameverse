@@ -83,7 +83,9 @@ class AchievementsScreen extends StatelessWidget {
                       SizedBox(height: compact ? 18 : 24),
                       const Text(
                           'Based on local records. Memory progress starts with this update.',
-                          textAlign: TextAlign.center),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: GameVerseUtilityColors.ink, fontSize: 12)),
                       const SizedBox(height: 12),
                       for (var index = 0; index < groups.length; index++) ...[
                         _AchievementSection(

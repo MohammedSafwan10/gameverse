@@ -81,6 +81,19 @@ See the entries below for original source URLs and licenses. Independent audio
 pools preload on mode entry; gameplay does not await playback. Mute is checked
 again after preload. No music loop or loud start cue is added.
 
+## Flappy Bird (release cleanup)
+
+Flap, pipe-score and collision feedback reuse the licensed Kenney CC0 PCM
+`memory_flip.wav`, `memory_match.wav` and `memory_miss.wav` listed below. Flap
+volume is 0.25, other cues 0.32. Independent AudioPool instances preload once;
+unready cues are skipped rather than delayed. Playback, pause and disposal are
+guarded against late asynchronous starts; active stop handles are bounded per
+cue, so long sessions cannot accumulate one handle per tap. Saving a result
+never waits on sound. Sound and haptic preferences persist on-device.
+
+Removed the obsolete `AssetManifest.json` probe and unlicensed shared
+`drop.mp3` / `win.mp3`. There is no background music loop or unused music toggle.
+
 ## Memory Match
 
 The Memory Match effects are distributed under Creative Commons CC0.

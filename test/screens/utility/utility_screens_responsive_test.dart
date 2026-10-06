@@ -5,13 +5,18 @@ import 'package:gameverse/screens/profile/profile_screen.dart';
 import 'package:gameverse/screens/settings/settings_screen.dart';
 import 'package:get/get.dart';
 import 'package:gameverse/services/player_progress.dart';
+import 'package:gameverse/services/app_info.dart';
+import 'package:gameverse/theme/app_theme.dart';
+import '../../support/offline_fonts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(loadOfflineFonts);
 
   setUp(() {
     Get.testMode = true;
     PlayerProgressStore.instance.value = PlayerProgress();
+    AppInfo.version.value = '1.0.0 (1)';
   });
 
   tearDown(Get.reset);
@@ -36,6 +41,7 @@ void main() {
         ]) {
           await tester.pumpWidget(
             GetMaterialApp(
+              theme: AppTheme.lightTheme,
               debugShowCheckedModeBanner: false,
               home: screen,
               getPages: [
@@ -73,6 +79,7 @@ void main() {
     _setSize(tester, const Size(390, 844));
     await tester.pumpWidget(
       GetMaterialApp(
+        theme: AppTheme.lightTheme,
         home: const ProfileScreen(),
         getPages: [
           GetPage(
@@ -114,13 +121,14 @@ void main() {
 
   testWidgets('settings contains no developer attribution', (tester) async {
     _setSize(tester, const Size(390, 844));
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+        MaterialApp(theme: AppTheme.lightTheme, home: const SettingsScreen()));
     await tester.pump();
 
     expect(find.text('Contact Us'), findsOneWidget);
     expect(find.text('Rate Game'), findsNothing);
     expect(find.text('Storage'), findsNothing);
-    expect(find.text('1.0.1'), findsOneWidget);
+    expect(find.text('1.0.0 (1)'), findsOneWidget);
     expect(find.textContaining('NEXDARK'), findsNothing);
     expect(find.textContaining('Built with'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -129,7 +137,8 @@ void main() {
   testWidgets('achievement summary refreshes from real progress',
       (tester) async {
     _setSize(tester, const Size(390, 844));
-    await tester.pumpWidget(const MaterialApp(home: AchievementsScreen()));
+    await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.lightTheme, home: const AchievementsScreen()));
     expect(find.text('0 / 9'), findsOneWidget);
     PlayerProgressStore.instance.value = PlayerProgress(wins: 1, quizzes: 1);
     await tester.pump();
@@ -147,6 +156,7 @@ void main() {
       _setSize(tester, const Size(390, 844));
       await tester.pumpWidget(
         GetMaterialApp(
+          theme: AppTheme.lightTheme,
           debugShowCheckedModeBanner: false,
           home: entry.value,
         ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 abstract final class MemoryMatchTheme {
   static const cobalt = Color(0xFF1455D9);
@@ -22,7 +21,8 @@ abstract final class MemoryMatchTheme {
     FontWeight weight = FontWeight.w900,
     double height = 0.98,
   }) =>
-      GoogleFonts.outfit(
+      TextStyle(
+        fontFamily: 'Outfit',
         fontSize: size,
         fontWeight: weight,
         height: height,
@@ -36,7 +36,8 @@ abstract final class MemoryMatchTheme {
     FontWeight weight = FontWeight.w500,
     double height = 1.25,
   }) =>
-      GoogleFonts.inter(
+      TextStyle(
+        fontFamily: 'Inter',
         fontSize: size,
         fontWeight: weight,
         height: height,
@@ -47,7 +48,8 @@ abstract final class MemoryMatchTheme {
     double size = 30,
     Color color = ink,
   }) =>
-      GoogleFonts.barlowCondensed(
+      TextStyle(
+        fontFamily: 'BarlowCondensed',
         fontSize: size,
         fontWeight: FontWeight.w900,
         height: .9,

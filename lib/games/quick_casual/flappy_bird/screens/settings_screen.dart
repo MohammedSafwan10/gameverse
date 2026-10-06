@@ -105,16 +105,6 @@ class FlappyBirdSettingsScreen extends StatelessWidget {
                                 ),
                                 _PanelDivider(palette: palette),
                                 _ToggleRow(
-                                  key: const Key('flappy-settings-music'),
-                                  icon: Icons.music_note_rounded,
-                                  title: 'Flight music',
-                                  subtitle: 'Background soundtrack',
-                                  value: controller.musicEnabled.value,
-                                  palette: palette,
-                                  onChanged: (_) => controller.toggleMusic(),
-                                ),
-                                _PanelDivider(palette: palette),
-                                _ToggleRow(
                                   key: const Key('flappy-settings-haptics'),
                                   icon: Icons.vibration_rounded,
                                   title: 'Haptic feedback',

@@ -48,6 +48,7 @@ then run focused tests again **without** updating baselines, analyzer, full
 suite and one final Android debug build. Real-device verification needs a full
 restart/install after adding new bundled assets.
 
-Shared `drop.mp3` / `win.mp3` cannot be deleted yet: Flappy Bird references them.
+Release cleanup replaced Flappy Bird's shared `drop.mp3` / `win.mp3` references
+with licensed PCM pools, then removed both obsolete MP3 files.
 Do not stage unrelated desktop registrants, pre-existing lockfile changes,
 test failure images, or temporary processing files.

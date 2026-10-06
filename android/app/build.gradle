@@ -1,6 +1,5 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
@@ -21,9 +20,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17
-    }
 
     defaultConfig {
         applicationId = "com.gameverse.app"
@@ -47,8 +43,25 @@ android {
 
     buildTypes {
         release {
+            // Never silently create a debug-signed store artifact.
+            if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }) {
+                if (!keystorePropertiesFile.exists()) {
+                    throw new GradleException("Release signing requires android/key.properties. See docs/ANDROID_RELEASE.md.")
+                }
+                ["keyAlias", "keyPassword", "storeFile", "storePassword"].each { key ->
+                    if (!keystoreProperties[key]) {
+                        throw new GradleException("Release signing is missing required field: " + key)
+                    }
+                }
+            }
             signingConfig = signingConfigs.release
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

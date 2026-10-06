@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const Color primaryColor = Color(0xFFF4B860); // Warm premium gold
@@ -16,44 +15,52 @@ class AppTheme {
   );
 
   static final TextTheme _textTheme = TextTheme(
-    displayLarge: GoogleFonts.outfit(
+    displayLarge: TextStyle(
+      fontFamily: 'Outfit',
       fontSize: 36,
       fontWeight: FontWeight.w800,
       letterSpacing: -1.5,
       color: Colors.white,
     ),
-    displayMedium: GoogleFonts.outfit(
+    displayMedium: TextStyle(
+      fontFamily: 'Outfit',
       fontSize: 30,
       fontWeight: FontWeight.w700,
       letterSpacing: -1.0,
       color: Colors.white,
     ),
-    displaySmall: GoogleFonts.outfit(
+    displaySmall: TextStyle(
+      fontFamily: 'Outfit',
       fontSize: 24,
       fontWeight: FontWeight.w700,
       color: Colors.white,
     ),
-    headlineMedium: GoogleFonts.outfit(
+    headlineMedium: TextStyle(
+      fontFamily: 'Outfit',
       fontSize: 22,
       fontWeight: FontWeight.w600,
       color: Colors.white,
     ),
-    titleLarge: GoogleFonts.inter(
+    titleLarge: TextStyle(
+      fontFamily: 'Inter',
       fontSize: 18,
       fontWeight: FontWeight.w700,
       color: Colors.white,
     ),
-    bodyLarge: GoogleFonts.inter(
+    bodyLarge: TextStyle(
+      fontFamily: 'Inter',
       fontSize: 16,
       fontWeight: FontWeight.w500,
       color: Colors.white.withValues(alpha: 0.9),
     ),
-    bodyMedium: GoogleFonts.inter(
+    bodyMedium: TextStyle(
+      fontFamily: 'Inter',
       fontSize: 14,
       fontWeight: FontWeight.w400,
       color: Colors.white.withValues(alpha: 0.7),
     ),
-    labelLarge: GoogleFonts.inter(
+    labelLarge: TextStyle(
+      fontFamily: 'Inter',
       fontSize: 14,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.5,
@@ -63,6 +70,7 @@ class AppTheme {
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
+    fontFamily: 'Inter',
     brightness: Brightness.light,
     primaryColor: primaryColor,
     scaffoldBackgroundColor: _backgroundColor,

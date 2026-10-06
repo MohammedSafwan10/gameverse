@@ -67,7 +67,7 @@ void main() {
         (tester) async {
       await pumpSettings(tester, size);
       expect(find.byKey(const Key('flappy-settings-sound')), findsOneWidget);
-      expect(find.byKey(const Key('flappy-settings-music')), findsOneWidget);
+      expect(find.byKey(const Key('flappy-settings-music')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
