@@ -1,7 +1,8 @@
 # Block Merge concept selection
 
 Direction 2 was selected by the user: mint/coral Fresh Resin. Direction 1 and 3
-are alternatives, not production themes. No redesign is implemented yet.
+are alternatives, not production themes. The resin flow is now implemented;
+see ../../BLOCK_MERGE_REDESIGN.md for rules and verification limitations.
 
 1. `01-ceramic-studio.png`: warm ivory, orange/cobalt ceramic number tiles.
 2. `02-fresh-resin-lab.png`: **approved direction**, mint/coral translucent resin.
@@ -21,9 +22,9 @@ describes Classic, Zen and three-minute Time Attack variants:
 https://play.google.com/store/apps/details?id=com.aramis.puzzle2048 .
 
 Concepts preserve the current Classic, Time Challenge and Zen choices. The
-precise Zen recovery rules and timed-mode win conditions need agreement before
-implementation. Do not promise infinite play on a finite blocked board without
-defining the recovery mechanic. Do not copy competitor artwork or sound assets.
+implemented Zen mode is relaxed untimed 2048, with one undo and restart on a
+blocked board. All modes offer a 2048 milestone and continued play. Time Challenge
+ends at three minutes of active play. No infinite-play promise is made.
 
 ## Next after selection
 
@@ -42,8 +43,8 @@ Related screen/state mockups use the approved image as their style reference:
 - `14-restart-dialog.png`
 - `15-leave-dialog.png`
 
-These are proposed related compositions awaiting review, not completed Flutter
-screens. Their prompts are recorded in `RELATED_SCREEN_PROMPTS.md`. No separate
+These related compositions were approved and implemented. Their prompts are
+recorded in `RELATED_SCREEN_PROMPTS.md`. No separate
 setup/difficulty screen is invented: mode selection starts the matching mode.
 Dialog states are separate image files, not new navigation routes.
 
@@ -68,7 +69,8 @@ Classic reaching 2048 is a milestone with Keep Playing; no-moves and expired-tim
 results have different available actions. Undo on a blocked board is conditional
 on a valid prior snapshot. Timed expiry must not offer continued timed play.
 Zen mockup says no clock, not an unsupported promise of an infinitely unblocked
-board. Leave-confirmation wording makes no new autosave promise. Statistics are
+board. One active run saves locally; returning to its mode resumes it.
+Switching to another mode starts a new run. Statistics are
 local sample values; no fabricated online leaderboard or achievements.
 
 After the user reviews the related mockups, isolate production artwork and

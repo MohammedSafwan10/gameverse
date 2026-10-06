@@ -1,5 +1,22 @@
 # Audio assets
 
+## Block Merge — fresh resin
+
+Downloaded from https://kenney.nl/assets/interface-sounds (CC0 / public domain).
+The pack license is at `assets/sounds/block_merge/LICENSE.txt`.
+
+- `slide.wav`: `switch_001.ogg`, 180 ms, 3 ms fade-in, 60 ms fade-out,
+  reduced gain; playback volume 0.30.
+- `merge.wav`: `pluck_002.ogg`, trimmed to about 157 ms; volume 0.40.
+- `win.wav`: `confirmation_004.ogg`, about 483 ms; volume 0.40.
+
+FFmpeg silence detection was inspected before converting to mono 44.1 kHz,
+16-bit PCM WAV, with a limiter for transients. Separate AudioPools prewarm on
+mode entry, skip unready cues rather than queuing delayed playback, and dispose
+with the controller. No looping music or loud start fanfare. The first
+`click_003` candidate was rejected because it was too short after trimming.
+Physical-device listening remains to be checked.
+
 ## Connect Four
 
 Reuses the existing licensed, FFmpeg-prepared CC0 PCM WAV effects documented

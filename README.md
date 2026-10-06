@@ -18,10 +18,12 @@ shared expressive mobile interface.
 - Local play and AI opponents where supported by the game.
 - Per-game settings, saved progress, statistics, and high scores.
 - Responsive layouts verified at 320×568, 360×800, 390×844, and 430×932.
-- Prepared low-latency sound effects for Memory Match and Chess.
+- Prepared low-latency sound effects for Memory Match, Chess, board games, and Block Merge.
+- Resin-themed Block Merge: Classic, three-minute Time Challenge, and untimed Zen;
+  swipe animations, one-move undo, a resumable local run, and a 2048 milestone.
 - Android, iOS, web, Windows, macOS, and Linux Flutter targets.
 
-The app currently uses a single light visual system. It does not require an
+The app combines shared navigation with game-specific visual themes. It does not require an
 account, network connection, Firebase, or cloud services.
 
 ## Development

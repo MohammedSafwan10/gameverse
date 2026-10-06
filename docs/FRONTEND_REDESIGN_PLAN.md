@@ -147,13 +147,14 @@ Block Merge:
 
 Direction 2 **Fresh Resin** selected: mint/off-white, coral actions, deep-teal
 type and translucent resin number tiles. Mode reference and related screen/state
-mockups: `docs/mockups/block_merge/`. Mockups are not implemented screens.
-The user explicitly requested a scoped logic rebuild and newly sourced/prepared
-sound effects alongside this game's future implementation.
+mockups: `docs/mockups/block_merge/`. Implemented with isolated resin artwork,
+native front-facing animated tiles, result/dialog states, local statistics
+and prepared CC0 PCM effects. Rules and verification:
+`docs/BLOCK_MERGE_REDESIGN.md`.
 
-- [ ] 21. Mode selection
-- [ ] 22. Gameplay
-- [ ] 23. Settings
+- [x] 21. Mode selection
+- [x] 22. Gameplay
+- [x] 23. Settings
 
 ### Phase 5: casual and educational games
 
