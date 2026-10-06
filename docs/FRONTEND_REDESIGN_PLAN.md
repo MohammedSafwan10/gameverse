@@ -109,12 +109,13 @@ Complete one polished journey from Home to result before broadening the redesign
 - [ ] 5. Games/category catalogue
 - [x] 6. Profile
 - [x] 7. Achievements
-- [ ] 8. Leaderboard
+- Removed: 8. Placeholder leaderboard (fake player data; no cloud ranking).
 - [x] 9. Application settings
 
-The Games catalogue should become a proper browse/discovery destination. The Home
-Games navigation item currently scrolls to the Home game grid; revisit this only
-when the catalogue redesign is implemented.
+Games currently clears mood filters and scrolls to all seven Home game cards;
+Home scrolls back to the top. A standalone browse destination is optional future
+work. Profile/Achievements now use real local records. See
+`docs/PLAYER_PROGRESS_AND_RELEASE_STATUS.md` for semantics and release blockers.
 
 ### Phase 3: classic board games
 
@@ -241,6 +242,7 @@ clean Android build on Windows.
 
 ## Next exact task
 
-Create mockup directions for the Games/category catalogue, then redesign:
-
-`lib/screens/games/games_screen.dart`
+Complete the release gate in `docs/PLAYER_PROGRESS_AND_RELEASE_STATUS.md`.
+The previously proposed `lib/screens/games/games_screen.dart` does not exist;
+do not treat it as a completed or missing required screen. A separate catalogue
+needs a new explicit product decision and approved mockups.

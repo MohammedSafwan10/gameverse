@@ -17,6 +17,9 @@ shared expressive mobile interface.
 
 - Local play and AI opponents where supported by the game.
 - Per-game settings, saved progress, statistics, and high scores.
+- Live local achievements and profile totals from saved game records; no fake
+  ranks, XP, leaderboard players or pre-awarded badges. Memory cleared-board
+  tracking starts with this update.
 - Responsive layouts verified at 320×568, 360×800, 390×844, and 430×932.
 - Prepared low-latency sound effects for Memory Match, Chess, board games, and Block Merge.
 - Discovery Gallery Quiz Master: five offline topics, quiz-length setup, timed
@@ -27,6 +30,11 @@ shared expressive mobile interface.
 
 The app combines shared navigation with game-specific visual themes. It does not require an
 account, network connection, Firebase, or cloud services.
+
+Gameplay is offline; fresh-install font availability still requires release
+verification. The visual redesign is not a production-readiness certificate.
+See [release status](docs/PLAYER_PROGRESS_AND_RELEASE_STATUS.md) for remaining
+store, device, typography and test gates.
 
 ## Development
 
