@@ -72,9 +72,47 @@ Do not claim deployment until a public HTTPS check succeeds.
   passed. The focused marketing golden also passed without baseline updates.
 - `website/README.md` and `website/ASSETS.md` document local preview, asset
   provenance and production build. No local preview server is left running.
-- Deployment pending public HTTPS verification. Record resource UUIDs, source
-  commit and deployment result here once verified.
+- Live deployment verified on 6 October 2026: HTTPS homepage, `/privacy/` and
+  `/health` return 200; unknown routes return 404. CSP/frame denial present,
+  no response cookies. Playwright passed all six viewports against the public
+  site, and the deployed desktop/mobile screenshots were inspected.
 
-Next: deploy the pushed commit using root Dockerfile, base directory `/`, port
-8080 and `/health`, memory 128M / CPU 0.25. Add only the DNS-only GameVerse A
-record. Do not modify unrelated apps, domains, firewall or OCI capacity.
+## Live Coolify resource and repeat deployments
+
+- URL: https://gameverse.nexdark.com
+- Policy: https://gameverse.nexdark.com/privacy/
+- Existing ARM64 server: `8z2ogeah73dlohmjvqjb41ag`.
+- New project GameVerse: `3gr7lgjbv2d4r9blxl3vzia9`.
+- New app GameVerse Website: `lfptedxauxnlqhoc9wrnkxm1`.
+- Successful deployment: `bfz9rdrkfjdtrhb8c8srtfgu`.
+- Deployed source commit: `f292de70547cff9c0d951fd73e7e4cb45411d6b9` on
+  `MohammedSafwan10/gameverse`, branch `main`.
+- Root Dockerfile, base directory `/`, port 8080, `/health`, CPU 0.25 and memory
+  128M. Registry manifests confirmed Linux ARM64 for Node 24 Alpine and NGINX
+  1.30.5 Alpine. Coolify's ARM64 build finished and the container is healthy.
+- Only DNS record added: DNS-only A `gameverse.nexdark.com` → `129.151.44.211`.
+  Origin HTTPS verifies normally, with no TLS bypass. No other DNS, server,
+  firewall or application was changed.
+
+This first deployment is deliberately pinned to the verified commit above.
+Before a future release, set the application's source commit to the desired
+pushed SHA (or `HEAD` in Coolify's Git Source settings if latest-main deployments
+are intended), then deploy this exact application UUID. CLI v1.8 does not expose
+a source-commit update flag. Never deploy a dirty local tree or claim that a
+push updates this site automatically. Automatic push deployment requires a
+GitHub App/webhook as well as Coolify's auto-deploy setting; that integration
+was not added as part of this manual deployment.
+
+```powershell
+& 'C:/Users/Thumbeja/AppData/Local/Coolify/coolify.exe' context verify
+& 'C:/Users/Thumbeja/AppData/Local/Coolify/coolify.exe' deploy uuid 'lfptedxauxnlqhoc9wrnkxm1'
+```
+
+Read the Oracle runbook before modifying deployment settings. Monitor returned
+deployment UUIDs with `deploy get`, printing only status/commit/timestamps, not
+raw configuration or secrets. Do not modify unrelated apps, domains, firewall
+or OCI capacity.
+
+Next: provide a published Play Store listing to replace the truthful coming-soon
+CTA. Physical-device release smoke testing/store approval remain separate app
+release gates; a healthy marketing site does not certify the Android app.

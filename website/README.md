@@ -32,7 +32,7 @@ NGINX on container port 8080. Build context is the repository root. The
 sources. `/health` reports readiness; unknown routes return a real HTTP 404.
 Security headers include CSP, frame denial and restricted browser permissions.
 
-Deployment target: the owner's existing Coolify/Oracle ARM64 VPS at
+Live site: the owner's existing Coolify/Oracle ARM64 VPS at
 https://gameverse.nexdark.com. See `../docs/WEBSITE_PLAN.md` for deployment state
 and operating instructions. Do not change other applications or host ports.
 

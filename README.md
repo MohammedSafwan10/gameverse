@@ -68,7 +68,21 @@ Detailed design and polish guidance is maintained in:
 - `docs/FONT_ASSETS.md`
 - `docs/ANDROID_RELEASE.md` — signing, AAB validation and store gates
 - `docs/PRIVACY_POLICY.md` — NexDark Labs' offline-data policy
-- `docs/WEBSITE_PLAN.md` — website concepts and proposed Coolify deployment
+- `docs/WEBSITE_PLAN.md` — approved website, verification and Coolify deployment
+
+## Marketing website
+
+The responsive static site lives in [`website/`](website/README.md), with the
+shared public privacy policy generated from `docs/PRIVACY_POLICY.md`.
+
+```bash
+cd website
+npm run dev
+```
+
+Open http://localhost:4173. Node.js 24 is required; no npm dependencies are
+needed. Production uses the root Dockerfile on the owner's existing Coolify
+ARM64 server, with a coming-soon Google Play CTA until a listing is published.
 
 ## Project structure
 
