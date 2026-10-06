@@ -11,19 +11,17 @@ class TicTacToeSettingsScreen extends StatelessWidget {
     final controller = Get.find<TicTacToeSettingsController>();
     return TactilePage(
         builder: (context, c) => SingleChildScrollView(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             child: Column(children: [
-              Align(
-                  alignment: Alignment.centerLeft,
-                  child: TactileIcon(Icons.arrow_back_rounded,
-                      label: 'Back', onPressed: () => Get.back())),
-              const SizedBox(height: 16),
               Row(children: [
-                const Expanded(child: TactileTitle('SETTINGS')),
+                TactileIcon(Icons.arrow_back_rounded,
+                    label: 'Back', onPressed: () => Get.back()),
+                const SizedBox(width: 10),
+                const Expanded(child: TactileTitle('SETTINGS', size: 32)),
                 Image.asset('${tttAssets}paired-pieces.png',
-                    width: 95, height: 65),
+                    width: 65, height: 46),
               ]),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               Obx(() {
                 final s = controller.settings;
                 return Column(children: [
@@ -117,22 +115,23 @@ class TicTacToeSettingsScreen extends StatelessWidget {
                   }),
                 ]);
               }),
-              const SizedBox(height: 20),
+              const SizedBox(height: 6),
             ])));
   }
 
   Widget _group(String title, List<Widget> rows) => Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TactileSurface(
+          padding: const EdgeInsets.all(12),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: tttText(27, heavy: true)),
-        const SizedBox(height: 8),
-        for (var i = 0; i < rows.length; i++) ...[
-          if (i > 0) const Divider(color: Color(0xFFDDC6A2)),
-          rows[i]
-        ],
-      ])));
+            Text(title, style: tttText(23, heavy: true)),
+            const SizedBox(height: 8),
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) const Divider(color: Color(0xFFDDC6A2), height: 8),
+              rows[i]
+            ],
+          ])));
   Widget _row(String label, String value, IconData icon, VoidCallback onTap) =>
       Material(
           color: Colors.transparent,
@@ -140,7 +139,7 @@ class TicTacToeSettingsScreen extends StatelessWidget {
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
               child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(children: [
                     Icon(icon, color: tttInk),
                     const SizedBox(width: 12),

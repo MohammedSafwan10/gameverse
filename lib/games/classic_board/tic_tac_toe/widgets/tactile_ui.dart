@@ -39,6 +39,29 @@ class TactilePage extends StatelessWidget {
       );
 }
 
+/// Allocate spare height to artwork/board instead of forcing a tall scroll page.
+/// Short landscape screens and accessibility text retain a scroll fallback.
+class TactileViewportContent extends StatelessWidget {
+  const TactileViewportContent(
+      {super.key,
+      required this.builder,
+      this.minimumHeight = 500,
+      this.padding = const EdgeInsets.all(14)});
+  final WidgetBuilder builder;
+  final double minimumHeight;
+  final EdgeInsets padding;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
+        final scale = MediaQuery.textScalerOf(context).scale(16) / 16;
+        final height =
+            math.max(c.maxHeight, minimumHeight * (scale > 1.3 ? scale : 1));
+        return SingleChildScrollView(
+            child: SizedBox(
+                height: height,
+                child: Padding(padding: padding, child: builder(context))));
+      });
+}
+
 class TactileSurface extends StatelessWidget {
   const TactileSurface(
       {super.key,
@@ -351,67 +374,74 @@ class _TactileDifficultyPageState extends State<TactileDifficultyPage> {
   ];
   @override
   Widget build(BuildContext context) => TactilePage(
-      builder: (context, c) => SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
-          child: Column(children: [
-            Align(
-                alignment: Alignment.centerLeft,
-                child: TactileIcon(Icons.arrow_back_rounded,
-                    label: 'Back', onPressed: () => Navigator.pop(context))),
-            const SizedBox(height: 12),
-            const TactileTitle('PLAY VS AI'),
-            const SizedBox(height: 6),
-            Text('Choose your challenge', style: tttText(18)),
-            Image.asset('${tttAssets}paired-pieces.png',
-                height: c.maxHeight < 650 ? 90 : 150),
-            for (final difficulty in GameDifficulty.values)
-              Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Semantics(
-                      selected: selected == difficulty,
-                      button: true,
-                      child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                              onTap: () =>
-                                  setState(() => selected = difficulty),
-                              borderRadius: BorderRadius.circular(24),
-                              child: TactileSurface(
-                                  selected: selected == difficulty,
-                                  padding: const EdgeInsets.all(13),
-                                  child: Row(children: [
-                                    TactilePiece(
-                                        difficulty.index.isEven
-                                            ? Player.x
-                                            : Player.o,
-                                        size: 46),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                        child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                          Text(
-                                              difficulty.displayName
-                                                  .toUpperCase(),
-                                              style: tttText(25, heavy: true)),
-                                          Text(descriptions[difficulty.index],
-                                              style: tttText(13)),
-                                        ])),
-                                    Icon(
-                                        selected == difficulty
-                                            ? Icons.check_circle
-                                            : Icons.radio_button_unchecked,
-                                        color: selected == difficulty
-                                            ? tttOrange
-                                            : const Color(0xFFAA9476)),
-                                  ])))))),
-            const SizedBox(height: 8),
-            TactileButton(widget.startGame ? 'START GAME' : 'SAVE DIFFICULTY',
-                primary: true,
-                icon: Icons.arrow_forward_rounded,
-                onPressed: () => widget.onSelected(selected)),
-          ])));
+      builder: (context, c) => TactileViewportContent(
+          minimumHeight: 620,
+          padding: const EdgeInsets.all(14),
+          builder: (context) => Column(children: [
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: TactileIcon(Icons.arrow_back_rounded,
+                        label: 'Back',
+                        onPressed: () => Navigator.pop(context))),
+                const SizedBox(height: 8),
+                const TactileTitle('PLAY VS AI', size: 34),
+                const SizedBox(height: 6),
+                Text('Choose your challenge', style: tttText(18)),
+                Expanded(
+                    child: Image.asset('${tttAssets}paired-pieces.png',
+                        fit: BoxFit.contain)),
+                for (final difficulty in GameDifficulty.values)
+                  Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Semantics(
+                          selected: selected == difficulty,
+                          button: true,
+                          child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                  onTap: () =>
+                                      setState(() => selected = difficulty),
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: TactileSurface(
+                                      selected: selected == difficulty,
+                                      padding: const EdgeInsets.all(10),
+                                      child: Row(children: [
+                                        TactilePiece(
+                                            difficulty.index.isEven
+                                                ? Player.x
+                                                : Player.o,
+                                            size: 38),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                            child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                              Text(
+                                                  difficulty.displayName
+                                                      .toUpperCase(),
+                                                  style:
+                                                      tttText(23, heavy: true)),
+                                              Text(
+                                                  descriptions[
+                                                      difficulty.index],
+                                                  style: tttText(13)),
+                                            ])),
+                                        Icon(
+                                            selected == difficulty
+                                                ? Icons.check_circle
+                                                : Icons.radio_button_unchecked,
+                                            color: selected == difficulty
+                                                ? tttOrange
+                                                : const Color(0xFFAA9476)),
+                                      ])))))),
+                const SizedBox(height: 8),
+                TactileButton(
+                    widget.startGame ? 'START GAME' : 'SAVE DIFFICULTY',
+                    primary: true,
+                    icon: Icons.arrow_forward_rounded,
+                    onPressed: () => widget.onSelected(selected)),
+              ])));
 }
 
 class TactileHelpPage extends StatelessWidget {
@@ -419,16 +449,16 @@ class TactileHelpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TactilePage(
       builder: (context, c) => SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(14),
           child: Column(children: [
-            Align(
-                alignment: Alignment.centerLeft,
-                child: TactileIcon(Icons.arrow_back_rounded,
-                    label: 'Back', onPressed: () => Navigator.pop(context))),
-            const SizedBox(height: 12),
-            const TactileTitle('HOW TO PLAY'),
+            Row(children: [
+              TactileIcon(Icons.arrow_back_rounded,
+                  label: 'Back', onPressed: () => Navigator.pop(context)),
+              const SizedBox(width: 12),
+              const Expanded(child: TactileTitle('HOW TO PLAY', size: 30))
+            ]),
             Image.asset('${tttAssets}paired-pieces.png',
-                height: c.maxHeight < 650 ? 70 : 110),
+                height: c.maxHeight < 650 ? 50 : 65),
             _section('1', 'TAKE TURNS', 'Place your piece in an empty square.',
                 const SizedBox.shrink()),
             _section(
@@ -458,7 +488,7 @@ class TactileHelpPage extends StatelessWidget {
                 'No winning line means a draw.',
                 Center(
                     child: SizedBox(
-                        width: 110,
+                        width: 80,
                         child: TactileBoard(board: const [
                           Player.x,
                           Player.o,
@@ -475,21 +505,24 @@ class TactileHelpPage extends StatelessWidget {
           ])));
   Widget _section(String n, String title, String text, Widget diagram) =>
       Padding(
-          padding: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.only(bottom: 10),
           child: TactileSurface(
+              padding: const EdgeInsets.all(12),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                Row(children: [
-                  CircleAvatar(
-                      backgroundColor: tttOrange,
-                      child: Text(n, style: tttText(20, color: Colors.white))),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(title, style: tttText(26, heavy: true)))
-                ]),
-                const SizedBox(height: 8),
-                Text(text, style: tttText(15)),
-                const SizedBox(height: 10),
-                diagram,
-              ])));
+                    Row(children: [
+                      CircleAvatar(
+                          backgroundColor: tttOrange,
+                          child:
+                              Text(n, style: tttText(20, color: Colors.white))),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: Text(title, style: tttText(23, heavy: true)))
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(text, style: tttText(14)),
+                    const SizedBox(height: 6),
+                    diagram,
+                  ])));
 }

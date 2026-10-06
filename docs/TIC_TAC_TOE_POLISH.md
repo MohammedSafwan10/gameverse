@@ -9,7 +9,11 @@ restart/leave confirmations use this family. Do not restore the old dark/glass U
 
 Text, selection, counts, buttons and the playable nine-cell board remain native
 Flutter. The mode hero is decorative perspective artwork; the playable board
-must stay square and front-facing. Compact screens may scroll, never crop controls.
+must stay square and front-facing. Mode selection fits all four required phone
+sizes, including safe areas and 115% text. Gameplay has no How to Play button;
+help remains on mode selection. Setup, gameplay, settings and statistics use
+compact viewport layouts. Very short screens or large accessibility text may
+scroll rather than crop controls. Achievement details remain available on tap.
 
 ## Production assets
 
@@ -53,19 +57,21 @@ This is an offline game; there is no new network backend.
 
 ## Verification
 
-Focused suite: 49 tests, including all four difficulty levels, lifecycle/race
+Focused suite: 59 tests, including all four difficulty levels, lifecycle/race
 regressions, every screen at 320x568, 360x800, 390x844 and 430x932, larger text,
 compact confirmations, and eight visually inspected goldens. Run without
 `--update-goldens` for the final check.
 
-`flutter analyze` passes. Full-suite run on 2026-10-06: 203 passed, nine golden
-comparisons outside Tic-Tac-Toe differ by 0.08–0.35% (Memory Match, Flappy Bird,
+The final combined Tic-Tac-Toe/Connect Four run passes all 123 tests.
+`flutter analyze` passes. Full-suite run on 2026-10-06: 271 passed, nine golden
+comparisons outside these two games differ (Memory Match, Flappy Bird,
 Profile, Achievements and app Settings). Those baselines were not overwritten.
 Do not report the full suite as green until these differences are investigated.
 
 Android debug build succeeded and was installed with `adb install -r`, retaining
-app data. Real-device AI setup and settings artwork were inspected; the user
-approved the final implementation. Generated screenshots and processing logs
+app data. Real-device mode selection and gameplay were inspected after the
+compact layout update; the complete board and controls fit, with help only on
+mode selection. The user approved the implementation. Screenshots and logs
 stay out of the commit.
 
 Removed five unreferenced legacy Tic-Tac-Toe widget/theme/animation files; Git

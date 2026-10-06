@@ -151,6 +151,74 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  for (final size in sizes) {
+    testWidgets(
+        'mode fits one viewport with phone insets and 115% text at $size',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const GetMaterialApp(
+          home: MediaQuery(
+              data: MediaQueryData(
+                  padding: EdgeInsets.only(top: 24, bottom: 24),
+                  textScaler: TextScaler.linear(1.15)),
+              child: ModeSelectionScreen())));
+      await _loadImages(tester);
+      for (final element in find.byType(Scrollable).evaluate()) {
+        expect((element as StatefulElement).state is ScrollableState, isTrue);
+        expect((element.state as ScrollableState).position.maxScrollExtent, 0);
+      }
+      final help = tester.getRect(find.text('HOW TO PLAY'));
+      expect(help.bottom, lessThanOrEqualTo(size.height - 24));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+  testWidgets('compact achievements retain their full details on tap',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const GetMaterialApp(home: TicTacToeStatsScreen()));
+    await _loadImages(tester);
+    await tester.tap(find.text('First Victory'));
+    await tester.pumpAndSettle();
+    expect(find.text('Win your first game'), findsOneWidget);
+    expect(find.text('Not unlocked yet'), findsOneWidget);
+    await tester.tap(find.text('CLOSE'));
+    await tester.pumpAndSettle();
+    expect(find.text('Not unlocked yet'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  for (final page in pages.entries.where((p) => p.key != 'mode')) {
+    testWidgets('${page.key} phone viewport has no unnecessary scrolling',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(GetMaterialApp(
+          home: MediaQuery(
+              data: const MediaQueryData(
+                  padding: EdgeInsets.only(top: 24, bottom: 24),
+                  textScaler: TextScaler.linear(1.15)),
+              child: page.value())));
+      await _loadImages(tester);
+      expect(tester.takeException(), isNull);
+      final scrollables = find.byType(Scrollable).evaluate();
+      for (final element in scrollables) {
+        final state = (element as StatefulElement).state as ScrollableState;
+        expect(state.position.maxScrollExtent, 0, reason: '${page.key} extent');
+      }
+      if (page.key == 'game') expect(find.text('HOW TO PLAY'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 }
 
 Future<void> _loadImages(WidgetTester tester) async {
