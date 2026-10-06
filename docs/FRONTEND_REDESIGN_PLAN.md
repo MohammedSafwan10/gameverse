@@ -145,6 +145,12 @@ Approved references and production prompts: `docs/mockups/connect_four/`.
 
 Block Merge:
 
+Direction 2 **Fresh Resin** selected: mint/off-white, coral actions, deep-teal
+type and translucent resin number tiles. Mode reference and related screen/state
+mockups: `docs/mockups/block_merge/`. Mockups are not implemented screens.
+The user explicitly requested a scoped logic rebuild and newly sourced/prepared
+sound effects alongside this game's future implementation.
+
 - [ ] 21. Mode selection
 - [ ] 22. Gameplay
 - [ ] 23. Settings
