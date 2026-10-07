@@ -8,7 +8,7 @@ void main() {
       () async {
     PackageInfo.setMockInitialValues(
         appName: 'GameVerse',
-        packageName: 'com.gameverse.app',
+        packageName: 'com.nexdarklabs.gameverse',
         version: '9.4.2',
         buildNumber: '73',
         buildSignature: 'test');

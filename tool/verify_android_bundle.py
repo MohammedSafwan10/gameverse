@@ -29,7 +29,7 @@ def verify(path):
         android_manifest = bundle.read("base/manifest/AndroidManifest.xml")
         for permission in ("INTERNET", "ACCESS_FINE_LOCATION", "CAMERA", "RECORD_AUDIO"):
             assert ("android.permission." + permission).encode() not in android_manifest, permission
-        assert b"com.gameverse.app" in android_manifest
+        assert b"com.nexdarklabs.gameverse" in android_manifest
         libraries = sorted(n for n in names if n.endswith(".so"))
         assert libraries, "No native libraries found"
         for name in libraries:

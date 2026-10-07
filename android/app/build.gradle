@@ -11,7 +11,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.gameverse.app"
+    namespace = "com.nexdarklabs.gameverse"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
 
 
     defaultConfig {
-        applicationId = "com.gameverse.app"
+        applicationId = "com.nexdarklabs.gameverse"
         minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

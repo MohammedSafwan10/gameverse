@@ -1,4 +1,4 @@
-package com.gameverse.app
+package com.nexdarklabs.gameverse
 
 import io.flutter.embedding.android.FlutterActivity
 
