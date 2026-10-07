@@ -67,9 +67,11 @@ Visual redesign completion does not certify production readiness. Outstanding:
 4. Perform release-mode phone smoke tests, persistence after process death,
    fresh install, upgrades, sound/mute and long sessions across all seven games.
    This change's final device check was unavailable: ADB reported no device.
-5. Upload the locally validated final signed AAB and check Play acceptance.
+5. Play processed the final signed AAB; the Alpha closed-test draft and release
+   notes are saved. Countries and tester configuration are still pending.
 6. Production access is locked pending a closed test with 12 opted-in testers
    for 14 days. Content rating, Data safety and 13+ audience are saved. Owner
-   approval to start the testing workflow and real testers are still required.
+   approved preparing/uploading the closed-test draft. Confirm countries,
+   tester addresses and final rollout before submitting the test for review.
 
 See `ANDROID_RELEASE.md` for commands, signing safeguards and compiler details.

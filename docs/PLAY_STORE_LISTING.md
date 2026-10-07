@@ -80,8 +80,9 @@ graphic tagline reads "Your games. One little escape." instead of
 
 Console shows production access disabled: at least **12 testers** opted into a
 closed test continuously for **14 days**, followed by a production-access
-application. The owner requested direct production and has **not authorized
-publishing a testing release**. Prepare drafts/artifacts only; never bypass or
+application. On 7 October the owner authorized preparing a closed-test release
+and uploading the signed AAB. Publishing the test remains pending the tester
+list, countries and final rollout approval. Prepare drafts only; never bypass or
 invent testing, tester participation or feedback. Internal testing is optional
 and does not satisfy this closed-test requirement.
 
@@ -104,7 +105,11 @@ retouched to pretend that the app layout is different. Re-capture after a UI fix
 Final local release AAB: `build/app/outputs/bundle/release/app-release.aab`.
 SHA256: `AD9932E98CB4D0688862F34D822C9772375BD9D7E1FB3272D3B13E806B206F1F`.
 Package `com.nexdarklabs.gameverse`, code 1, target SDK 36; bundletool validation
-and local bundle verification passed. The AAB has **not** been uploaded to Play.
+and local bundle verification passed. Play processed the uploaded bundle and
+the Alpha draft `1.0.0 (1) - Closed test` is saved with English release notes.
+Preview confirms API 24+, target SDK 36 and approximately 105MB new-install
+download size. The only displayed error is no countries selected; the warning
+is no testers configured. No rollout or Google review submission yet.
 
 Feature art uses the built-in image generator. Evergreen edit prompt:
 "Change only the tagline from 'Seven games.' to 'Your games.' Keep second line
