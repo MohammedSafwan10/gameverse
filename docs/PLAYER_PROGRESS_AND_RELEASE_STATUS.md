@@ -43,13 +43,14 @@
   Resetting stats clears the high-score cache; sound/haptic preferences persist.
 - AGP 9.4.0 / Gradle 9.6.0 / Kotlin 2.4.20 debug build passed. The explicit
   compiler override is declared in plugin resolution and root dependencies.
-- Analyzer is clean. Full serial suite: **405 passed**. The parallel suite hit
+- Analyzer is clean. Final serial suite: **406 passed**. The parallel suite hit
   three Windows test-storage lock collisions; serial execution passed those tests.
 - Nine Memory/Flappy/utility goldens were inspected and intentionally reapproved
   with bundled typography and Material icons. No unrelated golden updates.
-- A signed 144MB AAB was built earlier with Kotlin 2.4.10; signature and all
-  native 64-bit ELF LOAD alignments were verified. Rebuild/validate the final
-  release after the final compiler/configuration changes before store upload.
+- The final signed 144MB AAB uses Kotlin 2.4.20 and the owner-approved Play
+  package `com.nexdarklabs.gameverse`. Bundletool validation, signature and
+  native 64-bit ELF LOAD alignment checks passed. See `PLAY_STORE_LISTING.md`
+  for the artifact hash. This is local validation, not Play acceptance.
 - Version remains **1.0.0+1**, explicitly chosen by the owner. It cannot replace
   the earlier GitHub version-code-2 install without an intentional fresh install.
 
@@ -57,18 +58,18 @@
 
 Visual redesign completion does not certify production readiness. Outstanding:
 
-1. Owner reviews policy and store disclosures. Publish the selected marketing
-   website and `/privacy/` via Coolify; see `WEBSITE_PLAN.md`. Three concepts
-   are awaiting selection. No DNS/deployment changes have been made.
+1. Marketing website and `/privacy/` are live at https://gameverse.nexdark.com
+   through Coolify. Store listing and declarations are complete, ready for
+   review; no publication or release rollout has been submitted.
 2. Verify fonts on a fresh offline release installation, despite bundled assets.
 3. Continue screenshot comparison on real devices; passing goldens are not
    release-mode device QA or Play Store approval.
 4. Perform release-mode phone smoke tests, persistence after process death,
    fresh install, upgrades, sound/mute and long sessions across all seven games.
    This change's final device check was unavailable: ADB reported no device.
-5. Rebuild/validate the final signed AAB, bundletool validation, APK alignment
-   and store configuration. No new GitHub release or Play Store upload yet.
-6. Complete account-specific Play Console testing/verification and content
-   rating, Data safety and target-audience declarations.
+5. Upload the locally validated final signed AAB and check Play acceptance.
+6. Production access is locked pending a closed test with 12 opted-in testers
+   for 14 days. Content rating, Data safety and 13+ audience are saved. Owner
+   approval to start the testing workflow and real testers are still required.
 
 See `ANDROID_RELEASE.md` for commands, signing safeguards and compiler details.

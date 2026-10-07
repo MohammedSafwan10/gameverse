@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>GameVerse store screenshot</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden}
+body{font-family:Arial,sans-serif;background:radial-gradient(ellipse at 15% 0%,#fff 0%,#f7eddf 70%);color:#071737}
+main{width:1080px;height:1920px;padding:66px 72px 54px;display:flex;flex-direction:column;align-items:center}
+.brand{align-self:flex-start;font-size:34px;font-weight:800;letter-spacing:-1px;margin-bottom:27px}
+h1{font-size:72px;line-height:1.04;letter-spacing:-3px;text-align:center;margin:0 0 14px;max-width:920px}
+p{font-size:27px;text-align:center;margin:0 0 35px;opacity:.8}
+.phone{height:1520px;flex-shrink:0;padding:12px;background:#101827;border-radius:49px;box-shadow:0 25px 65px #08183435;border:3px solid #ffffff90}
+img{height:1490px;width:auto;display:block;border-radius:34px}
+body.chess{background:radial-gradient(ellipse at top,#213f69,#07142b 80%);color:#f9e4b9}
+body.memory{background:radial-gradient(ellipse at top,#61b8ff,#0745bd 80%);color:#fff6e7}
+body.quiz{background:radial-gradient(ellipse at top,#fff,#cce9fb 90%);color:#062677}
+</style>
+<main><div class="brand">GameVerse</div><h1></h1><p></p><div class="phone"><img alt="Real GameVerse app screenshot"></div></main>
+<script>
+const key=new URLSearchParams(location.search).get('game')||'home';
+const copy={home:['Your next favorite game.','Quick rounds. Thoughtful challenges.'],chess:['Make your next move.','A little strategy. A satisfying match.'],memory:['Find your focus.','Flip cards. Find pairs. Keep your streak.'],quiz:['Put your knowledge to play.','Pick a topic and take on a new question.']};
+if(!copy[key])throw new Error('Unknown screenshot');
+document.body.className=key;document.querySelector('h1').textContent=copy[key][0];document.querySelector('p').textContent=copy[key][1];document.querySelector('img').src='captures/'+key+'.png';
+</script></html>

@@ -65,3 +65,12 @@ silently uninstall a user's app to work around this.
   from a successful local build.
 
 Contact/developer identity: NexDark Labs, nexdarksolutions@gmail.com.
+
+## Play Console registration — 6 October 2026
+
+The owner approved `com.nexdarklabs.gameverse` because `com.gameverse.app` was
+already used in Play Console. Android applicationId, namespace and MainActivity
+now match the registered identity. Preserve the existing release keystore.
+Old-package installs remain separate; do not uninstall or claim data migration.
+Title: GameVerse: Play Your Way. See `PLAY_STORE_LISTING.md` for the exact
+Console state, audience choice, draft copy and production-access blocker.
