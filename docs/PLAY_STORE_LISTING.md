@@ -65,7 +65,9 @@ graphic tagline reads "Your games. One little escape." instead of
 - App icon, evergreen feature graphic and four real-screen phone compositions
   are uploaded. The completed default listing is **Ready to send for review**.
   Generated artwork-bearing assets are AI-labeled through the Console review
-  declaration. No app review, release rollout or publication has been submitted.
+  declaration. On 7 October 2026 the owner authorized review submission.
+  Publishing overview shows **Changes in review**, with automated quick checks
+  still running. This is not approval or public production publication.
 - Source inspection supports no login/restricted access, no ad SDK/advertising
   ID, no in-app data transmission, no government/financial/health features.
   Review each exact Console question; do not extrapolate to future releases.
@@ -81,8 +83,10 @@ graphic tagline reads "Your games. One little escape." instead of
 Console shows production access disabled: at least **12 testers** opted into a
 closed test continuously for **14 days**, followed by a production-access
 application. On 7 October the owner authorized preparing a closed-test release
-and uploading the signed AAB. Publishing the test remains pending the tester
-list, countries and final rollout approval. Prepare drafts only; never bypass or
+and uploading the signed AAB, then authorized submitting it for review. The
+owner's 12 supplied accounts are configured, and 178 countries were already
+selected in Console. Multiple accounts controlled by one person must not be
+represented as 12 genuine participants. Never bypass or
 invent testing, tester participation or feedback. Internal testing is optional
 and does not satisfy this closed-test requirement.
 
@@ -108,8 +112,12 @@ Package `com.nexdarklabs.gameverse`, code 1, target SDK 36; bundletool validatio
 and local bundle verification passed. Play processed the uploaded bundle and
 the Alpha draft `1.0.0 (1) - Closed test` is saved with English release notes.
 Preview confirms API 24+, target SDK 36 and approximately 105MB new-install
-download size. The only displayed error is no countries selected; the warning
-is no testers configured. No rollout or Google review submission yet.
+download size. Countries and account-list configuration resolved the initial
+error/warning; final release preview showed **Ready to release**. The missing
+Advertising ID declaration was completed as **No**, matching current SDKs.
+Sixteen changes (Alpha rollout, listing and disclosures/settings) were submitted
+for review on 7 October 2026. Managed publishing is off, so approved changes
+can publish to the closed track automatically. Production remains locked.
 
 Feature art uses the built-in image generator. Evergreen edit prompt:
 "Change only the tagline from 'Seven games.' to 'Your games.' Keep second line

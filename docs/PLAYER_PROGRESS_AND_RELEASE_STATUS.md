@@ -60,7 +60,8 @@ Visual redesign completion does not certify production readiness. Outstanding:
 
 1. Marketing website and `/privacy/` are live at https://gameverse.nexdark.com
    through Coolify. Store listing and declarations are complete, ready for
-   review; no publication or release rollout has been submitted.
+   review. Alpha and associated listing/setup were submitted on 7 October 2026;
+   Console shows Changes in review, pending quick checks and Google approval.
 2. Verify fonts on a fresh offline release installation, despite bundled assets.
 3. Continue screenshot comparison on real devices; passing goldens are not
    release-mode device QA or Play Store approval.
@@ -68,10 +69,11 @@ Visual redesign completion does not certify production readiness. Outstanding:
    fresh install, upgrades, sound/mute and long sessions across all seven games.
    This change's final device check was unavailable: ADB reported no device.
 5. Play processed the final signed AAB; the Alpha closed-test draft and release
-   notes are saved. Countries and tester configuration are still pending.
+   notes are saved. Countries and testing account list are configured.
 6. Production access is locked pending a closed test with 12 opted-in testers
    for 14 days. Content rating, Data safety and 13+ audience are saved. Owner
-   approved preparing/uploading the closed-test draft. Confirm countries,
-   tester addresses and final rollout before submitting the test for review.
+   approved preparing/uploading and submitting the closed test for review.
+   Twelve listed accounts do not establish twelve genuine test participants.
+   Approval, actual participation and production access remain outstanding.
 
 See `ANDROID_RELEASE.md` for commands, signing safeguards and compiler details.
